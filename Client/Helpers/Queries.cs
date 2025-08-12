@@ -26,7 +26,7 @@ public class Queries(List<Func<Task>> tasks, HttpClient? httpClient)
 
     private async Task<ExecutedTaskDto?> AddExecutedTaskAsync(ExecutedTaskDto executedTaskDto)
     {
-        var responseMessage = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Post, "Tasks/AddExecutedTask").AddContent(executedTaskDto));
+        var responseMessage = await httpClient!.SendAsync(new HttpRequestMessage(HttpMethod.Post, "Tasks/AddExecutedTask").AddContent(executedTaskDto));
         var addedTask = await responseMessage.GetModelAsync<ExecutedTaskDto>();
         return addedTask;
     }

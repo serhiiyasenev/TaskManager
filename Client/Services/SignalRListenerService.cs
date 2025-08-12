@@ -1,38 +1,47 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Client.Services;
 
-public class SignalRListenerService(HubConnection connection) : BackgroundService
+public class SignalRListenerService(HubConnection connection, ILogger<SignalRListenerService> log) : BackgroundService
 {
-    private HubConnection _connection = connection;
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Wait for 5 seconds before connect to СhatHub
-        await Task.Delay(5_000, stoppingToken); 
-
-        _connection = new HubConnectionBuilder().WithUrl("https://localhost:7268/chathub").Build();
-
-        _connection.On<string, string>("ReceiveMessage", (user, message) =>
+        connection.On<string, string>("ReceiveMessage", (user, message) =>
         {
             Console.WriteLine("\n---Message was received from Notifier---");
-            Console.WriteLine($"\n{user}: {message}");
+            Console.WriteLine($"{user}: {message}\n");
+            return Task.CompletedTask;
         });
 
-        // Connect to SignalR and start listening
-        await _connection.StartAsync(stoppingToken);
+        await Task.Delay(5000, stoppingToken);
 
-        // Keep listening until the service is stopped
         while (!stoppingToken.IsCancellationRequested)
         {
+            if (connection.State is not HubConnectionState.Connected
+                and not HubConnectionState.Connecting)
+            {
+                try
+                {
+                    await connection.StartAsync(stoppingToken);
+                    log.LogInformation("SignalR connected");
+                }
+                catch (Exception ex)
+                {
+                    log.LogWarning(ex, "Hub not ready, retry in 5s...");
+                    await Task.Delay(3000, stoppingToken);
+                    continue;
+                }
+            }
+
             await Task.Delay(1000, stoppingToken);
         }
+    }
 
-        // Disconnect from SignalR when the service is being stopped
-        if (_connection.State == HubConnectionState.Connected)
-        {
-            await _connection.StopAsync(stoppingToken);
-        }
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        if (connection.State == HubConnectionState.Connected) await connection.StopAsync(cancellationToken);
+        await base.StopAsync(cancellationToken);
     }
 }
