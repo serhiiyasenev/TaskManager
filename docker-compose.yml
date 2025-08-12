@@ -1,0 +1,11 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: task-rabbit
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # UI http://localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: unless-stopped
