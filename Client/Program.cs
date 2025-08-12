@@ -1,6 +1,7 @@
 ﻿using Client.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Client
 {
@@ -14,6 +15,7 @@ namespace Client
             var host = new HostBuilder()
             .ConfigureServices((hostContext, services) =>
             {
+                services.AddLogging(b => b.AddSimpleConsole());
                 services.AddHostedService<SignalRListenerService>();
             })
             .Build();
