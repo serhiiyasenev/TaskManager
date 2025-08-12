@@ -39,7 +39,7 @@ The system supports **real-time notifications**, **asynchronous task processing*
 ## 📦 Project Structure
 ```mermaid
 graph TD
-	A[TaskManager Solution] --> B[BLL - Business Logic]
+    A[TaskManager Solution] --> B[BLL - Business Logic]
     A --> C[DAL - Data Access Layer]
     A --> D[WebAPI - REST API]
     A --> E[Client - Console App]
@@ -48,8 +48,9 @@ graph TD
     B --> C
     D --> B
     C -->|Entity Framework Core| DB[(SQL Server)]
-    E -->|SignalR| D
+    E -->|HttpClient| D
     F -->|RabbitMQ| D
+    F -->|SignalR| E
 ```
 
 ## 📦 Sequence Diagram
