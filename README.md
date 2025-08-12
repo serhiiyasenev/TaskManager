@@ -12,7 +12,7 @@ The system supports **real-time notifications**, **asynchronous task processing*
 - **SignalR Integration**
   - Instant real-time messages between server and clients
 - **RabbitMQ Messaging**
-  - Asynchronous communication between microservices
+  - Asynchronous communication between services
 - **Layered Architecture**
   - **BLL** (Business Logic Layer)
   - **DAL** (Data Access Layer)
