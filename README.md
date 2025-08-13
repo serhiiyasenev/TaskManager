@@ -1,7 +1,7 @@
 # 📝 TaskManager
 
 **TaskManager** is a multi-component project management and task tracking system built with **.NET 9**, **SignalR**, **RabbitMQ**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
-The system supports **real-time notifications**, **asynchronous task processing**, and **modular expansion**.
+The system supports **real-time notifications**, **asynchronous task processing**, **Analytics**, and **modular expansion**.
 
 ---
 
@@ -9,8 +9,9 @@ The system supports **real-time notifications**, **asynchronous task processing*
 - **Project and Task Management**
   - Create, update, and delete tasks
   - Link tasks to projects and users
+  - Analytics (Analyze tasks, Examine team structure, Investigate projects, Measure user performance, Compare teams and participants)
 - **SignalR Integration**
-  - Instant real-time messages between server and clients
+  - Instant real-time messages between the server and clients
 - **RabbitMQ Messaging**
   - Asynchronous communication between services
 - **Layered Architecture**
@@ -21,7 +22,7 @@ The system supports **real-time notifications**, **asynchronous task processing*
   - **Notifier** (Notification service)
 - **Scalability**
   - Can be deployed locally or in Docker
-  - Supports SQL Server
+  - Supports SQL Server, or you can switch to your DB provider
 
 ---
 
@@ -35,23 +36,6 @@ The system supports **real-time notifications**, **asynchronous task processing*
 - **Docker** (optional)
 
 ---
-
-## 📦 Project Structure
-```mermaid
-graph TD
-    A[TaskManager Solution] --> B[BLL - Business Logic]
-    A --> C[DAL - Data Access Layer]
-    A --> D[WebAPI - REST API]
-    A --> E[Client - Console App]
-    A --> F[Notifier - Notification Service]
-
-    B --> C
-    D --> B
-    C -->|Entity Framework Core| DB[(SQL Server)]
-    E -->|HttpClient| D
-    F -->|RabbitMQ| D
-    F -->|SignalR| E
-```
 
 ## 📦 Sequence Diagram
 ```mermaid
@@ -68,6 +52,23 @@ sequenceDiagram
     Rabbit->>Notifier: Deliver task update message
     Notifier->>SignalR: Send "ReceiveMessage" event
     SignalR->>Client: Display notification in real time
+```
+
+## 📦 Project Structure
+```mermaid
+graph TD
+    A[TaskManager Solution] --> B[BLL - Business Logic]
+    A --> C[DAL - Data Access Layer]
+    A --> D[WebAPI - REST API]
+    A --> E[Client - Console App]
+    A --> F[Notifier - Notification Service]
+
+    B --> C
+    D --> B
+    C -->|Entity Framework Core| DB[(SQL Server)]
+    E -->|HttpClient| D
+    F -->|RabbitMQ| D
+    F -->|SignalR| E
 ```
 
 ⚙️ Local Setup Instructions
