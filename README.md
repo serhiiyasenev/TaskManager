@@ -85,6 +85,7 @@ dotnet run --project Client
 ```
 
 Use the console client to interact with the system:
+
 0. Get Tasks Count In Projects By User Id
 1. Get Capital Tasks By User Id
 2. Get Projects By Team Size
