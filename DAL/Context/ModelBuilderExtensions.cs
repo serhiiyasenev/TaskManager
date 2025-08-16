@@ -141,7 +141,7 @@ namespace DAL.Context
                 new User
                 {
                     Id = 3,
-                    TeamId = 2,
+                    TeamId = 1,
                     UserName = "john.b",
                     NormalizedUserName = Normalize("john.b"),
                     Email = "john.b.doe@gmail.com",
