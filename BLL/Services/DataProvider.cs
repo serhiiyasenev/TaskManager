@@ -34,7 +34,7 @@ public class DataProvider(TaskContext context) : IDataProvider
 
     public async Task<Project> GetProjectByIdAsync(int id)
     {
-        return await Context.Projects.FirstOrDefaultAsync(p => p.Id == id);
+        return await Context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public async Task<Project> AddProjectAsync(Project project)
@@ -85,7 +85,7 @@ public class DataProvider(TaskContext context) : IDataProvider
 
     public async Task<Task> GetTaskByIdAsync(int id)
     {
-        return await Context.Tasks.FirstOrDefaultAsync(p => p.Id == id);
+        return await Context.Tasks.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public async Task<Task> AddTaskAsync(Task task)
@@ -123,7 +123,7 @@ public class DataProvider(TaskContext context) : IDataProvider
 
         if (task.State is TaskState.Done or TaskState.Canceled)
         {
-            taskEntity.FinishedAt = DateTime.UtcNow;
+            taskEntity.FinishedAt ??= DateTime.UtcNow;
         }
 
         if (task.State is TaskState.ToDo or TaskState.InProgress)
@@ -154,7 +154,7 @@ public class DataProvider(TaskContext context) : IDataProvider
 
     public async Task<Team> GetTeamByIdAsync(int id)
     {
-        return await Context.Teams.FirstOrDefaultAsync(p => p.Id == id);
+        return await Context.Teams.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public async Task<Team> AddTeamAsync(Team team)
@@ -196,7 +196,7 @@ public class DataProvider(TaskContext context) : IDataProvider
 
     public async Task<User> GetUserByIdAsync(int id)
     {
-        return await Context.Users.FirstOrDefaultAsync(p => p.Id == id);
+        return await Context.Users.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public async Task<User> AddUserAsync(User user)
