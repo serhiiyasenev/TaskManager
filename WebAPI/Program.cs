@@ -31,10 +31,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Swagger
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile<MappingProfile>();
@@ -56,12 +52,8 @@ builder.Services.AddScoped<IQueueService, RabbitMqService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// Identity
-// builder.Services.AddAuthentication(...);
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOnly", p => p.RequireRole("admin"));
-});
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddSwaggerGen(options =>
 {

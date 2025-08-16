@@ -40,10 +40,16 @@ public static class DependencyInjection
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
                     ValidateIssuer = false,
                     ValidateAudience = false,
+                    ValidateLifetime = true,
                     RoleClaimType = ClaimTypes.Role,
                     NameClaimType = ClaimTypes.NameIdentifier
                 };
             });
+
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("AdminOnly", p => p.RequireRole("admin"));
+        });
 
         return services;
     }
