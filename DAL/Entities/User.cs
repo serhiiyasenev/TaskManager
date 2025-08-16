@@ -38,4 +38,8 @@ public class User : IdentityUser<int>
     {
 
     }
+
+    public User(string userName, string lastName, string email) : base(userName)
+    {
+    }
 }

@@ -4,6 +4,7 @@ using BLL.Services;
 using BLL.Services.Queries;
 using DAL.Extensions;
 using System.Text.Json.Serialization;
+using Go.BLL.Services;
 using WebAPI;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,6 +46,8 @@ builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<ITeamsService, TeamsService>();
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IQueueService, RabbitMqService>();
+
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Identity
 // builder.Services.AddAuthentication(...);
