@@ -22,8 +22,8 @@ The system supports **real-time notifications**, **asynchronous task processing*
   - **Client** (Console client application)
   - **Notifier** (Notification service)
 - **Scalability**
-  - Can be deployed locally or in Docker
-  - Supports SQL Server, or you can switch to your DB provider
+  - Can be deployed locally, in Docker or in any cloud provider
+  - Supports SQL Server or you can switch to your DB provider
 
 ---
 
