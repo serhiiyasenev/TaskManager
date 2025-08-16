@@ -1,6 +1,6 @@
 # 📝 TaskManager
 
-**TaskManager** is a multi-component project management and task tracking system built with **.NET 9**, **SignalR**, **RabbitMQ**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
+**TaskManager** is a multi-component project management and task tracking system built with **.NET 9**, **SignalR**, **RabbitMQ**, **Serilog**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
 The system supports **real-time notifications**, **asynchronous task processing**, **analytics**, and **modular expansion**.
 
 ---
