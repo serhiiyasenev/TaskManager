@@ -7,9 +7,10 @@ The system supports **real-time notifications**, **asynchronous task processing*
 
 ## 🚀 Main Features
 - **Project and Task Management**
-  - Create, update, and delete tasks
+  - Provide Analytics about projects: analyze tasks, examine team structure, investigate projects, measure user performance, compare teams and participants
+  - Create, update, and delete projects, tasks, users, teams
   - Link tasks to projects and users
-  - Analytics (Analyze tasks, Examine team structure, Investigate projects, Measure user performance, Compare teams and participants)
+  - Auth
 - **SignalR Integration**
   - Instant real-time messages between the server and clients
 - **RabbitMQ Messaging**
@@ -33,6 +34,7 @@ The system supports **real-time notifications**, **asynchronous task processing*
 - **SignalR**
 - **RabbitMQ**
 - **SQL Server**
+- **Serilog**
 - **Docker** (optional)
 
 ---
