@@ -5,7 +5,7 @@ using DAL.Entities;
 using DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLL.Services.Queries;
+namespace BLL.Services.Analytics;
 
 public class TeamAnalyticsService(
     IReadRepository<Team> teams,

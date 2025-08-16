@@ -46,10 +46,7 @@ public static class DependencyInjection
                 };
             });
 
-        services.AddAuthorization(options =>
-        {
-            options.AddPolicy("AdminOnly", p => p.RequireRole("admin"));
-        });
+        services.AddAuthorizationBuilder().AddPolicy("AdminOnly", p => p.RequireRole("admin"));
 
         return services;
     }

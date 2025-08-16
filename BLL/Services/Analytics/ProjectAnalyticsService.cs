@@ -9,7 +9,7 @@ using DAL.Enum;
 using DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLL.Services.Queries;
+namespace BLL.Services.Analytics;
 
 public class ProjectAnalyticsService(
     IReadRepository<Project> projects,
@@ -23,7 +23,7 @@ public class ProjectAnalyticsService(
                           join t in teams.Query() on p.TeamId equals t.Id
                           join u in users.Query() on t.Id equals u.TeamId into ug
                           select new { p.Id, p.Name, TeamSize = ug.Count() })
-                         .Where(x => x.TeamSize >= teamSize)
+                         .Where(x => x.TeamSize == teamSize)
                          .ToListAsync();
 
         return data.Select(x => (x.Id, x.Name, x.TeamSize)).ToList();
@@ -57,7 +57,7 @@ public class ProjectAnalyticsService(
 
                           (p.Description.Length > 20
                               || tasks.Query().Count(t => t.ProjectId == p.Id) < 3)
-                              ? (int?)users.Query().Count(u => u.TeamId == p.TeamId)
+                              ? users.Query().Count(u => u.TeamId == p.TeamId)
                               : null))
                      .ToListAsync();
     }

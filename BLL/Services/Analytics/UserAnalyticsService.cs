@@ -7,7 +7,7 @@ using DAL.Enum;
 using DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace BLL.Services.Queries;
+namespace BLL.Services.Analytics;
 
 public class UserAnalyticsService(
     IReadRepository<User> users,

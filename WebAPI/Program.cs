@@ -1,12 +1,13 @@
-﻿using BLL.Interfaces;
+﻿using BLL;
+using BLL.Interfaces;
 using BLL.Interfaces.Analytics;
+using BLL.Mapping;
 using BLL.Services;
-using BLL.Services.Queries;
 using DAL.Extensions;
 using System.Text.Json.Serialization;
-using BLL;
-using BLL.Mapping;
+using BLL.Services.Analytics;
 using WebAPI;
+using WebAPI.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,6 +92,8 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 
 app.UseCors("Frontend");
+
+app.UseGlobalExceptionHandling();
 
 app.UseSwagger();
 app.UseSwaggerUI();
