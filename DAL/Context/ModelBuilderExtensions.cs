@@ -381,7 +381,7 @@ namespace DAL.Context
                 // Project 1 (Task Manager API)
                 new Task { Id = 1, ProjectId = 1, PerformerId = 1, Name = "Design DB schema", Description = "Initial ERD + migrations", State = TaskState.Done, CreatedAt = t0.AddDays(-3), FinishedAt = t0 },
                 new Task { Id = 2, ProjectId = 1, PerformerId = 2, Name = "Implement DAL", Description = "EF Core, repositories", State = TaskState.InProgress, CreatedAt = t0.AddDays(-1), FinishedAt = null },
-                new Task { Id = 3, ProjectId = 1, PerformerId = 2, Name = "Seed data", Description = "Teams/Users/Projects/Tasks", State = TaskState.ToDo, CreatedAt = t0, FinishedAt = null },
+                new Task { Id = 3, ProjectId = 1, PerformerId = 3, Name = "Seed data", Description = "Teams/Users/Projects/Tasks", State = TaskState.ToDo, CreatedAt = t0, FinishedAt = null },
 
                 // Project 2 (Realtime Hub)
                 new Task { Id = 4, ProjectId = 2, PerformerId = 3, Name = "Create SignalR hub", Description = "User + project groups", State = TaskState.InProgress, CreatedAt = t0.AddDays(-2), FinishedAt = null },
@@ -421,7 +421,7 @@ namespace DAL.Context
             );
         }
 
-        public static class SeedConstants
+        private static class SeedConstants
         {
             public const string AdminSecurityStamp = "11111111-1111-1111-1111-111111111111";
             public const string AdminConcurrencyStamp = "22222222-2222-2222-2222-222222222222";

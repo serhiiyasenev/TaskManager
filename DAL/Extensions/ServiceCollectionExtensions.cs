@@ -1,5 +1,5 @@
 ﻿using DAL.Context;
-using DAL.Repositories.Base;
+using DAL.Repositories.Implementation;
 using DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +18,12 @@ public static class ServiceCollectionExtensions
                 configuration["ConnectionStrings:DbConnection"],
                 sql => sql.MigrationsAssembly(migrationsAssembly)));
 
-        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+        services.AddScoped<DbContext>(sp => sp.GetRequiredService<TaskContext>());
+
+        services.AddScoped(typeof(IReadRepository<>), typeof(EfCoreRepository<>));
+        services.AddScoped(typeof(IWriteRepository<>), typeof(EfCoreRepository<>));
+        services.AddScoped(typeof(IRepository<>), typeof(EfCoreRepository<>));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.AddScoped<DbContext, TaskContext>();
 
