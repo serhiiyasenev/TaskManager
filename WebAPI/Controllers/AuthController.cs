@@ -1,9 +1,10 @@
-﻿using BLL.Models.Users;
+﻿using BLL.Interfaces;
+using BLL.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
-namespace Go.WebApi.Controllers;
+namespace WebAPI.Controllers;
 
 [Route("api/Auth")]
 [ApiController]
@@ -38,7 +39,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     [SwaggerResponse(200, "User info retrieved", typeof(FullUserDto))]
     [SwaggerResponse(401, "Unauthorized access")]
     [SwaggerResponse(404, "User not found")]
-    public async Task<IActionResult> GetCurrentUserInfo(Guid id)
+    public async Task<IActionResult> GetCurrentUserInfo(int id)
     {
         var result = await authService.GetFullUserInfoAsync(id);
         return Ok(result);
@@ -49,9 +50,9 @@ public class AuthController(IAuthService authService) : ControllerBase
     [SwaggerOperation(Summary = "Get public user info", Description = "Returns public user info by user ID.")]
     [SwaggerResponse(200, "Public user info retrieved", typeof(FullUserDto))]
     [SwaggerResponse(404, "User not found")]
-    public async Task<IActionResult> GetPublicUserInfo(Guid id)
+    public async Task<IActionResult> GetPublicUserInfo(int id)
     {
-        var result = await authService.GetPublicUserInfoAsync(id);
+        var result = await authService.GetFullUserInfoAsync(id);
         return Ok(result);
     }
 }

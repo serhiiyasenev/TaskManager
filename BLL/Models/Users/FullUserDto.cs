@@ -1,10 +1,11 @@
-﻿namespace BLL.Models.Users
+﻿namespace BLL.Models.Users;
+
+public class FullUserDto
 {
-    public record FullUserDto(
-        int Id,
-        string Email,
-        string UserName,
-        string FirstName,
-        string LastName,
-        DateTime CreatedAt);
+    public int Id { get; set; }
+    public string Email { get; set; }
+    public string UserName { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public DateTime RegisteredAt { get; set; }
 }

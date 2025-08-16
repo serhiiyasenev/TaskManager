@@ -4,7 +4,8 @@ using BLL.Services;
 using BLL.Services.Queries;
 using DAL.Extensions;
 using System.Text.Json.Serialization;
-using Go.BLL.Services;
+using BLL;
+using BLL.Mapping;
 using WebAPI;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,7 +35,13 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<MappingProfile>();
+});
+
 builder.Services.AddRepositories(builder.Configuration);
+builder.Services.AddUserIdentityService(builder.Configuration);
 
 builder.Services.AddScoped<ITaskAnalyticsService, TaskAnalyticsService>();
 builder.Services.AddScoped<IProjectAnalyticsService, ProjectAnalyticsService>();
@@ -51,7 +58,41 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Identity
 // builder.Services.AddAuthentication(...);
-// builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", p => p.RequireRole("admin"));
+});
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.EnableAnnotations();
+    options.UseInlineDefinitionsForEnums();
+
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Enter just your valid JWT token.\n\nExample: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    });
+
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 

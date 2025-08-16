@@ -85,7 +85,7 @@ namespace DAL.Context
         {
             string Normalize(string s) => s.ToUpperInvariant();
             var t0 = new DateTime(2025, 08, 01, 00, 00, 00, DateTimeKind.Utc);
-            const string pwdHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==";
+            const string pwdHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==";
 
             modelBuilder.Entity<Team>().HasData(
                 new Team { Id = 1, Name = "Team 1", CreatedAt = t0.AddDays(-3) },

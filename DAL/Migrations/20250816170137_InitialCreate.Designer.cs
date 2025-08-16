@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(TaskContext))]
-    [Migration("20250816123629_InitialCreate2")]
-    partial class InitialCreate2
+    [Migration("20250816170137_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -277,7 +277,7 @@ namespace DAL.Migrations
                             CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Teams/Users/Projects/Tasks",
                             Name = "Seed data",
-                            PerformerId = 2,
+                            PerformerId = 3,
                             ProjectId = 1,
                             State = 0
                         },
@@ -641,7 +641,7 @@ namespace DAL.Migrations
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 2,
+                            TeamId = 1,
                             TwoFactorEnabled = false,
                             UserName = "john.b"
                         },

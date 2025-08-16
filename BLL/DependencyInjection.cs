@@ -1,23 +1,14 @@
-﻿using BLL.Interfaces;
+﻿using DAL.Context;
 using DAL.Entities;
-using Go.BLL.Mapping;
-using Go.BLL.Services;
-using Go.BLL.Services.Interfaces;
-using Go.DAL;
-using Go.DAL.Entities;
-using Go.DAL.Repositories;
-using Go.DAL.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
-using DAL.Context;
 
-namespace Go.WebApi;
+namespace BLL;
 
 public static class DependencyInjection
 {
@@ -35,7 +26,7 @@ public static class DependencyInjection
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             options.Lockout.AllowedForNewUsers = true;
         })
-            .AddRoles<IdentityRole<Guid>>()
+            .AddRoles<IdentityRole<int>>()
             .AddSignInManager<SignInManager<User>>()
             .AddEntityFrameworkStores<TaskContext>()
             .AddDefaultTokenProviders();
@@ -48,7 +39,9 @@ public static class DependencyInjection
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
                     ValidateIssuer = false,
-                    ValidateAudience = false
+                    ValidateAudience = false,
+                    RoleClaimType = ClaimTypes.Role,
+                    NameClaimType = ClaimTypes.NameIdentifier
                 };
             });
 
