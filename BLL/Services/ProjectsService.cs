@@ -2,6 +2,7 @@
 using BLL.Interfaces;
 using DAL.Entities;
 using DAL.Repositories.Interfaces;
+using Microsoft.Extensions.Logging;
 using Task = System.Threading.Tasks.Task;
 
 namespace BLL.Services;
@@ -10,12 +11,16 @@ public class ProjectsService(
     IRepository<Project> projects,
     IReadRepository<User> users,
     IReadRepository<Team> teams,
-    IUnitOfWork uow)
+    IUnitOfWork uow, ILogger<ProjectsService> logger)
     : IProjectsService
 {
     public async Task<List<Project>> GetProjectsAsync() => await projects.ListAsync();
 
-    public async Task<Project> GetProjectByIdAsync(int id) => await projects.GetByIdAsync(id) ?? throw new NotFoundException(nameof(Project), id);
+    public async Task<Project> GetProjectByIdAsync(int id)
+    {
+        logger.LogInformation($"Start work on project {id}");
+        return await projects.GetByIdAsync(id) ?? throw new NotFoundException(nameof(Project), id);
+    }
 
     public async Task<Project> AddProjectAsync(Project project)
     {

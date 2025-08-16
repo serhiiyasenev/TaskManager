@@ -5,6 +5,7 @@ using BLL.Models.Users;
 using DAL.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -16,7 +17,7 @@ public class AuthService(
     UserManager<User> userManager,
     SignInManager<User> signInManager,
     IConfiguration configuration,
-    IMapper mapper)
+    IMapper mapper, ILogger<ProjectsService> logger)
     : IAuthService
 {
     public async Task<string> RegisterAsync(RegisterUserDto model)
@@ -30,7 +31,7 @@ public class AuthService(
 
     public async Task<UserLoginInfoDto> LoginAsync(LoginUserDto model)
     {
-        User user = await userManager.FindByEmailAsync(model.Email);
+        var user = await userManager.FindByEmailAsync(model.Email);
         if (user == null)
             throw new NotFoundException("No user found. Please register.");
 
@@ -43,8 +44,10 @@ public class AuthService(
             throw new NotFoundException("Sign-in is not allowed for this account.");
 
         if (!signIn.Succeeded)
+        {
+            logger.LogError($"Incorrect password for user '{model.Email}'");
             throw new NotFoundException("Incorrect password, please try again.");
-
+        }
 
         var roles = await userManager.GetRolesAsync(user);
 

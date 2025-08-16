@@ -8,8 +8,15 @@ using System.Text.Json.Serialization;
 using BLL.Services.Analytics;
 using WebAPI;
 using WebAPI.Middleware;
+using Serilog;
+
+Serilog.Debugging.SelfLog.Enable(msg => File.AppendAllText("serilog-selflog.txt", msg + Environment.NewLine));
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((ctx, services, lc) =>
+    lc.ReadFrom.Configuration(ctx.Configuration)
+        .ReadFrom.Services(services));
 
 builder.Services
     .AddControllers(options =>
@@ -87,7 +94,31 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+Serilog.Debugging.SelfLog.Enable(Console.Error);
+
 var app = builder.Build();
+
+Log.Information("WebAPI started; env={Env}; service={Service}", "dev", "task-platform");
+
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+});
+
+app.Use(async (ctx, next) =>
+{
+    const string header = "X-Correlation-ID";
+    if (!ctx.Request.Headers.TryGetValue(header, out var cid) || string.IsNullOrWhiteSpace(cid))
+    {
+        cid = ctx.TraceIdentifier;
+        ctx.Request.Headers[header] = cid;
+    }
+    ctx.Response.Headers[header] = cid;
+    using (Serilog.Context.LogContext.PushProperty("CorrelationId", cid.ToString()))
+    {
+        await next();
+    }
+});
 
 app.UseHttpsRedirection();
 
