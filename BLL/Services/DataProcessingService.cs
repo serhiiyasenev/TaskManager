@@ -4,7 +4,7 @@ using BLL.Models.Projects;
 using BLL.Models.Tasks;
 using BLL.Models.Teams;
 using BLL.Models.Users;
-using DAL.Entities;
+using DAL.Enum;
 
 namespace BLL.Services;
 
@@ -44,7 +44,7 @@ public class DataProcessingService(IDataProvider dataProvider) : IDataProcessing
         return result;
     }
 
-    public async Task<List<(int Id, string Name)>> GetProjectsByTeamSizeAsync(int teamSize)
+    public async Task<List<(int Id, string Name, int teamSizeCurrent)>> GetProjectsByTeamSizeAsync(int teamSize)
     {
         var users = await dataProvider.GetUsersAsync();
         var projects = await dataProvider.GetProjectsAsync();
@@ -53,8 +53,8 @@ public class DataProcessingService(IDataProvider dataProvider) : IDataProcessing
         var result = (from project in projects
                       join team in teams on project.TeamId equals team.Id
                       let teamSizeCurrent = users.Count(u => u.TeamId == team.Id)
-                      where teamSizeCurrent > teamSize
-                      select (project.Id, project.Name)).ToList();
+                      where teamSizeCurrent >= teamSize
+                      select (project.Id, project.Name, teamSizeCurrent)).ToList();
 
         return result;
     }

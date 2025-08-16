@@ -1,5 +1,6 @@
 ﻿using BLL.Interfaces;
 using DAL.Entities;
+using DAL.Enum;
 using Task = DAL.Entities.Task;
 
 namespace BLL.Services;
@@ -82,7 +83,7 @@ public class DataProviderMock : IDataProvider
 
     public async Task<ExecutedTask> AddExecutedTaskAsync(ExecutedTask executedTask)
     {
-        var newId = tasks.Max(p => p.Id) + 1;
+        var newId = executedTasks.Count == 0 ? 1 : executedTasks.Max(e => e.Id) + 1;
         executedTask.Id = newId;
         executedTask.CreatedAt = DateTime.UtcNow;
         executedTasks.Add(executedTask);
@@ -190,9 +191,9 @@ public class DataProviderMock : IDataProvider
     {
         return
         [
-            new Project(1, 1, 1, "Project 1", "Description 1", DateTime.UtcNow, DateTime.UtcNow.AddDays(10), null, null, null),
-            new Project(2, 2, 2, "Project 2", "Description 2", DateTime.UtcNow, DateTime.UtcNow.AddDays(14), null,null, null),
-            new Project(3, 3, 3, "Project 3", "Description 3", DateTime.UtcNow, DateTime.UtcNow.AddDays(21), null,null, null)
+            new Project(1, 1, 1, "Project 1", "Description 1", DateTime.UtcNow, DateTime.UtcNow.AddDays(10), null!, null!, null!),
+            new Project(2, 2, 2, "Project 2", "Description 2", DateTime.UtcNow, DateTime.UtcNow.AddDays(14), null!,null!, null!),
+            new Project(3, 3, 3, "Project 3", "Description 3", DateTime.UtcNow, DateTime.UtcNow.AddDays(21), null!,null!, null!)
         ];
     }
 
@@ -200,11 +201,61 @@ public class DataProviderMock : IDataProvider
     {
         return
         [
-            new Task(1, 1, 1, "Task 1", "Description 1", TaskState.ToDo, DateTime.UtcNow, null, null, null),
-            new Task(2, 2, 2, "Task 2", "Description 2", TaskState.Canceled, DateTime.UtcNow.AddDays(-3), DateTime.UtcNow, null, null),
-            new Task(3, 3, 3, "Task 3", "Description 3", TaskState.ToDo, DateTime.UtcNow, null, null, null),
-            new Task(4, 1, 2, "Task 4", "Description 4", TaskState.InProgress, DateTime.UtcNow, null, null, null),
-            new Task(5, 2, 3, "Task 5", "Description 5", TaskState.Done, DateTime.UtcNow.AddDays(-3), DateTime.UtcNow, null, null)
+            new Task
+            {
+                Id = 1,
+                ProjectId = 1,
+                PerformerId = 1,
+                Name = "Task 1",
+                Description = "Description 1",
+                State = TaskState.ToDo,
+                CreatedAt = DateTime.UtcNow,
+                FinishedAt = null
+            },
+            new Task
+            {
+                Id = 2,
+                ProjectId = 2,
+                PerformerId = 2,
+                Name = "Task 2",
+                Description = "Description 2",
+                State = TaskState.Canceled,
+                CreatedAt = DateTime.UtcNow.AddDays(-3),
+                FinishedAt = DateTime.UtcNow
+            },
+            new Task
+            {
+                Id = 3,
+                ProjectId = 3,
+                PerformerId = 3,
+                Name = "Task 3",
+                Description = "Description 3",
+                State = TaskState.ToDo,
+                CreatedAt = DateTime.UtcNow,
+                FinishedAt = null
+            },
+            new Task
+            {
+                Id = 4,
+                ProjectId = 1,
+                PerformerId = 2,
+                Name = "Task 4",
+                Description = "Description 4",
+                State = TaskState.InProgress,
+                CreatedAt = DateTime.UtcNow,
+                FinishedAt = null
+            },
+            new Task
+            {
+                Id = 5,
+                ProjectId = 2,
+                PerformerId = 3,
+                Name = "Task 5",
+                Description = "Description 5",
+                State = TaskState.Done,
+                CreatedAt = DateTime.UtcNow.AddDays(-3),
+                FinishedAt = DateTime.UtcNow
+            }
         ];
     }
 
@@ -212,9 +263,9 @@ public class DataProviderMock : IDataProvider
     {
         return
         [
-            new Team(1, "Team 1", DateTime.UtcNow, null, null),
-            new Team(2, "Team 2", DateTime.UtcNow, null, null),
-            new Team(3, "Team 3", DateTime.UtcNow, null, null)
+            new Team(1, "Team 1", DateTime.UtcNow, null!, null!),
+            new Team(2, "Team 2", DateTime.UtcNow, null!, null!),
+            new Team(3, "Team 3", DateTime.UtcNow, null!, null!)
         ];
     }
 
@@ -222,11 +273,11 @@ public class DataProviderMock : IDataProvider
     {
         return
         [
-            new User(1, 1, "John", "A", "john.A.doe@gmail.com", DateTime.Now, DateTime.Parse("1991-01-01"), null,null),
-            new User(2, 2, "John", "B", "john.B.doe@gmail.com", DateTime.Now, DateTime.Parse("1992-02-02"), null,null),
-            new User(3, 3, "John", "C", "john.C.doe@gmail.com", DateTime.Now, DateTime.Parse("1993-03-03"), null,null),
-            new User(4, 1, "John", "D", "john.D.doe@gmail.com", DateTime.Now, DateTime.Parse("1994-04-04"), null,null),
-            new User(5, 2, "John", "E", "john.E.doe@gmail.com", DateTime.Now, DateTime.Parse("1995-05-05"), null,null)
+            new User(1, 1, "John", "A", "john.A.doe@gmail.com", DateTime.UtcNow, DateTime.Parse("1991-01-01"), null!,null!),
+            new User(2, 2, "John", "B", "john.B.doe@gmail.com", DateTime.UtcNow, DateTime.Parse("1992-02-02"), null!,null!),
+            new User(3, 3, "John", "C", "john.C.doe@gmail.com", DateTime.UtcNow, DateTime.Parse("1993-03-03"), null!,null!),
+            new User(4, 1, "John", "D", "john.D.doe@gmail.com", DateTime.UtcNow, DateTime.Parse("1994-04-04"), null!,null!),
+            new User(5, 2, "John", "E", "john.E.doe@gmail.com", DateTime.UtcNow, DateTime.Parse("1995-05-05"), null!,null!)
         ];
     }
 }

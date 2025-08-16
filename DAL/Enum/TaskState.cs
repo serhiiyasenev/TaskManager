@@ -1,4 +1,4 @@
-﻿namespace DAL.Entities;
+﻿namespace DAL.Enum;
 
 public enum TaskState : int
 {

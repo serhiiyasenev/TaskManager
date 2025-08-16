@@ -1,15 +1,70 @@
-using Microsoft.AspNetCore;
+﻿using BLL.Interfaces;
+using BLL.Services;
+using DAL.Context;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
+using WebAPI;
 
-namespace WebAPI;
+var builder = WebApplication.CreateBuilder(args);
 
-public class Program
-{
-    public static void Main(string[] args)
+var connectionString = builder.Configuration.GetConnectionString("DbConnection");
+
+var migrationAssembly = typeof(TaskContext).Assembly.GetName().Name;
+
+builder.Services.AddDbContext<TaskContext>(options =>
+    options.UseSqlServer(connectionString, opt => opt.MigrationsAssembly(migrationAssembly)));
+
+builder.Services
+    .AddControllers(options =>
     {
-        CreateWebHostBuilder(args).Build().Run();
-    }
+        options.Filters.Add<CustomExceptionFilterAttribute>();
+    })
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
-    public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-        WebHost.CreateDefaultBuilder(args)
-            .UseStartup<Startup>();
-}
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<IDataProvider, DataProvider>();
+builder.Services.AddScoped<IDataProcessingService, DataProcessingService>();
+builder.Services.AddScoped<IProjectsService, ProjectsService>();
+builder.Services.AddScoped<ITasksService, TasksService>();
+builder.Services.AddScoped<ITeamsService, TeamsService>();
+builder.Services.AddScoped<IUsersService, UsersService>();
+builder.Services.AddScoped<IQueueService, RabbitMqService>();
+
+// Identity Core
+// builder.Services.AddAuthentication(...);
+// builder.Services.AddAuthorization();
+
+var app = builder.Build();
+
+// ---- Middleware ----
+
+app.UseHttpsRedirection();
+
+app.UseCors("Frontend");
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();

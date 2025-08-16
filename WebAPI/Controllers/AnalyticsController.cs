@@ -24,7 +24,7 @@ namespace WebAPI.Controllers
         public async Task<ActionResult<IEnumerable<ProjectInfo>>> GetProjectsByTeamSizeAsync(int teamSize)
         {
             var projects = await dataProcessingService.GetProjectsByTeamSizeAsync(teamSize);
-            var projectInfoList = projects.Select(p => new ProjectInfo { Id = p.Id, Name = p.Name }).ToList();
+            var projectInfoList = projects.Select(p => new ProjectInfo { Id = p.Id, Name = p.Name, TeamSize = p.teamSizeCurrent }).ToList();
             return Ok(projectInfoList);
         }
 

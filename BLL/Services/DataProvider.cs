@@ -2,6 +2,7 @@
 using BLL.Interfaces;
 using DAL.Context;
 using DAL.Entities;
+using DAL.Enum;
 using Microsoft.EntityFrameworkCore;
 using Task = DAL.Entities.Task;
 
@@ -23,7 +24,7 @@ public class DataProvider(TaskContext context) : IDataProvider
 
     public async Task<List<Team>> GetTeamsAsync()
     {
-        return await Context.Teams.AsNoTracking().ToListAsync();
+        return await Context.Teams.Include(u => u.Users).AsNoTracking().ToListAsync();
     }
 
     public async Task<List<User>> GetUsersAsync()

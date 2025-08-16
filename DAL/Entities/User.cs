@@ -1,27 +1,25 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json;
 
 namespace DAL.Entities;
 
-public class User : BaseEntity
+public class User : IdentityUser<int>
 {
     public int? TeamId { get; set; }
+
     [MaxLength(100)]
     public string FirstName { get; set; }
     [MaxLength(100)]
     public string LastName { get; set; }
-    [Required]
-    public string Email { get; set; }
+
     public DateTime RegisteredAt { get; set; }
     public DateTime BirthDay { get; set; }
-    [JsonIgnore]
-    internal Team Team { get; set; }
-    [JsonIgnore]
-    internal List<Task> Tasks { get; set; }
 
-    public User()
-    {
-    }
+    [JsonIgnore]
+    public Team? Team { get; set; }
+    [JsonIgnore]
+    public List<Task>? Tasks { get; set; }
 
     public User(int id, int? teamId, string firstName, string lastName, string email, DateTime registeredAt, DateTime birthDay, Team team, List<Task> tasks)
     {
@@ -34,5 +32,10 @@ public class User : BaseEntity
         BirthDay = birthDay;
         Team = team;
         Tasks = tasks;
+    }
+
+    public User()
+    {
+
     }
 }
