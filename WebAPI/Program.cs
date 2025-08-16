@@ -3,6 +3,7 @@ using BLL.Services;
 using DAL.Context;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using DAL.Extensions;
 using WebAPI;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +39,8 @@ builder.Services.AddCors(options =>
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddRepositories(builder.Configuration);
 
 builder.Services.AddScoped<IDataProvider, DataProvider>();
 builder.Services.AddScoped<IDataProcessingService, DataProcessingService>();
