@@ -20,10 +20,8 @@ public class TasksService(
 
     public async Task<DAL.Entities.Task> AddTaskAsync(DAL.Entities.Task task)
     {
-        if (!await users.AnyAsync(u => u.Id == task.PerformerId))
-            throw new NotFoundException("PerformerId", task.PerformerId);
-        if (!await projects.AnyAsync(p => p.Id == task.ProjectId))
-            throw new NotFoundException("ProjectId", task.ProjectId);
+        if (!await users.AnyAsync(u => u.Id == task.PerformerId)) throw new NotFoundException("PerformerId", task.PerformerId);
+        if (!await projects.AnyAsync(p => p.Id == task.ProjectId)) throw new NotFoundException("ProjectId", task.ProjectId);
 
         task.Id = 0;
         task.CreatedAt = DateTime.UtcNow;
@@ -49,6 +47,7 @@ public class TasksService(
 
         if (!await users.AnyAsync(u => u.Id == task.PerformerId))
             throw new NotFoundException("PerformerId", task.PerformerId);
+
         if (!await projects.AnyAsync(p => p.Id == task.ProjectId))
             throw new NotFoundException("ProjectId", task.ProjectId);
 
@@ -57,7 +56,10 @@ public class TasksService(
         entity.Name = task.Name;
         entity.Description = task.Description;
         entity.State = task.State;
-        entity.FinishedAt = task.State is TaskState.Done or TaskState.Canceled ? DateTime.UtcNow : null;
+
+        entity.FinishedAt = entity.State is TaskState.Done or TaskState.Canceled
+            ? DateTime.UtcNow
+            : null;
 
         tasks.Update(entity);
         await uow.SaveChangesAsync();

@@ -6,9 +6,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace BLL.Services;
 
-public class TeamsService(
-    IRepository<Team> teams,
-    IUnitOfWork uow) : ITeamsService
+public class TeamsService(IRepository<Team> teams, IUnitOfWork uow) : ITeamsService
 {
     public async Task<List<Team>> GetTeamsAsync() => await teams.ListAsync();
 

@@ -6,10 +6,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace BLL.Services;
 
-public class UsersService(
-    IRepository<User> users,
-    IReadRepository<Team> teams,
-    IUnitOfWork uow) : IUsersService
+public class UsersService(IRepository<User> users, IReadRepository<Team> teams, IUnitOfWork uow) : IUsersService
 {
     public async Task<List<User>> GetUsersAsync() => await users.ListAsync();
 
@@ -22,7 +19,6 @@ public class UsersService(
 
         user.Id = 0;
         user.RegisteredAt = DateTime.UtcNow;
-
         await users.AddAsync(user);
         await uow.SaveChangesAsync();
         return user;

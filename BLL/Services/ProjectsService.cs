@@ -19,10 +19,8 @@ public class ProjectsService(
 
     public async Task<Project> AddProjectAsync(Project project)
     {
-        if (!await users.AnyAsync(u => u.Id == project.AuthorId))
-            throw new NotFoundException("AuthorId", project.AuthorId);
-        if (!await teams.AnyAsync(t => t.Id == project.TeamId))
-            throw new NotFoundException("TeamId", project.TeamId);
+        if (!await users.AnyAsync(u => u.Id == project.AuthorId)) throw new NotFoundException("AuthorId", project.AuthorId);
+        if (!await teams.AnyAsync(t => t.Id == project.TeamId)) throw new NotFoundException("TeamId", project.TeamId);
 
         project.Id = 0;
         project.CreatedAt = DateTime.UtcNow;
@@ -35,11 +33,8 @@ public class ProjectsService(
     public async Task<Project> UpdateProjectByIdAsync(int id, Project project)
     {
         var entity = await projects.GetByIdAsync(id) ?? throw new NotFoundException(nameof(Project), id);
-
-        if (!await users.AnyAsync(u => u.Id == project.AuthorId))
-            throw new NotFoundException("AuthorId", project.AuthorId);
-        if (!await teams.AnyAsync(t => t.Id == project.TeamId))
-            throw new NotFoundException("TeamId", project.TeamId);
+        if (!await users.AnyAsync(u => u.Id == project.AuthorId)) throw new NotFoundException("AuthorId", project.AuthorId);
+        if (!await teams.AnyAsync(t => t.Id == project.TeamId)) throw new NotFoundException("TeamId", project.TeamId);
 
         entity.AuthorId = project.AuthorId;
         entity.TeamId = project.TeamId;
@@ -55,14 +50,7 @@ public class ProjectsService(
     public async Task DeleteProjectByIdAsync(int id)
     {
         var entity = await projects.GetByIdAsync(id) ?? throw new NotFoundException(nameof(Project), id);
-        try
-        {
-            projects.Remove(entity);
-            await uow.SaveChangesAsync();
-        }
-        catch
-        {
-            throw new CanNotDeleteException(nameof(Project), id);
-        }
+        projects.Remove(entity);
+        await uow.SaveChangesAsync();
     }
 }
