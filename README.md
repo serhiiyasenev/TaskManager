@@ -40,7 +40,7 @@ The system supports **real-time notifications**, **asynchronous task processing*
 ## 📦 Sequence Diagram
 ```mermaid
 sequenceDiagram
-    participant Client as Console Client
+    participant Client as Console Client/Postman/WebUI
     participant WebAPI as WebAPI
     participant Notifier as Notifier Service
     participant Rabbit as RabbitMQ
@@ -57,18 +57,50 @@ sequenceDiagram
 ## 📦 Project Structure
 ```mermaid
 graph TD
-    A[TaskManager Solution] --> B[BLL - Business Logic]
-    A --> C[DAL - Data Access Layer]
-    A --> D[WebAPI - REST API]
-    A --> E[Client - Console App]
-    A --> F[Notifier - Notification Service]
+    A[TaskManager Solution]
+    subgraph LAYERS[Layers]
+      B[BLL - Business Logic]
+      C[DAL - Data Access Layer]
+      D[WebAPI - REST API]
+      E[Client - Console/SPA]
+      F[Notifier - Background Service]
+      H[SignalR Hub]
+      R[RabbitMQ]
+      DB[(SQL Server)]
+      LG[Serilog Logger]
+    end
 
-    B --> C
+    A --> D
+    A --> B
+    A --> C
+    A --> E
+    A --> F
+    A --> H
+
+    %% Dependencies
     D --> B
-    C -->|Entity Framework Core| DB[(SQL Server)]
-    E -->|HttpClient| D
-    F -->|RabbitMQ| D
-    F -->|SignalR| E
+    B --> C
+    C -->|EF Core| DB
+
+    %% Messaging
+    D -->|Publish| R
+    F -->|Consume| R
+
+    %% Realtime
+    D -->|WebSockets| H
+    F -->|Notify| H
+    H -->|Push| E
+
+    %% Clients call API
+    E -->|HTTP| D
+
+    %% Logging (dotted)
+    D -.->|logs| LG
+    B -.->|logs| LG
+    C -.->|logs| LG
+    F -.->|logs| LG
+    H -.->|logs| LG
+
 ```
 
 ⚙️ Local Setup Instructions
