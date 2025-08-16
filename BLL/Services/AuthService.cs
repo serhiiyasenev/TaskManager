@@ -49,7 +49,6 @@ public class AuthService(
 
         var roles = await userManager.GetRolesAsync(user);
 
-
         var token = GenerateJwtToken(user, roles);
 
         return new UserLoginInfoDto { Token = token, Id = user.Id };
