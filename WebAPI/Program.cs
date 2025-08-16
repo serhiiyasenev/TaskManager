@@ -1,19 +1,12 @@
 ﻿using BLL.Interfaces;
+using BLL.Interfaces.Analytics;
 using BLL.Services;
-using DAL.Context;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
+using BLL.Services.Queries;
 using DAL.Extensions;
+using System.Text.Json.Serialization;
 using WebAPI;
 
 var builder = WebApplication.CreateBuilder(args);
-
-var connectionString = builder.Configuration.GetConnectionString("DbConnection");
-
-var migrationAssembly = typeof(TaskContext).Assembly.GetName().Name;
-
-builder.Services.AddDbContext<TaskContext>(options =>
-    options.UseSqlServer(connectionString, opt => opt.MigrationsAssembly(migrationAssembly)));
 
 builder.Services
     .AddControllers(options =>
@@ -30,9 +23,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("Frontend", policy =>
     {
         policy.WithOrigins("http://localhost:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -42,21 +35,22 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddRepositories(builder.Configuration);
 
-builder.Services.AddScoped<IDataProvider, DataProvider>();
-builder.Services.AddScoped<IDataProcessingService, DataProcessingService>();
+builder.Services.AddScoped<ITaskAnalyticsService, TaskAnalyticsService>();
+builder.Services.AddScoped<IProjectAnalyticsService, ProjectAnalyticsService>();
+builder.Services.AddScoped<ITeamAnalyticsService, TeamAnalyticsService>();
+builder.Services.AddScoped<IUserAnalyticsService, UserAnalyticsService>();
+
 builder.Services.AddScoped<IProjectsService, ProjectsService>();
 builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<ITeamsService, TeamsService>();
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IQueueService, RabbitMqService>();
 
-// Identity Core
+// Identity
 // builder.Services.AddAuthentication(...);
 // builder.Services.AddAuthorization();
 
 var app = builder.Build();
-
-// ---- Middleware ----
 
 app.UseHttpsRedirection();
 

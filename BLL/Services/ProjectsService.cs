@@ -1,35 +1,68 @@
 ﻿using BLL.Exceptions;
 using BLL.Interfaces;
 using DAL.Entities;
+using DAL.Repositories.Interfaces;
 using Task = System.Threading.Tasks.Task;
 
 namespace BLL.Services;
 
-public class ProjectsService(IDataProvider dataProvider) : IProjectsService
+public class ProjectsService(
+    IRepository<Project> projects,
+    IReadRepository<User> users,
+    IReadRepository<Team> teams,
+    IUnitOfWork uow)
+    : IProjectsService
 {
-    public async Task<List<Project>> GetProjectsAsync()
-    {
-        return await dataProvider.GetProjectsAsync();
-    }
+    public async Task<List<Project>> GetProjectsAsync() => await projects.ListAsync();
 
-    public async Task<Project> GetProjectByIdAsync(int id)
-    {
-        return await dataProvider.GetProjectByIdAsync(id) ?? throw new NotFoundException(nameof(Project), id);
-    }
+    public async Task<Project> GetProjectByIdAsync(int id) => await projects.GetByIdAsync(id) ?? throw new NotFoundException(nameof(Project), id);
 
     public async Task<Project> AddProjectAsync(Project project)
     {
-        return await dataProvider.AddProjectAsync(project);
+        if (!await users.AnyAsync(u => u.Id == project.AuthorId))
+            throw new NotFoundException("AuthorId", project.AuthorId);
+        if (!await teams.AnyAsync(t => t.Id == project.TeamId))
+            throw new NotFoundException("TeamId", project.TeamId);
+
+        project.Id = 0;
+        project.CreatedAt = DateTime.UtcNow;
+
+        await projects.AddAsync(project);
+        await uow.SaveChangesAsync();
+        return project;
     }
 
     public async Task<Project> UpdateProjectByIdAsync(int id, Project project)
     {
-        return await dataProvider.UpdateProjectByIdAsync(id, project) ?? throw new NotFoundException(nameof(Project), id);
+        var entity = await projects.GetByIdAsync(id) ?? throw new NotFoundException(nameof(Project), id);
+
+        if (!await users.AnyAsync(u => u.Id == project.AuthorId))
+            throw new NotFoundException("AuthorId", project.AuthorId);
+        if (!await teams.AnyAsync(t => t.Id == project.TeamId))
+            throw new NotFoundException("TeamId", project.TeamId);
+
+        entity.AuthorId = project.AuthorId;
+        entity.TeamId = project.TeamId;
+        entity.Name = project.Name;
+        entity.Description = project.Description;
+        entity.Deadline = project.Deadline;
+
+        projects.Update(entity);
+        await uow.SaveChangesAsync();
+        return entity;
     }
 
     public async Task DeleteProjectByIdAsync(int id)
     {
-        var isDeleted = await dataProvider.DeleteProjectByIdAsync(id) ?? throw new NotFoundException(nameof(Project), id);
-        if (isDeleted == false) throw new CanNotDeleteException(nameof(Project), id);
+        var entity = await projects.GetByIdAsync(id) ?? throw new NotFoundException(nameof(Project), id);
+        try
+        {
+            projects.Remove(entity);
+            await uow.SaveChangesAsync();
+        }
+        catch
+        {
+            throw new CanNotDeleteException(nameof(Project), id);
+        }
     }
 }
