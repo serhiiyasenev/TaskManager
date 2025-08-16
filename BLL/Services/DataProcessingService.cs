@@ -204,8 +204,8 @@ public class DataProcessingService(IDataProvider dataProvider) : IDataProcessing
                     break;
                 case SortingProperty.Name:
                     projects = sortingModel.Order == SortingOrder.Ascending ?
-                        projects.OrderBy(p => projects.FirstOrDefault(u => u.Id == p.Id)?.Name).ToList() :
-                        projects.OrderByDescending(p => projects.FirstOrDefault(u => u.Id == p.Id)?.Name).ToList();
+                        projects.OrderBy(p => p.Name).ToList() :
+                        projects.OrderByDescending(p => p.Name).ToList();
                     break;
             }
         }

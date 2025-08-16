@@ -91,7 +91,7 @@ public class DataProvider(TaskContext context) : IDataProvider
     public async Task<Task> AddTaskAsync(Task task)
     {
         var author = await Context.Users.FirstOrDefaultAsync(u => u.Id == task.PerformerId) ?? throw new NotFoundException("PerformerId", task.PerformerId);
-        var project = await Context.Teams.FirstOrDefaultAsync(u => u.Id == task.ProjectId) ?? throw new NotFoundException("ProjectId", task.ProjectId);
+        var project = await Context.Projects.FirstOrDefaultAsync(u => u.Id == task.ProjectId) ?? throw new NotFoundException("ProjectId", task.ProjectId);
 
         task.Id = 0;
         task.CreatedAt = DateTime.UtcNow;
@@ -113,7 +113,7 @@ public class DataProvider(TaskContext context) : IDataProvider
     {
         var taskEntity = await Context.Tasks.FirstOrDefaultAsync(p => p.Id == id) ?? throw new NotFoundException(nameof(Task), id);
         var author = await Context.Users.FirstOrDefaultAsync(u => u.Id == task.PerformerId) ?? throw new NotFoundException("PerformerId", task.PerformerId);
-        var project = await Context.Teams.FirstOrDefaultAsync(u => u.Id == task.ProjectId) ?? throw new NotFoundException("ProjectId", task.ProjectId);
+        var project = await Context.Projects.FirstOrDefaultAsync(u => u.Id == task.ProjectId) ?? throw new NotFoundException("ProjectId", task.ProjectId);
 
         taskEntity.ProjectId = task.ProjectId;
         taskEntity.PerformerId = task.PerformerId;
