@@ -1,4 +1,5 @@
 ﻿using BLL.Interfaces.Analytics;
+using BLL.Models.Projects;
 using BLL.Models.Tasks;
 using DAL.Entities;
 using DAL.Enum;
@@ -48,5 +49,25 @@ public class TaskAnalyticsService(
                 },
                 x.CreatedAt, x.FinishedAt))
             .ToList();
+    }
+
+    public async Task<List<ProjectTaskStatusDto>> GetTaskStatusByProjectAsync(int projectId)
+    {
+        var query =
+            from p in projects.Query()
+            where p.Id == projectId
+            join t in tasks.Query() on p.Id equals t.ProjectId into tg
+            orderby p.Name
+            select new ProjectTaskStatusDto(
+                p.Id,
+                p.Name,
+                tg.Count(x => x.State == TaskState.ToDo),
+                tg.Count(x => x.State == TaskState.InProgress),
+                tg.Count(x => x.State == TaskState.Done),
+                tg.Count(x => x.State == TaskState.Canceled),
+                tg.Count()
+            );
+
+        return await query.ToListAsync();
     }
 }

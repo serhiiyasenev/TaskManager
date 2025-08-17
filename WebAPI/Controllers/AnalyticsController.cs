@@ -80,5 +80,12 @@ namespace WebAPI.Controllers
         {
             return Ok(await userQueries.GetUserInfoAsync(userId));
         }
+
+        [HttpGet("GetTaskStatusByProject")]
+        [ProducesResponseType(typeof(IEnumerable<ProjectTaskStatusDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<ProjectTaskStatusDto>>> GetTaskStatusByProjectAsync([FromQuery] int projectId)
+        {
+            return Ok(await taskAnalytics.GetTaskStatusByProjectAsync(projectId));
+        }
     }
 }
