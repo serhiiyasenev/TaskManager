@@ -1,11 +1,147 @@
+version: "3.9"
+
 services:
+  # ---------- SQL Server ----------
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: task-mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Your_strong_password_123!"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/1433'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  # ---------- RabbitMQ + UI ----------
   rabbitmq:
     image: rabbitmq:3.13-management
     container_name: task-rabbit
-    ports:
-      - "5672:5672"     # AMQP
-      - "15672:15672"   # UI http://localhost:15672
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # http://localhost:15672
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
     restart: unless-stopped
+
+  # ---------- WebAPI (REST + SignalR Hub) ----------
+  webapi:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    container_name: task-webapi
+    depends_on:
+      mssql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    working_dir: /src
+    volumes:
+      - ./:/src:rw
+      - nuget_cache:/root/.nuget/packages
+    environment:
+      DOTNET_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+
+      # DB connection (override appsettings)
+      ConnectionStrings__DbConnection: "Server=mssql,1433;Database=TaskManagerDB;User Id=sa;Password=Your_strong_password_123!;MultipleActiveResultSets=True;TrustServerCertificate=True"
+
+      # RabbitMQ
+      RabbitMQ__HostName: "rabbitmq"
+      RabbitMQ__UserName: "guest"
+      RabbitMQ__Password: "guest"
+
+      # CORS (if needed)
+      Cors__AllowedOrigins__0: "http://localhost:4200"
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "
+      until </dev/tcp/mssql/1433; do echo 'Waiting for MSSQL...'; sleep 2; done;
+      until </dev/tcp/rabbitmq/5672; do echo 'Waiting for RabbitMQ...'; sleep 2; done;
+      dotnet restore &&
+      dotnet run --project WebAPI/WebAPI.csproj --urls http://0.0.0.0:8080
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  # ---------- Notifier (RabbitMQ consumer -> SignalR) ----------
+  notifier:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    container_name: task-notifier
+    depends_on:
+      mssql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      webapi:
+        condition: service_healthy
+    working_dir: /src
+    volumes:
+      - ./:/src:rw
+      - nuget_cache:/root/.nuget/packages
+    environment:
+      DOTNET_ENVIRONMENT: "Development"
+
+      # RabbitMQ
+      RabbitMQ__HostName: "rabbitmq"
+      RabbitMQ__UserName: "guest"
+      RabbitMQ__Password: "guest"
+
+      # URL SignalR Hub (у WebAPI)
+      SignalR__HubUrl: "http://webapi:8080/hub"
+    command: >
+      bash -c "
+      until </dev/tcp/mssql/1433; do echo 'Waiting for MSSQL...'; sleep 2; done;
+      until </dev/tcp/rabbitmq/5672; do echo 'Waiting for RabbitMQ...'; sleep 2; done;
+      until </dev/tcp/webapi/8080; do echo 'Waiting for WebAPI...'; sleep 2; done;
+      dotnet restore &&
+      dotnet run --project Notifier/Notifier.csproj
+      "
+    restart: unless-stopped
+
+  # ---------- Console Client ----------
+  client:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    container_name: task-client
+    depends_on:
+      webapi:
+        condition: service_healthy
+    working_dir: /src
+    volumes:
+      - ./:/src:rw
+      - nuget_cache:/root/.nuget/packages
+    environment:
+      Api__BaseUrl: "http://webapi:8080"
+      DOTNET_ENVIRONMENT: "Development"
+    stdin_open: true   # дозволяє ввод з клавіатури
+    tty: true          # інтерактивна консоль
+    command: >
+      bash -c "
+      until </dev/tcp/webapi/8080; do echo 'Waiting for WebAPI...'; sleep 2; done;
+      dotnet restore &&
+      dotnet run --project Client/Client.csproj
+      "
+    restart: "no"
+
+volumes:
+  mssql_data:
+  rabbitmq_data:
+  nuget_cache:
