@@ -23,7 +23,6 @@ internal sealed class EfCoreRepository<T>(TaskContext db) : IRepository<T> where
     public async Task AddAsync(T entity, CancellationToken ct = default)
         => await Set.AddAsync(entity, ct);
 
-
     public void Update(T entity) => Set.Update(entity);
     public void Remove(T entity) => Set.Remove(entity);
 }
