@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using DAL.Entities.Base;
 using DAL.Enum;
-using Newtonsoft.Json;
 
 namespace DAL.Entities;
 
@@ -19,9 +18,7 @@ public class Task : BaseEntity
     public DateTime CreatedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
 
-    [JsonIgnore]
     public Project Project { get; set; }
-    [JsonIgnore]
     public User Performer { get; set; }
 
 

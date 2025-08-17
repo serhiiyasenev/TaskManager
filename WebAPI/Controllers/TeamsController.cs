@@ -1,4 +1,5 @@
 using BLL.Interfaces;
+using BLL.Models.Teams;
 using DAL.Entities;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,14 +25,14 @@ public class TeamsController(ITeamsService teamsService) : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(Team), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Team>> Add([FromBody] Team team)
+    public async Task<ActionResult<Team>> Add([FromBody] CreateTeamDto team)
     {
         return Ok(await teamsService.AddTeamAsync(team));
     }
 
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(Team), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Team>> Update([FromRoute] int id, [FromBody] Team team)
+    public async Task<ActionResult<Team>> Update([FromRoute] int id, [FromBody] UpdateTeamDto team)
     {
         return Ok(await teamsService.UpdateTeamByIdAsync(id, team));
     }

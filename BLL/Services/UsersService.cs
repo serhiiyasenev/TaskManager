@@ -11,7 +11,11 @@ public class UsersService(IRepository<User> users, IReadRepository<Team> teams, 
 {
     public async Task<List<User>> GetUsersAsync() => await users.ListAsync();
 
-    public async Task<User> GetUserByIdAsync(int id) => await users.GetByIdAsync(id) ?? throw new NotFoundException(nameof(User), id);
+    public async Task<UserDto> GetUserByIdAsync(int id)
+    {
+        var user = await users.GetByIdAsync(id) ?? throw new NotFoundException(nameof(User), id);
+        return new UserDto(user.Id, user.TeamId, user.FirstName, user.LastName, user.Email, user.RegisteredAt, user.BirthDay);
+    }
 
     public async Task<User> UpdateUserByIdAsync(int id, UpdateUserDto user)
     {

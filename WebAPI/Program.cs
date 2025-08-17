@@ -7,6 +7,8 @@ using DAL.Extensions;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using DAL.Entities;
 using WebAPI;
 using WebAPI.Middleware;
 
@@ -26,6 +28,25 @@ builder.Services
     .AddJsonOptions(o =>
     {
         o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+
+        var resolver = new DefaultJsonTypeInfoResolver
+        {
+            Modifiers =
+            {
+                (JsonTypeInfo ti) =>
+                {
+                    if (ti.Type == typeof(User))
+                    {
+                        foreach (var name in new[] { "PasswordHash", "SecurityStamp", "ConcurrencyStamp" })
+                        {
+                            var p = ti.Properties.FirstOrDefault(pr => pr.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                        }
+                    }
+                }
+            }
+        };
+
+        o.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, resolver);
     });
 
 builder.Services.AddCors(options =>
@@ -66,8 +87,8 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "TaskManager API",
         Version = "v1",
-        
-        Description = "Default admin credentials: **admin@example.com / Password1!**"
+        Description = "Don't forget to update your 'ConnectionStrings'" +
+                      "\n\n Default admin credentials: **admin@example.com / Password1!**"
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

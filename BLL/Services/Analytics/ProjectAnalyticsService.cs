@@ -133,7 +133,7 @@ public class ProjectAnalyticsService(
                                   t.CreatedAt,
                                   t.FinishedAt,
                                   Performer = u == null ? null :
-                                      new UserDto(u.Id, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay)
+                                      new UserDto(u.Id, u.TeamId, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay)
                               }).ToListAsync();
 
         var tasksByProject = taskRows
@@ -150,10 +150,9 @@ public class ProjectAnalyticsService(
             new FullProjectDto(
                 x.Id, x.Name, x.Description, x.CreatedAt, x.Deadline,
                 tasksByProject.GetValueOrDefault(x.Id, []),
-                new UserDto(
+                new UserDto(x.AuthorId,
                     users.Query().Where(u => u.Id == x.AuthorId)
-                        .Select(u => new { u.Id, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay })
-                        .FirstOrDefault()!.Id,
+                        .Select(u => new { u.Id, u.TeamId, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay }).FirstOrDefault()!.Id,
                     x.AuthorFirstName!, x.AuthorLastName!,
                     users.Query().Where(u => u.Id == x.AuthorId).Select(u => u.Email).FirstOrDefault()!,
                     users.Query().Where(u => u.Id == x.AuthorId).Select(u => u.RegisteredAt).FirstOrDefault(),

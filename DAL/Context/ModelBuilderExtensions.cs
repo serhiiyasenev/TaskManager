@@ -406,7 +406,8 @@ namespace DAL.Context
                 // Project 6 (Admin Panel)
                 new Task { Id = 16, ProjectId = 6, PerformerId = 11, Name = "Scaffold admin UI", Description = "Users/Teams grid", State = TaskState.InProgress, CreatedAt = t0.AddDays(-3), FinishedAt = null },
                 new Task { Id = 17, ProjectId = 6, PerformerId = 12, Name = "RBAC in UI", Description = "Guarded routes", State = TaskState.ToDo, CreatedAt = t0, FinishedAt = null },
-                new Task { Id = 18, ProjectId = 6, PerformerId = 12, Name = "Audit logs view", Description = "Filters & export", State = TaskState.ToDo, CreatedAt = t0.AddDays(1), FinishedAt = null }
+                new Task { Id = 18, ProjectId = 6, PerformerId = 12, Name = "Audit logs view", Description = "Filters & export", State = TaskState.ToDo, CreatedAt = t0.AddDays(1), FinishedAt = null },
+                new Task { Id = 19, ProjectId = 6, PerformerId = 12, Name = "Audit Tests", Description = "Test & report", State = TaskState.InProgress, CreatedAt = t0.AddDays(1), FinishedAt = null }
             );
 
             modelBuilder.Entity<ExecutedTask>().HasData(

@@ -46,7 +46,7 @@ public class UserAnalyticsService(
     {
         var userDto = await users.Query()
             .Where(u => u.Id == userId)
-            .Select(u => new UserDto(u.Id, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay))
+            .Select(u => new UserDto(u.Id, u.TeamId, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay))
             .FirstOrDefaultAsync();
         if (userDto is null) return null;
 

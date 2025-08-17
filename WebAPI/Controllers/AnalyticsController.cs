@@ -45,7 +45,7 @@ namespace WebAPI.Controllers
         public async Task<ActionResult<PagedList<FullProjectDto>>> GetSortedFilteredPageOfProjectsAsync([FromQuery] PageModel? pageModel, [FromQuery] FilterModel? filterModel, [FromQuery] SortingModel sortingModel)
         {
             if (pageModel is not { PageNumber: > 0, PageSize: > 0 })
-                pageModel = null;
+                pageModel = new PageModel(20, 1);
 
             if (filterModel is { Name: null, Description: null, AuthorFirstName: null, AuthorLastName: null, TeamName: null })
                 filterModel = null;

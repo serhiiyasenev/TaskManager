@@ -21,7 +21,7 @@ public class TeamAnalyticsService(
             {
                 t.Id,
                 t.Name,
-                Member = new UserDto(u.Id, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay)
+                Member = new UserDto(u.Id, u.TeamId, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay)
             }).ToListAsync();
 
         return rows.GroupBy(r => new { r.Id, r.Name })

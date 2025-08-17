@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(TaskContext))]
-    [Migration("20250816170137_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250817151938_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -430,6 +430,16 @@ namespace DAL.Migrations
                             PerformerId = 12,
                             ProjectId = 6,
                             State = 0
+                        },
+                        new
+                        {
+                            Id = 19,
+                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Test & report",
+                            Name = "Audit Tests",
+                            PerformerId = 12,
+                            ProjectId = 6,
+                            State = 1
                         });
                 });
 
@@ -595,7 +605,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "JOHN.A.DOE@GMAIL.COM",
                             NormalizedUserName = "JOHN.A",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
@@ -616,7 +626,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "KATE.A@EXAMPLE.COM",
                             NormalizedUserName = "KATE.A",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
@@ -637,7 +647,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "JOHN.B.DOE@GMAIL.COM",
                             NormalizedUserName = "JOHN.B",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
@@ -658,7 +668,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "KATE.B@EXAMPLE.COM",
                             NormalizedUserName = "KATE.B",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
@@ -679,7 +689,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "JOHN.C.DOE@GMAIL.COM",
                             NormalizedUserName = "JOHN.C",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
@@ -700,7 +710,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "KATE.C@EXAMPLE.COM",
                             NormalizedUserName = "KATE.C",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
@@ -721,7 +731,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "JOHN.D.DOE@GMAIL.COM",
                             NormalizedUserName = "JOHN.D",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
@@ -742,7 +752,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "KATE.D@EXAMPLE.COM",
                             NormalizedUserName = "KATE.D",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
@@ -763,7 +773,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "JOHN.E.DOE@GMAIL.COM",
                             NormalizedUserName = "JOHN.E",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
@@ -784,7 +794,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "KATE.E@EXAMPLE.COM",
                             NormalizedUserName = "KATE.E",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "55555555-5555-5555-5555-555555555555",
@@ -805,7 +815,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@EXAMPLE.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "11111111-1111-1111-1111-111111111111",
@@ -825,7 +835,7 @@ namespace DAL.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "SERVICE.BOT@EXAMPLE.COM",
                             NormalizedUserName = "SERVICE.BOT",
-                            PasswordHash = "AQAAAAIAAYagAAAAENb2U6m9bq0y7D8qg3Y0r8JqzY3v1kq1nJx3e2nqkQe3y5wB7wqk0pZr4h3Hc0c5w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
                             PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 22, 0, 0, 0, 0, DateTimeKind.Utc),
                             SecurityStamp = "33333333-3333-3333-3333-333333333333",
