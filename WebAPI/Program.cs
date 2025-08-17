@@ -28,25 +28,6 @@ builder.Services
     .AddJsonOptions(o =>
     {
         o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-
-        var resolver = new DefaultJsonTypeInfoResolver
-        {
-            Modifiers =
-            {
-                (JsonTypeInfo ti) =>
-                {
-                    if (ti.Type == typeof(User))
-                    {
-                        foreach (var name in new[] { "PasswordHash", "SecurityStamp", "ConcurrencyStamp" })
-                        {
-                            var p = ti.Properties.FirstOrDefault(pr => pr.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-                        }
-                    }
-                }
-            }
-        };
-
-        o.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, resolver);
     });
 
 builder.Services.AddCors(options =>

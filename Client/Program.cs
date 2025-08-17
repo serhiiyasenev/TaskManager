@@ -40,9 +40,10 @@ public class Program
             Console.WriteLine("5. Get User Info");
             Console.WriteLine("6. Get Projects Info");
             Console.WriteLine("7. Get Sorted Filtered Page Of Projects");
-            Console.WriteLine("8. Start Timer Service To Execute Random Tasks With Delay");
-            Console.WriteLine("9. Stop Timer Service");
-            Console.WriteLine("10. Exit the program\n");
+            Console.WriteLine("8. Get Task Status By Project Id");
+            Console.WriteLine("9. Start Timer Service To Execute Random Tasks With Delay");
+            Console.WriteLine("10. Stop Timer Service");
+            Console.WriteLine("11. Exit the program\n");
             Console.Write("Enter your choice:\n");
 
             if (int.TryParse(Console.ReadLine(), out var choiceInt) && choiceInt is >= 0 and <= 10)
