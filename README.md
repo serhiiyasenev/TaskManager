@@ -135,3 +135,7 @@ Use the console client to interact with the system:
 <img src="Img_1.jpg" style="max-width: 100%; height: auto;"/>
 
 <img src="Img_2.jpg" style="max-width: 100%; height: auto;"/>
+
+<img src="Grafana_1.jpg" style="max-width: 100%; height: auto;"/>
+
+<img src="Grafana_2.jpg" style="max-width: 100%; height: auto;"/>
