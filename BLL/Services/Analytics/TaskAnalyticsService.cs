@@ -13,12 +13,18 @@ public class TaskAnalyticsService(
 {
     public async Task<Dictionary<string, int>> GetTasksCountInProjectsByUserIdAsync(int userId)
     {
-        return await (from t in tasks.Query()
-                where t.PerformerId == userId
-                join p in projects.Query() on t.ProjectId equals p.Id
-                group t by new { p.Id, p.Name } into g
-                select new { g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => $"{x.Key.Id}: {x.Key.Name}", x => x.Count);
+        var rows = await (
+                from p in projects.Query()
+                join t in tasks.Query().Where(t => t.PerformerId == userId)
+                    on p.Id equals t.ProjectId into tg
+                select new
+                {
+                    p.Id,
+                    p.Name,
+                    Count = tg.Count()
+                }).ToListAsync();
+
+        return rows.ToDictionary(x => $"{x.Id}: {x.Name}", x => x.Count);
     }
 
     public async Task<List<TaskDto>> GetCapitalTasksByUserIdAsync(int userId)
