@@ -1,5 +1,6 @@
 ﻿using BLL.Exceptions;
 using BLL.Interfaces;
+using BLL.Models.Users;
 using DAL.Entities;
 using DAL.Repositories.Interfaces;
 using Task = System.Threading.Tasks.Task;
@@ -12,19 +13,7 @@ public class UsersService(IRepository<User> users, IReadRepository<Team> teams, 
 
     public async Task<User> GetUserByIdAsync(int id) => await users.GetByIdAsync(id) ?? throw new NotFoundException(nameof(User), id);
 
-    public async Task<User> AddUserAsync(User user)
-    {
-        if (user.TeamId.HasValue && !await teams.AnyAsync(t => t.Id == user.TeamId.Value))
-            throw new NotFoundException("TeamId", user.TeamId.Value);
-
-        user.Id = 0;
-        user.RegisteredAt = DateTime.UtcNow;
-        await users.AddAsync(user);
-        await uow.SaveChangesAsync();
-        return user;
-    }
-
-    public async Task<User> UpdateUserByIdAsync(int id, User user)
+    public async Task<User> UpdateUserByIdAsync(int id, UpdateUserDto user)
     {
         var entity = await users.GetByIdAsync(id) ?? throw new NotFoundException(nameof(User), id);
 
@@ -35,7 +24,6 @@ public class UsersService(IRepository<User> users, IReadRepository<Team> teams, 
         entity.FirstName = user.FirstName;
         entity.LastName = user.LastName;
         entity.Email = user.Email;
-        entity.BirthDay = user.BirthDay;
 
         users.Update(entity);
         await uow.SaveChangesAsync();

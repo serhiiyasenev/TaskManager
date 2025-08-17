@@ -6,5 +6,4 @@ public interface IAuthService
 {
     Task<string> RegisterAsync(RegisterUserDto model);
     Task<UserLoginInfoDto> LoginAsync(LoginUserDto model);
-    Task<FullUserDto> GetFullUserInfoAsync(int userId);
 }

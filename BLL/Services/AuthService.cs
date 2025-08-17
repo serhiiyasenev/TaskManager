@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using BLL.Exceptions;
+﻿using BLL.Exceptions;
 using BLL.Interfaces;
 using BLL.Models.Users;
 using DAL.Entities;
@@ -16,9 +15,7 @@ namespace BLL.Services;
 public class AuthService(
     UserManager<User> userManager,
     SignInManager<User> signInManager,
-    IConfiguration configuration,
-    IMapper mapper, ILogger<ProjectsService> logger)
-    : IAuthService
+    IConfiguration configuration, ILogger<ProjectsService> logger) : IAuthService
 {
     public async Task<string> RegisterAsync(RegisterUserDto model)
     {
@@ -54,23 +51,6 @@ public class AuthService(
         var token = GenerateJwtToken(user, roles);
 
         return new UserLoginInfoDto { Token = token, Id = user.Id };
-    }
-
-    public async Task<FullUserDto> GetFullUserInfoAsync(Guid userId)
-    {
-        var user = await userManager.FindByIdAsync(userId.ToString());
-        return user == null ? throw new NotFoundException("No user found.") : mapper.Map<FullUserDto>(user);
-    }
-
-    public async Task<FullUserDto> GetFullUserInfoAsync(int userId)
-    {
-        var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user == null)
-        {
-            throw new NotFoundException("No user found.");
-        }
-
-        return mapper.Map<FullUserDto>(user);
     }
 
     private string GenerateJwtToken(User user, IList<string> roles)

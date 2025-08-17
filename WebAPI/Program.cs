@@ -1,14 +1,14 @@
 ﻿using BLL;
 using BLL.Interfaces;
 using BLL.Interfaces.Analytics;
-using BLL.Mapping;
 using BLL.Services;
-using DAL.Extensions;
-using System.Text.Json.Serialization;
 using BLL.Services.Analytics;
+using DAL.Extensions;
+using Microsoft.OpenApi.Models;
+using Serilog;
+using System.Text.Json.Serialization;
 using WebAPI;
 using WebAPI.Middleware;
-using Serilog;
 
 Serilog.Debugging.SelfLog.Enable(msg => File.AppendAllText("serilog-selflog.txt", msg + Environment.NewLine));
 
@@ -39,11 +39,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddAutoMapper(cfg =>
-{
-    cfg.AddProfile<MappingProfile>();
-});
-
 builder.Services.AddRepositories(builder.Configuration);
 builder.Services.AddUserIdentityService(builder.Configuration);
 
@@ -61,31 +56,38 @@ builder.Services.AddScoped<IQueueService, RabbitMqService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 builder.Services.AddSwaggerGen(options =>
 {
     options.EnableAnnotations();
     options.UseInlineDefinitionsForEnums();
 
-    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "TaskManager API",
+        Version = "v1",
+        
+        Description = "Default admin credentials: **admin@example.com / Password1!**"
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        In = ParameterLocation.Header,
         Description = "Enter just your valid JWT token.\n\nExample: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     });
 
-    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new OpenApiSecurityScheme
             {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                Reference = new OpenApiReference
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
             },
