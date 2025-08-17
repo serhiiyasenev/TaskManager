@@ -118,7 +118,8 @@ dotnet run --project Notifier
 dotnet run --project Client
 ```
 
-Use the console client to interact with the system:
+Use the console client to interact with the system
+Also you can use Swagger, Postman or any other client to execute WebAPI requests 
 
 0. Get Tasks Count In Projects By User Id
 1. Get Capital Tasks By User Id
@@ -128,13 +129,16 @@ Use the console client to interact with the system:
 5. Get User Info
 6. Get Projects Info
 7. Get Sorted Filtered Page Of Projects
-8. Start Timer Service To Execute Random Tasks With Delay
-9. Stop Timer Service
-10. Exit the program
+8. Get Tasks Status By Project User Id
+9. Start Timer Service To Execute Random Tasks With Delay
+10. Stop Timer Service
+11. Exit the program
 
 <img src="Img_1.jpg" style="max-width: 100%; height: auto;"/>
 
 <img src="Img_2.jpg" style="max-width: 100%; height: auto;"/>
+
+<img src="Img_3.jpg" style="max-width: 100%; height: auto;"/>
 
 <img src="Grafana_1.jpg" style="max-width: 100%; height: auto;"/>
 
