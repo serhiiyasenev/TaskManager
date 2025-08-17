@@ -1,4 +1,6 @@
-﻿namespace DAL.Entities;
+﻿using DAL.Entities.Base;
+
+namespace DAL.Entities;
 
 public class ExecutedTask : BaseEntity
 {

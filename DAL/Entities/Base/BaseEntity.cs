@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace DAL.Entities
+namespace DAL.Entities.Base
 {
     public abstract class BaseEntity
     {

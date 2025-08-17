@@ -25,8 +25,9 @@ namespace Client
             [5] = GetUserInfo,
             [6] = GetProjectsInfo,
             [7] = GetSortedFilteredPageOfProjects,
-            [8] = StartTimerServiceToExecuteRandomTasksWithDelay,
-            [9] = StopTimerService
+            [8] = GetTaskStatusByProject,
+            [9] = StartTimerServiceToExecuteRandomTasksWithDelay,
+            [10] = StopTimerService
         };
 
         public static async Task GetTasksCountInProjectsByUserId()
@@ -177,6 +178,67 @@ namespace Client
 
             PrintColored($"\nTotalCount: {projects?.TotalCount}", ConsoleColor.Green);
             projects?.Items.ForEach(e => PrintColored($"\n{e}", ConsoleColor.Green));
+        }
+
+        public static async Task GetTaskStatusByProject()
+        {
+            PrintColored($"\nProvide ProjectId as Integer", ConsoleColor.Green);
+
+            if (!int.TryParse(Console.ReadLine(), out var projectId))
+            {
+                PrintColored("\nIncorrect ProjectId - use Integer", ConsoleColor.Red);
+                return;
+            }
+
+            // call API
+            var response = await HttpClient!.SendAsync(new HttpRequestMessage(HttpMethod.Get, $"Analytics/GetTaskStatusByProject/{projectId}"));
+
+            var stats = await response.GetModelAsync<List<ProjectTaskStatusDto>>();
+            if (stats is null || stats.Count == 0)
+            {
+                PrintColored("\nNo data for this project", ConsoleColor.Yellow);
+                return;
+            }
+
+            // widths for pretty table
+            var projectNameColumnWidth = Math.Max("Project".Length, stats.Max(s => s.ProjectName?.Length ?? 0));
+            var toDoColumnWidth = Math.Max("ToDo".Length, stats.Max(s => s.ToDo.ToString().Length));
+            var inProgressColumnWidth = Math.Max("InProgress".Length, stats.Max(s => s.InProgress.ToString().Length));
+            var doneColumnWidth = Math.Max("Done".Length, stats.Max(s => s.Done.ToString().Length));
+            var canceledColumnWidth = Math.Max("Canceled".Length, stats.Max(s => s.Canceled.ToString().Length));
+            var totalColumnWidth = Math.Max("Total".Length, stats.Max(s => s.Total.ToString().Length));
+
+            var sep =
+                "+" + new string('-', projectNameColumnWidth + 2) +
+                "+" + new string('-', toDoColumnWidth + 2) +
+                "+" + new string('-', inProgressColumnWidth + 2) +
+                "+" + new string('-', doneColumnWidth + 2) +
+                "+" + new string('-', canceledColumnWidth + 2) +
+                "+" + new string('-', totalColumnWidth + 2) + "+";
+
+            // header
+            PrintColored("\n" + sep, ConsoleColor.DarkGray);
+            var text = $"| {"Project".PadRight(projectNameColumnWidth)} " +
+                       $"| {"ToDo".PadLeft(toDoColumnWidth)} " +
+                       $"| {"InProgress".PadLeft(inProgressColumnWidth)}" +
+                       $" | {"Done".PadLeft(doneColumnWidth)} " +
+                       $"| {"Canceled".PadLeft(canceledColumnWidth)}" +
+                       $" | {"Total".PadLeft(totalColumnWidth)} |";
+            PrintColored(text, ConsoleColor.Cyan);
+            PrintColored(sep, ConsoleColor.DarkGray);
+
+            // rows
+            foreach (var row in stats.Select(s => $"| {s.ProjectName.PadRight(projectNameColumnWidth)} | " +
+                                                  $"{s.ToDo.ToString().PadLeft(toDoColumnWidth)} | " +
+                                                  $"{s.InProgress.ToString().PadLeft(inProgressColumnWidth)} | " +
+                                                  $"{s.Done.ToString().PadLeft(doneColumnWidth)} | " +
+                                                  $"{s.Canceled.ToString().PadLeft(canceledColumnWidth)} | " +
+                                                  $"{s.Total.ToString().PadLeft(totalColumnWidth)} |"))
+            {
+                PrintColored(row, ConsoleColor.Green);
+            }
+
+            PrintColored(sep, ConsoleColor.DarkGray);
         }
 
         public void Greetings()

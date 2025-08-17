@@ -43,6 +43,64 @@ namespace DAL.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ExecutedTasks");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TaskId = 1,
+                            TaskName = "Design DB schema"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TaskId = 2,
+                            TaskName = "Implement DAL"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TaskId = 3,
+                            TaskName = "Seed data"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TaskId = 10,
+                            TaskName = "JWT endpoints"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TaskId = 11,
+                            TaskName = "Password policies"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TaskId = 12,
+                            TaskName = "Publishers"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TaskId = 13,
+                            TaskName = "OTel tracing"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TaskId = 14,
+                            TaskName = "Metrics exporter"
+                        });
                 });
 
             modelBuilder.Entity("DAL.Entities.Project", b =>
@@ -64,11 +122,13 @@ namespace DAL.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("TeamId")
                         .HasColumnType("int");
@@ -77,7 +137,8 @@ namespace DAL.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.HasIndex("TeamId");
+                    b.HasIndex("TeamId", "Name")
+                        .IsUnique();
 
                     b.ToTable("Projects");
 
@@ -87,30 +148,60 @@ namespace DAL.Migrations
                             Id = 1,
                             AuthorId = 1,
                             CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Deadline = new DateTime(2025, 8, 11, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Description 1",
-                            Name = "Project 1",
+                            Deadline = new DateTime(2025, 8, 21, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Core Web API",
+                            Name = "Task Manager API",
                             TeamId = 1
                         },
                         new
                         {
                             Id = 2,
                             AuthorId = 2,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Deadline = new DateTime(2025, 8, 16, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Description 2",
-                            Name = "Project 2",
+                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Deadline = new DateTime(2025, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "SignalR hubs & clients",
+                            Name = "Realtime Hub",
                             TeamId = 2
                         },
                         new
                         {
                             Id = 3,
                             AuthorId = 3,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Deadline = new DateTime(2025, 8, 21, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Description 3",
-                            Name = "Project 3",
+                            CreatedAt = new DateTime(2025, 8, 3, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Deadline = new DateTime(2025, 8, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "RabbitMQ publishers/consumers",
+                            Name = "Broker Layer",
                             TeamId = 3
+                        },
+                        new
+                        {
+                            Id = 4,
+                            AuthorId = 4,
+                            CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Deadline = new DateTime(2025, 8, 16, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "JWT, refresh tokens",
+                            Name = "Auth & Identity",
+                            TeamId = 4
+                        },
+                        new
+                        {
+                            Id = 5,
+                            AuthorId = 5,
+                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Deadline = new DateTime(2025, 8, 19, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "OTel, tracing, metrics",
+                            Name = "Observability",
+                            TeamId = 5
+                        },
+                        new
+                        {
+                            Id = 6,
+                            AuthorId = 6,
+                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Deadline = new DateTime(2025, 8, 23, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Backoffice UI",
+                            Name = "Admin Panel",
+                            TeamId = 6
                         });
                 });
 
@@ -127,14 +218,16 @@ namespace DAL.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime?>("FinishedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("PerformerId")
                         .HasColumnType("int");
@@ -157,54 +250,193 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Task Description 1",
-                            Name = "Task 1",
+                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Initial ERD + migrations",
+                            FinishedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Design DB schema",
                             PerformerId = 1,
                             ProjectId = 1,
-                            State = 0
+                            State = 2
                         },
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Task Description 2",
-                            Name = "Task 2",
+                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "EF Core, repositories",
+                            Name = "Implement DAL",
                             PerformerId = 2,
-                            ProjectId = 2,
+                            ProjectId = 1,
                             State = 1
                         },
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Task Description 3",
-                            FinishedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Task 3",
-                            PerformerId = 3,
-                            ProjectId = 3,
-                            State = 2
-                        },
-                        new
-                        {
-                            Id = 4,
                             CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Task Description 4",
-                            Name = "Task 4",
-                            PerformerId = 1,
+                            Description = "Teams/Users/Projects/Tasks",
+                            Name = "Seed data",
+                            PerformerId = 3,
                             ProjectId = 1,
                             State = 0
                         },
                         new
                         {
-                            Id = 5,
-                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Task Description 5",
-                            FinishedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Task 5",
-                            PerformerId = 2,
+                            Id = 4,
+                            CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "User + project groups",
+                            Name = "Create SignalR hub",
+                            PerformerId = 3,
                             ProjectId = 2,
-                            State = 3
+                            State = 1
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "JWT bearer auth",
+                            Name = "Auth for hubs",
+                            PerformerId = 4,
+                            ProjectId = 2,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Redis backplane",
+                            Name = "Backplane setup",
+                            PerformerId = 4,
+                            ProjectId = 2,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Outbox pattern",
+                            Name = "Publishers",
+                            PerformerId = 5,
+                            ProjectId = 3,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 8,
+                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Idempotency, DLQ",
+                            Name = "Consumers",
+                            PerformerId = 6,
+                            ProjectId = 3,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 9,
+                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Exponential backoff",
+                            Name = "Retry policy",
+                            PerformerId = 7,
+                            ProjectId = 3,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Login/refresh/roles",
+                            Name = "JWT endpoints",
+                            PerformerId = 7,
+                            ProjectId = 4,
+                            State = 1
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Strong defaults",
+                            Name = "Password policies",
+                            PerformerId = 8,
+                            ProjectId = 4,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 12,
+                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "RBAC",
+                            Name = "Seed admin role",
+                            PerformerId = 9,
+                            ProjectId = 4,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 13,
+                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "ActivitySource",
+                            Name = "OTel tracing",
+                            PerformerId = 9,
+                            ProjectId = 5,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 14,
+                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Prometheus",
+                            Name = "Metrics exporter",
+                            PerformerId = 10,
+                            ProjectId = 5,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 15,
+                            CreatedAt = new DateTime(2025, 8, 3, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Serilog + sinks",
+                            Name = "Logs pipeline",
+                            PerformerId = 10,
+                            ProjectId = 5,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 16,
+                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Users/Teams grid",
+                            Name = "Scaffold admin UI",
+                            PerformerId = 11,
+                            ProjectId = 6,
+                            State = 1
+                        },
+                        new
+                        {
+                            Id = 17,
+                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Guarded routes",
+                            Name = "RBAC in UI",
+                            PerformerId = 12,
+                            ProjectId = 6,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 18,
+                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Filters & export",
+                            Name = "Audit logs view",
+                            PerformerId = 12,
+                            ProjectId = 6,
+                            State = 0
+                        },
+                        new
+                        {
+                            Id = 19,
+                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Test & report",
+                            Name = "Audit Tests",
+                            PerformerId = 12,
+                            ProjectId = 6,
+                            State = 1
                         });
                 });
 
@@ -221,9 +453,13 @@ namespace DAL.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Teams");
 
@@ -245,6 +481,24 @@ namespace DAL.Migrations
                             Id = 3,
                             CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Name = "Team 3"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Team 4"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Team 5"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Team 6"
                         });
                 });
 
@@ -256,12 +510,22 @@ namespace DAL.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("BirthDay")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -273,69 +537,463 @@ namespace DAL.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("RegisteredAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("TeamId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasFilter("[Email] IS NOT NULL");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("Users");
+                    b.ToTable("AspNetUsers", (string)null);
 
                     b.HasData(
                         new
                         {
                             Id = 1,
+                            AccessFailedCount = 0,
                             BirthDay = new DateTime(1991, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
                             Email = "john.A.doe@gmail.com",
+                            EmailConfirmed = true,
                             FirstName = "John",
                             LastName = "A",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "JOHN.A.DOE@GMAIL.COM",
+                            NormalizedUserName = "JOHN.A",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TeamId = 1
+                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
+                            TeamId = 1,
+                            TwoFactorEnabled = false,
+                            UserName = "john.a"
                         },
                         new
                         {
                             Id = 2,
-                            BirthDay = new DateTime(1992, 2, 2, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Email = "john.B.doe@gmail.com",
-                            FirstName = "John",
-                            LastName = "B",
+                            AccessFailedCount = 0,
+                            BirthDay = new DateTime(1990, 5, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
+                            Email = "kate.a@example.com",
+                            EmailConfirmed = true,
+                            FirstName = "Kate",
+                            LastName = "A",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "KATE.A@EXAMPLE.COM",
+                            NormalizedUserName = "KATE.A",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TeamId = 2
+                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
+                            TeamId = 1,
+                            TwoFactorEnabled = false,
+                            UserName = "kate.a"
                         },
                         new
                         {
                             Id = 3,
-                            BirthDay = new DateTime(1993, 3, 3, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Email = "john.C.doe@gmail.com",
+                            AccessFailedCount = 0,
+                            BirthDay = new DateTime(1992, 2, 2, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
+                            Email = "john.b.doe@gmail.com",
+                            EmailConfirmed = true,
                             FirstName = "John",
-                            LastName = "C",
+                            LastName = "B",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "JOHN.B.DOE@GMAIL.COM",
+                            NormalizedUserName = "JOHN.B",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TeamId = 3
+                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
+                            TeamId = 1,
+                            TwoFactorEnabled = false,
+                            UserName = "john.b"
                         },
                         new
                         {
                             Id = 4,
-                            BirthDay = new DateTime(1994, 4, 4, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Email = "john.D.doe@gmail.com",
-                            FirstName = "John",
-                            LastName = "D",
+                            AccessFailedCount = 0,
+                            BirthDay = new DateTime(1991, 6, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
+                            Email = "kate.b@example.com",
+                            EmailConfirmed = true,
+                            FirstName = "Kate",
+                            LastName = "B",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "KATE.B@EXAMPLE.COM",
+                            NormalizedUserName = "KATE.B",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
                             RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TeamId = 1
+                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
+                            TeamId = 2,
+                            TwoFactorEnabled = false,
+                            UserName = "kate.b"
                         },
                         new
                         {
                             Id = 5,
+                            AccessFailedCount = 0,
+                            BirthDay = new DateTime(1993, 3, 3, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
+                            Email = "john.c.doe@gmail.com",
+                            EmailConfirmed = true,
+                            FirstName = "John",
+                            LastName = "C",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "JOHN.C.DOE@GMAIL.COM",
+                            NormalizedUserName = "JOHN.C",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
+                            RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
+                            TeamId = 3,
+                            TwoFactorEnabled = false,
+                            UserName = "john.c"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            AccessFailedCount = 0,
+                            BirthDay = new DateTime(1989, 8, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
+                            Email = "kate.c@example.com",
+                            EmailConfirmed = true,
+                            FirstName = "Kate",
+                            LastName = "C",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "KATE.C@EXAMPLE.COM",
+                            NormalizedUserName = "KATE.C",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
+                            RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
+                            TeamId = 3,
+                            TwoFactorEnabled = false,
+                            UserName = "kate.c"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            AccessFailedCount = 0,
+                            BirthDay = new DateTime(1994, 4, 4, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
+                            Email = "john.d.doe@gmail.com",
+                            EmailConfirmed = true,
+                            FirstName = "John",
+                            LastName = "D",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "JOHN.D.DOE@GMAIL.COM",
+                            NormalizedUserName = "JOHN.D",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
+                            RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
+                            TeamId = 4,
+                            TwoFactorEnabled = false,
+                            UserName = "john.d"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            AccessFailedCount = 0,
+                            BirthDay = new DateTime(1990, 12, 2, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
+                            Email = "kate.d@example.com",
+                            EmailConfirmed = true,
+                            FirstName = "Kate",
+                            LastName = "D",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "KATE.D@EXAMPLE.COM",
+                            NormalizedUserName = "KATE.D",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
+                            RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
+                            TeamId = 4,
+                            TwoFactorEnabled = false,
+                            UserName = "kate.d"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            AccessFailedCount = 0,
                             BirthDay = new DateTime(1995, 5, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Email = "john.E.doe@gmail.com",
+                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
+                            Email = "john.e.doe@gmail.com",
+                            EmailConfirmed = true,
                             FirstName = "John",
                             LastName = "E",
-                            RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TeamId = 2
+                            LockoutEnabled = false,
+                            NormalizedEmail = "JOHN.E.DOE@GMAIL.COM",
+                            NormalizedUserName = "JOHN.E",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
+                            RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
+                            TeamId = 5,
+                            TwoFactorEnabled = false,
+                            UserName = "john.e"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            AccessFailedCount = 0,
+                            BirthDay = new DateTime(1988, 7, 7, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
+                            Email = "kate.e@example.com",
+                            EmailConfirmed = true,
+                            FirstName = "Kate",
+                            LastName = "E",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "KATE.E@EXAMPLE.COM",
+                            NormalizedUserName = "KATE.E",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
+                            RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
+                            TeamId = 5,
+                            TwoFactorEnabled = false,
+                            UserName = "kate.e"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            AccessFailedCount = 0,
+                            BirthDay = new DateTime(1985, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "22222222-2222-2222-2222-222222222222",
+                            Email = "admin@example.com",
+                            EmailConfirmed = true,
+                            FirstName = "System",
+                            LastName = "Admin",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "ADMIN@EXAMPLE.COM",
+                            NormalizedUserName = "ADMIN",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
+                            RegisteredAt = new DateTime(2025, 7, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityStamp = "11111111-1111-1111-1111-111111111111",
+                            TwoFactorEnabled = false,
+                            UserName = "admin"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            AccessFailedCount = 0,
+                            BirthDay = new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ConcurrencyStamp = "44444444-4444-4444-4444-444444444444",
+                            Email = "service.bot@example.com",
+                            EmailConfirmed = true,
+                            FirstName = "Service",
+                            LastName = "Bot",
+                            LockoutEnabled = false,
+                            NormalizedEmail = "SERVICE.BOT@EXAMPLE.COM",
+                            NormalizedUserName = "SERVICE.BOT",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
+                            PhoneNumberConfirmed = false,
+                            RegisteredAt = new DateTime(2025, 7, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityStamp = "33333333-3333-3333-3333-333333333333",
+                            TwoFactorEnabled = false,
+                            UserName = "service.bot"
                         });
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ConcurrencyStamp = "77777777-7777-7777-7777-777777777777",
+                            Name = "admin",
+                            NormalizedName = "ADMIN"
+                        });
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = 11,
+                            RoleId = 1
+                        });
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Project", b =>
@@ -362,7 +1020,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.User", "Performer")
                         .WithMany("Tasks")
                         .HasForeignKey("PerformerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("DAL.Entities.Project", "Project")
@@ -384,6 +1042,57 @@ namespace DAL.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<int>", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
+                {
+                    b.HasOne("DAL.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
+                {
+                    b.HasOne("DAL.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<int>", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
+                {
+                    b.HasOne("DAL.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DAL.Entities.Project", b =>

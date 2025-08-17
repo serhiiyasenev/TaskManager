@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Newtonsoft.Json;
+using DAL.Entities.Base;
+using DAL.Enum;
 
 namespace DAL.Entities;
 
@@ -7,23 +8,21 @@ public class Task : BaseEntity
 {
     public int ProjectId { get; set; }
     public int PerformerId { get; set; }
+
     [Required]
+    [MaxLength(100)]
     public string Name { get; set; }
+    [MaxLength(1000)]
     public string Description { get; set; }
     public TaskState State { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
-    [JsonIgnore]
-    internal Project Project { get; set; }
-    [JsonIgnore]
-    internal User Performer { get; set; }
 
-    public Task()
-    {
-        
-    }
+    public Project Project { get; set; }
+    public User Performer { get; set; }
 
-    public Task(int id, int projectId, int performerId, string name, string description, TaskState state, DateTime createdAt, DateTime? finishedAt, Project project, User user)
+
+    public Task(int id, int projectId, int performerId, string name, string description, TaskState state, DateTime createdAt, DateTime? finishedAt, Project project, User user, User performer)
     {
         Id = id;
         ProjectId = projectId;
@@ -35,5 +34,10 @@ public class Task : BaseEntity
         FinishedAt = finishedAt;
         Project = project;
         Performer = user;
+    }
+
+    public Task()
+    {
+
     }
 }

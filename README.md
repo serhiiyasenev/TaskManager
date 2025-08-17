@@ -1,15 +1,16 @@
 # 📝 TaskManager
 
-**TaskManager** is a multi-component project management and task tracking system built with **.NET 9**, **SignalR**, **RabbitMQ**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
+**TaskManager** is a multi-component project management and task tracking system built with **.NET 9**, **SignalR**, **RabbitMQ**, **Serilog**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
 The system supports **real-time notifications**, **asynchronous task processing**, **analytics**, and **modular expansion**.
 
 ---
 
 ## 🚀 Main Features
 - **Project and Task Management**
-  - Create, update, and delete tasks
+  - Provide Analytics about projects: analyze tasks, examine team structure, investigate projects, measure user performance, compare teams and participants
+  - Create, update, and delete projects, tasks, users, teams
   - Link tasks to projects and users
-  - Analytics (Analyze tasks, Examine team structure, Investigate projects, Measure user performance, Compare teams and participants)
+  - Auth
 - **SignalR Integration**
   - Instant real-time messages between the server and clients
 - **RabbitMQ Messaging**
@@ -21,8 +22,8 @@ The system supports **real-time notifications**, **asynchronous task processing*
   - **Client** (Console client application)
   - **Notifier** (Notification service)
 - **Scalability**
-  - Can be deployed locally or in Docker
-  - Supports SQL Server, or you can switch to your DB provider
+  - Can be deployed locally, in Docker or in any cloud provider
+  - Supports SQL Server or you can switch to your DB provider
 
 ---
 
@@ -33,6 +34,7 @@ The system supports **real-time notifications**, **asynchronous task processing*
 - **SignalR**
 - **RabbitMQ**
 - **SQL Server**
+- **Serilog**
 - **Docker** (optional)
 
 ---
@@ -40,7 +42,7 @@ The system supports **real-time notifications**, **asynchronous task processing*
 ## 📦 Sequence Diagram
 ```mermaid
 sequenceDiagram
-    participant Client as Console Client
+    participant Client as Console Client/Postman/WebUI
     participant WebAPI as WebAPI
     participant Notifier as Notifier Service
     participant Rabbit as RabbitMQ
@@ -57,18 +59,50 @@ sequenceDiagram
 ## 📦 Project Structure
 ```mermaid
 graph TD
-    A[TaskManager Solution] --> B[BLL - Business Logic]
-    A --> C[DAL - Data Access Layer]
-    A --> D[WebAPI - REST API]
-    A --> E[Client - Console App]
-    A --> F[Notifier - Notification Service]
+    A[TaskManager Solution]
+    subgraph LAYERS[Layers]
+      B[BLL - Business Logic]
+      C[DAL - Data Access Layer]
+      D[WebAPI - REST API]
+      E[Client - Console/SPA]
+      F[Notifier - Background Service]
+      H[SignalR Hub]
+      R[RabbitMQ]
+      DB[(SQL Server)]
+      LG[Serilog Logger]
+    end
 
-    B --> C
+    A --> D
+    A --> B
+    A --> C
+    A --> E
+    A --> F
+    A --> H
+
+    %% Dependencies
     D --> B
-    C -->|Entity Framework Core| DB[(SQL Server)]
-    E -->|HttpClient| D
-    F -->|RabbitMQ| D
-    F -->|SignalR| E
+    B --> C
+    C -->|EF Core| DB
+
+    %% Messaging
+    D -->|Publish| R
+    F -->|Consume| R
+
+    %% Realtime
+    D -->|WebSockets| H
+    F -->|Notify| H
+    H -->|Push| E
+
+    %% Clients call API
+    E -->|HTTP| D
+
+    %% Logging (dotted)
+    D -.->|logs| LG
+    B -.->|logs| LG
+    C -.->|logs| LG
+    F -.->|logs| LG
+    H -.->|logs| LG
+
 ```
 
 ⚙️ Local Setup Instructions
@@ -84,7 +118,8 @@ dotnet run --project Notifier
 dotnet run --project Client
 ```
 
-Use the console client to interact with the system:
+Use the console client to interact with the system
+Also you can use Swagger, Postman or any other client to execute WebAPI requests 
 
 0. Get Tasks Count In Projects By User Id
 1. Get Capital Tasks By User Id
@@ -94,10 +129,17 @@ Use the console client to interact with the system:
 5. Get User Info
 6. Get Projects Info
 7. Get Sorted Filtered Page Of Projects
-8. Start Timer Service To Execute Random Tasks With Delay
-9. Stop Timer Service
-10. Exit the program
+8. Get Tasks Status By Project User Id
+9. Start Timer Service To Execute Random Tasks With Delay
+10. Stop Timer Service
+11. Exit the program
 
 <img src="Img_1.jpg" style="max-width: 100%; height: auto;"/>
 
 <img src="Img_2.jpg" style="max-width: 100%; height: auto;"/>
+
+<img src="Img_3.jpg" style="max-width: 100%; height: auto;"/>
+
+<img src="Grafana_1.jpg" style="max-width: 100%; height: auto;"/>
+
+<img src="Grafana_2.jpg" style="max-width: 100%; height: auto;"/>

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using DAL.Entities.Base;
 using System.ComponentModel.DataAnnotations;
 
 namespace DAL.Entities;
@@ -7,22 +7,18 @@ public class Project : BaseEntity
 {
     public int AuthorId { get; set; }
     public int TeamId { get; set; }
+
     [Required]
+    [MaxLength(100)]
     public string Name { get; set; }
+    [MaxLength(1000)]
     public string Description { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime Deadline { get; set; }
-    [JsonIgnore]
-    internal User Author { get; set; }
-    [JsonIgnore]
-    internal Team Team { get; set; }
-    [JsonIgnore]
-    internal List<Task> Tasks { get; set; }
 
-    public Project()
-    {
-        
-    }
+    public User Author { get; set; }
+    public Team Team { get; set; }
+    public List<Task> Tasks { get; set; }
 
     public Project(int id, int authorId, int teamId, string name, string description, DateTime createdAt, DateTime deadline, User author, Team team, List<Task> tasks)
     {
@@ -36,5 +32,10 @@ public class Project : BaseEntity
         Author = author;
         Team = team;
         Tasks = tasks;
+    }
+
+    public Project()
+    {
+
     }
 }
