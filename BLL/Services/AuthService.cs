@@ -19,8 +19,10 @@ public class AuthService(
 {
     public async Task<string> RegisterAsync(RegisterUserDto model)
     {
-        var user = new User(model.UserName, model.FirstName, model.LastName, model.Email);
-
+        var user = new User(model.UserName, model.FirstName, model.LastName, model.Email)
+        {
+            RegisteredAt = DateTime.UtcNow
+        };
         var result = await userManager.CreateAsync(user, model.Password);
 
         return !result.Succeeded ? string.Join(" ", result.Errors.Select(e => e.Description).ToList()) : "User registered successfully.";

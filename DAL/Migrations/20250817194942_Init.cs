@@ -299,7 +299,8 @@ namespace DAL.Migrations
                     { 2, new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc), "Team 2" },
                     { 3, new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc), "Team 3" },
                     { 4, new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc), "Team 4" },
-                    { 5, new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc), "Team 5" }
+                    { 5, new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc), "Team 5" },
+                    { 6, new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc), "Team 6" }
                 });
 
             migrationBuilder.InsertData(
@@ -330,11 +331,11 @@ namespace DAL.Migrations
                 values: new object[,]
                 {
                     { 1, 1, new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 21, 0, 0, 0, 0, DateTimeKind.Utc), "Core Web API", "Task Manager API", 1 },
-                    { 2, 3, new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc), "SignalR hubs & clients", "Realtime Hub", 2 },
-                    { 3, 5, new DateTime(2025, 8, 3, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 31, 0, 0, 0, 0, DateTimeKind.Utc), "RabbitMQ publishers/consumers", "Broker Layer", 3 },
-                    { 4, 7, new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 16, 0, 0, 0, 0, DateTimeKind.Utc), "JWT, refresh tokens", "Auth & Identity", 4 },
-                    { 5, 9, new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 19, 0, 0, 0, 0, DateTimeKind.Utc), "OTel, tracing, metrics", "Observability", 5 },
-                    { 6, 2, new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 23, 0, 0, 0, 0, DateTimeKind.Utc), "Backoffice UI", "Admin Panel", 1 }
+                    { 2, 2, new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc), "SignalR hubs & clients", "Realtime Hub", 2 },
+                    { 3, 3, new DateTime(2025, 8, 3, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 31, 0, 0, 0, 0, DateTimeKind.Utc), "RabbitMQ publishers/consumers", "Broker Layer", 3 },
+                    { 4, 4, new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 16, 0, 0, 0, 0, DateTimeKind.Utc), "JWT, refresh tokens", "Auth & Identity", 4 },
+                    { 5, 5, new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 19, 0, 0, 0, 0, DateTimeKind.Utc), "OTel, tracing, metrics", "Observability", 5 },
+                    { 6, 6, new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 8, 23, 0, 0, 0, 0, DateTimeKind.Utc), "Backoffice UI", "Admin Panel", 6 }
                 });
 
             migrationBuilder.InsertData(
@@ -350,10 +351,10 @@ namespace DAL.Migrations
                     { 6, new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc), "Redis backplane", null, "Backplane setup", 4, 2, 0 },
                     { 7, new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc), "Outbox pattern", null, "Publishers", 5, 3, 0 },
                     { 8, new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Idempotency, DLQ", null, "Consumers", 6, 3, 0 },
-                    { 9, new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc), "Exponential backoff", null, "Retry policy", 6, 3, 0 },
+                    { 9, new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc), "Exponential backoff", null, "Retry policy", 7, 3, 0 },
                     { 10, new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc), "Login/refresh/roles", null, "JWT endpoints", 7, 4, 1 },
                     { 11, new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Strong defaults", null, "Password policies", 8, 4, 0 },
-                    { 12, new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc), "RBAC", null, "Seed admin role", 8, 4, 0 },
+                    { 12, new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc), "RBAC", null, "Seed admin role", 9, 4, 0 },
                     { 13, new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc), "ActivitySource", null, "OTel tracing", 9, 5, 0 },
                     { 14, new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Prometheus", null, "Metrics exporter", 10, 5, 0 },
                     { 15, new DateTime(2025, 8, 3, 0, 0, 0, 0, DateTimeKind.Utc), "Serilog + sinks", null, "Logs pipeline", 10, 5, 0 },

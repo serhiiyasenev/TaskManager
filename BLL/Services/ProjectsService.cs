@@ -14,7 +14,10 @@ public class ProjectsService(
     IUnitOfWork uow, ILogger<ProjectsService> logger)
     : IProjectsService
 {
-    public async Task<List<Project>> GetProjectsAsync() => await projects.ListAsync();
+    public async Task<List<Project>> GetProjectsAsync()
+    {
+        return await projects.ListAsync();
+    }
 
     public async Task<Project> GetProjectByIdAsync(int id)
     {

@@ -34,13 +34,17 @@ public class UsersController(IUsersService usersService, IAuthService authServic
 
     [HttpGet]
     [Authorize(Roles = "admin")]
-    [ProducesResponseType(typeof(List<User>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<User>>> GetAll()
+    [SwaggerOperation(Summary = "Get all users", Description = "Only a user who is authenticated as an **admin** can view the entire list of users.")]
+    [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+    [SwaggerResponse(401, "Invalid credentials")]
+    [SwaggerResponse(403, "Forbidden")]
+    public async Task<ActionResult<List<UserDto>>> GetAll()
     {
         return Ok(await usersService.GetUsersAsync());
     }
 
     [HttpGet("{id}")]
+    [SwaggerOperation(Summary = "Get user by Id")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<UserDto>> GetById([FromRoute] int id)
     {
@@ -48,14 +52,18 @@ public class UsersController(IUsersService usersService, IAuthService authServic
     }
 
     [HttpPut("{id}")]
+    [SwaggerOperation(Summary = "Update user by Id")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<UserDto>> Update([FromRoute] int id, [FromBody] UpdateUserDto user)
     {
         return Ok(await usersService.UpdateUserByIdAsync(id, user));
     }
 
+    [Authorize]
     [HttpDelete("{id}")]
+    [SwaggerOperation(Summary = "Delete user by Id", Description = "Only a authenticated user can delete users.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [SwaggerResponse(401, "Invalid credentials")]
     public async Task<ActionResult<Team>> DeleteById([FromRoute] int id)
     {
         await usersService.DeleteUserByIdAsync(id);

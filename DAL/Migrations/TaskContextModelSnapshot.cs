@@ -156,7 +156,7 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 2,
-                            AuthorId = 3,
+                            AuthorId = 2,
                             CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
                             Deadline = new DateTime(2025, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "SignalR hubs & clients",
@@ -166,7 +166,7 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 3,
-                            AuthorId = 5,
+                            AuthorId = 3,
                             CreatedAt = new DateTime(2025, 8, 3, 0, 0, 0, 0, DateTimeKind.Utc),
                             Deadline = new DateTime(2025, 8, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "RabbitMQ publishers/consumers",
@@ -176,7 +176,7 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 4,
-                            AuthorId = 7,
+                            AuthorId = 4,
                             CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
                             Deadline = new DateTime(2025, 8, 16, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "JWT, refresh tokens",
@@ -186,7 +186,7 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 5,
-                            AuthorId = 9,
+                            AuthorId = 5,
                             CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             Deadline = new DateTime(2025, 8, 19, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "OTel, tracing, metrics",
@@ -196,12 +196,12 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 6,
-                            AuthorId = 2,
+                            AuthorId = 6,
                             CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Deadline = new DateTime(2025, 8, 23, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Backoffice UI",
                             Name = "Admin Panel",
-                            TeamId = 1
+                            TeamId = 6
                         });
                 });
 
@@ -334,7 +334,7 @@ namespace DAL.Migrations
                             CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Exponential backoff",
                             Name = "Retry policy",
-                            PerformerId = 6,
+                            PerformerId = 7,
                             ProjectId = 3,
                             State = 0
                         },
@@ -364,7 +364,7 @@ namespace DAL.Migrations
                             CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "RBAC",
                             Name = "Seed admin role",
-                            PerformerId = 8,
+                            PerformerId = 9,
                             ProjectId = 4,
                             State = 0
                         },
@@ -493,6 +493,12 @@ namespace DAL.Migrations
                             Id = 5,
                             CreatedAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
                             Name = "Team 5"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Team 6"
                         });
                 });
 

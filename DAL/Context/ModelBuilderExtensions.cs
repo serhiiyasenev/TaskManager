@@ -92,7 +92,8 @@ namespace DAL.Context
                 new Team { Id = 2, Name = "Team 2", CreatedAt = t0.AddDays(-3) },
                 new Team { Id = 3, Name = "Team 3", CreatedAt = t0.AddDays(-3) },
                 new Team { Id = 4, Name = "Team 4", CreatedAt = t0.AddDays(-6) },
-                new Team { Id = 5, Name = "Team 5", CreatedAt = t0.AddDays(-6) }
+                new Team { Id = 5, Name = "Team 5", CreatedAt = t0.AddDays(-6) },
+                new Team { Id = 6, Name = "Team 6", CreatedAt = t0.AddDays(-6) }
             );
 
             modelBuilder.Entity<User>().HasData(
@@ -370,11 +371,11 @@ namespace DAL.Context
 
             modelBuilder.Entity<Project>().HasData(
                 new Project { Id = 1, AuthorId = 1, TeamId = 1, Name = "Task Manager API", Description = "Core Web API", CreatedAt = t0, Deadline = t0.AddDays(20) },
-                new Project { Id = 2, AuthorId = 3, TeamId = 2, Name = "Realtime Hub", Description = "SignalR hubs & clients", CreatedAt = t0.AddDays(1), Deadline = t0.AddDays(25) },
-                new Project { Id = 3, AuthorId = 5, TeamId = 3, Name = "Broker Layer", Description = "RabbitMQ publishers/consumers", CreatedAt = t0.AddDays(2), Deadline = t0.AddDays(30) },
-                new Project { Id = 4, AuthorId = 7, TeamId = 4, Name = "Auth & Identity", Description = "JWT, refresh tokens", CreatedAt = t0.AddDays(-2), Deadline = t0.AddDays(15) },
-                new Project { Id = 5, AuthorId = 9, TeamId = 5, Name = "Observability", Description = "OTel, tracing, metrics", CreatedAt = t0.AddDays(-1), Deadline = t0.AddDays(18) },
-                new Project { Id = 6, AuthorId = 2, TeamId = 1, Name = "Admin Panel", Description = "Backoffice UI", CreatedAt = t0.AddDays(-3), Deadline = t0.AddDays(22) }
+                new Project { Id = 2, AuthorId = 2, TeamId = 2, Name = "Realtime Hub", Description = "SignalR hubs & clients", CreatedAt = t0.AddDays(1), Deadline = t0.AddDays(25) },
+                new Project { Id = 3, AuthorId = 3, TeamId = 3, Name = "Broker Layer", Description = "RabbitMQ publishers/consumers", CreatedAt = t0.AddDays(2), Deadline = t0.AddDays(30) },
+                new Project { Id = 4, AuthorId = 4, TeamId = 4, Name = "Auth & Identity", Description = "JWT, refresh tokens", CreatedAt = t0.AddDays(-2), Deadline = t0.AddDays(15) },
+                new Project { Id = 5, AuthorId = 5, TeamId = 5, Name = "Observability", Description = "OTel, tracing, metrics", CreatedAt = t0.AddDays(-1), Deadline = t0.AddDays(18) },
+                new Project { Id = 6, AuthorId = 6, TeamId = 6, Name = "Admin Panel", Description = "Backoffice UI", CreatedAt = t0.AddDays(-3), Deadline = t0.AddDays(22) }
             );
 
             modelBuilder.Entity<Task>().HasData(
@@ -391,12 +392,12 @@ namespace DAL.Context
                 // Project 3 (Broker Layer)
                 new Task { Id = 7, ProjectId = 3, PerformerId = 5, Name = "Publishers", Description = "Outbox pattern", State = TaskState.ToDo, CreatedAt = t0.AddDays(-1), FinishedAt = null },
                 new Task { Id = 8, ProjectId = 3, PerformerId = 6, Name = "Consumers", Description = "Idempotency, DLQ", State = TaskState.ToDo, CreatedAt = t0, FinishedAt = null },
-                new Task { Id = 9, ProjectId = 3, PerformerId = 6, Name = "Retry policy", Description = "Exponential backoff", State = TaskState.ToDo, CreatedAt = t0.AddDays(1), FinishedAt = null },
+                new Task { Id = 9, ProjectId = 3, PerformerId = 7, Name = "Retry policy", Description = "Exponential backoff", State = TaskState.ToDo, CreatedAt = t0.AddDays(1), FinishedAt = null },
 
                 // Project 4 (Auth & Identity)
                 new Task { Id = 10, ProjectId = 4, PerformerId = 7, Name = "JWT endpoints", Description = "Login/refresh/roles", State = TaskState.InProgress, CreatedAt = t0.AddDays(-2), FinishedAt = null },
                 new Task { Id = 11, ProjectId = 4, PerformerId = 8, Name = "Password policies", Description = "Strong defaults", State = TaskState.ToDo, CreatedAt = t0, FinishedAt = null },
-                new Task { Id = 12, ProjectId = 4, PerformerId = 8, Name = "Seed admin role", Description = "RBAC", State = TaskState.ToDo, CreatedAt = t0.AddDays(1), FinishedAt = null },
+                new Task { Id = 12, ProjectId = 4, PerformerId = 9, Name = "Seed admin role", Description = "RBAC", State = TaskState.ToDo, CreatedAt = t0.AddDays(1), FinishedAt = null },
 
                 // Project 5 (Observability)
                 new Task { Id = 13, ProjectId = 5, PerformerId = 9, Name = "OTel tracing", Description = "ActivitySource", State = TaskState.ToDo, CreatedAt = t0.AddDays(-1), FinishedAt = null },

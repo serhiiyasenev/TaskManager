@@ -9,7 +9,11 @@ namespace BLL.Services;
 
 public class UsersService(IRepository<User> users, IReadRepository<Team> teams, IUnitOfWork uow) : IUsersService
 {
-    public async Task<List<User>> GetUsersAsync() => await users.ListAsync();
+    public async Task<List<UserDto>> GetUsersAsync()
+    {
+        var entities = await users.ListAsync();
+        return entities.Select(u => new UserDto(u.Id, u.TeamId, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay)).ToList();
+    }
 
     public async Task<UserDto> GetUserByIdAsync(int id)
     {
@@ -17,7 +21,7 @@ public class UsersService(IRepository<User> users, IReadRepository<Team> teams, 
         return new UserDto(user.Id, user.TeamId, user.FirstName, user.LastName, user.Email, user.RegisteredAt, user.BirthDay);
     }
 
-    public async Task<User> UpdateUserByIdAsync(int id, UpdateUserDto user)
+    public async Task<UserDto> UpdateUserByIdAsync(int id, UpdateUserDto user)
     {
         var entity = await users.GetByIdAsync(id) ?? throw new NotFoundException(nameof(User), id);
 
@@ -28,10 +32,11 @@ public class UsersService(IRepository<User> users, IReadRepository<Team> teams, 
         entity.FirstName = user.FirstName;
         entity.LastName = user.LastName;
         entity.Email = user.Email;
+        entity.BirthDay = user.BirthDay;
 
         users.Update(entity);
         await uow.SaveChangesAsync();
-        return entity;
+        return new UserDto(entity.Id, entity.TeamId, entity.FirstName, entity.LastName, entity.Email, entity.RegisteredAt, entity.BirthDay);
     }
 
     public async Task DeleteUserByIdAsync(int id)

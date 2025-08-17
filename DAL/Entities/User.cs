@@ -19,10 +19,11 @@ public class User : IdentityUser<int>
 
     public List<Task>? Tasks { get; set; }
 
-    public User(int id, int? teamId, string firstName, string lastName, string email, DateTime registeredAt, DateTime birthDay, Team team, List<Task> tasks)
+    public User(int id, int? teamId, string userName, string firstName, string lastName, string email, DateTime registeredAt, DateTime birthDay, Team team, List<Task> tasks)
     {
         Id = id;
         TeamId = teamId;
+        UserName = userName;
         FirstName = firstName;
         LastName = lastName;
         Email = email;
