@@ -8,7 +8,7 @@ The system supports **real-time notifications**, **asynchronous task processing*
 ## 🚀 Main Features
 - **Project and Task Management**
   - Provide Analytics about projects: analyze tasks, examine team structure, investigate projects, measure user performance, compare teams and participants
-  - Create, update, and delete projects, tasks, users, teams
+  - Create, update, and delete projects, tasks, users, and teams
   - Link tasks to projects and users
   - Auth
 - **SignalR Integration**
@@ -106,11 +106,12 @@ graph TD
 ```
 
 ⚙️ Local Setup Instructions
+
 Install SQL Server and RabbitMQ (or run them via Docker)
 
 Configure connection strings in appsettings.json for WebAPI and Notifier
 
-Run the following commands in project root:
+Run the following commands in projects root:
 
 ```bash
 dotnet run --project WebAPI
