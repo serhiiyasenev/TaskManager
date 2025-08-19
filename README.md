@@ -70,6 +70,8 @@ graph TD
       R[RabbitMQ]
       DB[(SQL Server)]
       LG[Serilog Logger]
+      LS[(Logs Store: Grafana Loki)]
+      G[Grafana Dashboards]
     end
 
     A --> D
@@ -96,13 +98,15 @@ graph TD
     %% Clients call API
     E -->|HTTP| D
 
-    %% Logging (dotted)
+    %% Logging pipeline
     D -.->|logs| LG
     B -.->|logs| LG
     C -.->|logs| LG
     F -.->|logs| LG
     H -.->|logs| LG
 
+    LG -->|sinks| LS
+    G ---|queries/visualizes| LS
 ```
 
 ⚙️ Local Setup Instructions
