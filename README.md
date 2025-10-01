@@ -115,7 +115,7 @@ Install SQL Server and RabbitMQ (or run them via Docker)
 
 Configure connection strings in appsettings.json for WebAPI and Notifier
 
-Run the following commands in projects root:
+Run the following commands in the projects root:
 
 ```bash
 dotnet run --project WebAPI
@@ -125,7 +125,7 @@ dotnet run --project Client
 
 Use the console client to interact with the system
 
-Also you can use Swagger, Postman or any other client to execute WebAPI requests 
+Also, you can use Swagger, Postman or any other client to execute Web API requests 
 
 0. Get Tasks Count In Projects By User Id
 1. Get Capital Tasks By User Id
@@ -136,7 +136,7 @@ Also you can use Swagger, Postman or any other client to execute WebAPI requests
 6. Get Projects Info
 7. Get Sorted Filtered Page Of Projects
 8. Get Tasks Status By Project User Id
-9. Start Timer Service To Execute Random Tasks With Delay
+9. Start Timer Service To Execute Random Tasks With a Delay
 10. Stop Timer Service
 11. Exit the program
 
@@ -149,3 +149,78 @@ Also you can use Swagger, Postman or any other client to execute WebAPI requests
 <img src="Grafana_1.jpg" style="max-width: 100%; height: auto;"/>
 
 <img src="Grafana_2.jpg" style="max-width: 100%; height: auto;"/>
+
+---
+## 🛢️ Database Diagram
+
+```mermaid
+erDiagram
+    USER {
+        int id
+        int teamId
+        string userName
+        string normalizedUserName
+        string email
+        string normalizedEmail
+        string firstName
+        string lastName
+        datetime registeredAt
+        date birthDay
+    }
+
+    TEAM {
+        int id
+        string name
+        datetime createdAt
+    }
+
+    PROJECT {
+        int id
+        int authorId
+        int teamId
+        string name
+        string description
+        datetime createdAt
+        datetime deadline
+    }
+
+    TASK {
+        int id
+        int projectId
+        int performerId
+        string name
+        string description
+        int state
+        datetime createdAt
+        datetime finishedAt
+    }
+
+    EXECUTED_TASK {
+        int id
+        int taskId
+        string taskName
+        datetime createdAt
+    }
+
+    ROLE {
+        int id
+        string name
+        string normalizedName
+    }
+
+    USER_ROLE {
+        int userId
+        int roleId
+    }
+
+    %% ---------- Relationships ----------
+    TEAM    ||--o{ USER    : has
+    TEAM    ||--o{ PROJECT : owns
+    USER    ||--o{ PROJECT : authors
+    PROJECT ||--o{ TASK    : contains
+    USER    ||--o{ TASK    : performs
+    TASK    ||--o{ EXECUTED_TASK : logs
+
+    ROLE ||--o{ USER_ROLE : maps
+    USER ||--o{ USER_ROLE : maps
+```
