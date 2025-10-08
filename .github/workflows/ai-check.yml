@@ -1,0 +1,59 @@
+name: 🔍 Validate AI Integration (ACE-FCA)
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate-ai-structure:
+    name: 🧠 Validate AI context files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛒 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔍 Check required files
+        run: |
+          echo "Checking for required AI files..."
+          test -f "AI/AGENTS.md" && echo "✅ AGENTS.md found" || (echo "❌ Missing AI/AGENTS.md" && exit 1)
+          test -f "AI/research.md" && echo "✅ research.md found" || (echo "❌ Missing AI/research.md" && exit 1)
+          test -f "AI/plan.md" && echo "✅ plan.md found" || (echo "❌ Missing AI/plan.md" && exit 1)
+          test -f "AI/decisions.md" && echo "✅ decisions.md found" || (echo "❌ Missing AI/decisions.md" && exit 1)
+          test -f "AI/AI_GUIDE.md" && echo "✅ AI_GUIDE.md found" || (echo "❌ Missing AI/AI_GUIDE.md" && exit 1)
+          test -d "AI/traces" && echo "✅ traces/ directory exists" || (echo "❌ Missing AI/traces directory" && exit 1)
+
+      - name: 📋 Validate YAML preamble in AI_GUIDE.md
+        run: |
+          echo "Checking YAML preamble validity..."
+          head -n 15 AI/AI_GUIDE.md | grep -q "ai_integration:" || (echo "❌ Missing YAML preamble in AI_GUIDE.md" && exit 1)
+          head -n 15 AI/AI_GUIDE.md | grep -q "context_files:" || (echo "❌ Missing context_files section" && exit 1)
+          head -n 15 AI/AI_GUIDE.md | grep -q "reset_policy:" || (echo "❌ Missing reset_policy section" && exit 1)
+          echo "✅ YAML preamble detected and valid"
+
+      - name: 🧾 Validate plan.md content
+        run: |
+          echo "Checking plan.md structure..."
+          grep -q "## GOAL" AI/plan.md || (echo "❌ plan.md is missing GOAL section" && exit 1)
+          grep -q "|" AI/plan.md || (echo "❌ plan.md appears to be missing step table" && exit 1)
+          echo "✅ plan.md structure is valid"
+
+      - name: ⏱️ Validate recent trace file
+        run: |
+          echo "Checking trace timestamps..."
+          latest_trace=$(find AI/traces -type f -name "*.md" -printf "%T@ %p\n" | sort -n | tail -1 | cut -d' ' -f2-)
+          if [ -z "$latest_trace" ]; then
+            echo "❌ No trace files found in AI/traces/"
+            exit 1
+          fi
+          echo "Most recent trace: $latest_trace"
+          file_age_days=$(( ( $(date +%s) - $(stat -c %Y "$latest_trace") ) / 86400 ))
+          if [ "$file_age_days" -gt 7 ]; then
+            echo "⚠️ Warning: last trace file is older than 7 days ($file_age_days days)"
+          else
+            echo "✅ Recent trace file updated within 7 days"
+          fi
+
+      - name: 🧩 Summary
+        run: echo "✅ All AI integration checks passed successfully!"
