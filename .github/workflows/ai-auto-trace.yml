@@ -1,0 +1,65 @@
+name: 🧾 Auto Trace on Merge (ACE-FCA)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create-trace-entry:
+    name: 🧩 Generate trace after merge
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+
+    steps:
+      - name: 🛒 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🧠 Gather PR metadata
+        id: prmeta
+        run: |
+          echo "Fetching pull request info..."
+          PR_TITLE=$(git log -1 --pretty=%s)
+          PR_AUTHOR=$(git log -1 --pretty=format:'%an')
+          COMMIT_SHA=$(git rev-parse HEAD)
+          PR_URL="https://github.com/${{ github.repository }}/commit/${COMMIT_SHA}"
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+          echo "pr_author=$PR_AUTHOR" >> $GITHUB_OUTPUT
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+
+      - name: 📝 Create trace file
+        run: |
+          mkdir -p AI/traces
+          TRACE_FILE="AI/traces/step-$(date +'%Y%m%d-%H%M%S').md"
+
+          echo "# Trace Auto Entry — $(date -u +"%Y-%m-%d %H:%M UTC")" > $TRACE_FILE
+          echo "" >> $TRACE_FILE
+          echo "**Date:** ${{ steps.prmeta.outputs.date }}" >> $TRACE_FILE
+          echo "**Commit SHA:** \`${{ steps.prmeta.outputs.commit_sha }}\`" >> $TRACE_FILE
+          echo "**Author:** ${{ steps.prmeta.outputs.pr_author }}" >> $TRACE_FILE
+          echo "**Summary:** ${{ steps.prmeta.outputs.pr_title }}" >> $TRACE_FILE
+          echo "**Source:** [View Commit](${{ steps.prmeta.outputs.pr_url }})" >> $TRACE_FILE
+          echo "" >> $TRACE_FILE
+          echo "**Auto-generated trace entry after merge to main.**" >> $TRACE_FILE
+
+          echo "✅ Created $TRACE_FILE"
+          cat $TRACE_FILE
+
+      - name: 🚀 Commit and push trace entry
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add AI/traces/
+          git commit -m "Auto trace entry after merge [skip ci]" || echo "No changes to commit."
+          git push origin main || echo "Push skipped (no diff)."
+
+      - name: ✅ Done
+        run: echo "✅ Auto trace successfully created and committed."
