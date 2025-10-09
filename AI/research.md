@@ -8,9 +8,9 @@ Architecture consists of:
 - **WebAPI** — RESTful interface for external clients.
 - **Notifier** — Background worker using RabbitMQ and SignalR for real-time updates.
 - **Client** — User interface consuming WebAPI and SignalR.
-- **Shared** — Common contracts, DTOs, and messaging models.
+- **Tests** — Unit and Integration tests.
 
-Technologies: C#, EF Core, MediatR, SignalR, RabbitMQ, Serilog, Docker.
+Technologies: C#, EF Core, MediatR, SignalR, RabbitMQ, Serilog, Docker, Grafana.
 
 ## Current Observations
 - WebAPI publishes task events into RabbitMQ.
@@ -25,13 +25,19 @@ Technologies: C#, EF Core, MediatR, SignalR, RabbitMQ, Serilog, Docker.
 - Long-term data consistency between DB and message queues.
 
 ## Related Code Areas
-- `/DAL/Context/TaskContext.cs`
-- `/Notifier/Consumers/`
+- `/DAL/Context/`
+- `/BLL/Services/`
+- `/Notifier/`
 - `/WebAPI/Controllers/`
-- `/BLL/Services/TaskService.cs`
+- `/Client/Services/`
+- `Tests/`
 
 ## Summary
-Before implementing message retry or DLX, clarify:
+Before implementing any feature, clarify:
+- How it works.
+- How it should workd.
 - How failures are detected.
 - What max retry count and delay should be.
 - How to track dead-letter messages.
+- How to handle exception.
+- What kind of interface should be and what properties.
