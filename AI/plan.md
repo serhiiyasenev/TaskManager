@@ -22,4 +22,4 @@ Implement a robust retry and Dead-Letter Exchange (DLX) mechanism in the Notifie
 | 7 | Human review & plan approval | `plan.md` accepted and merged |
 | 8 | Implement iteratively, updating `traces/` | Each step compacted and logged |
 | 9 | Observe production behaviour | Metrics show retry/dlx counts |
-|10 | Confirm each step |
+|10 | Confirm each step | The user approves this manually |

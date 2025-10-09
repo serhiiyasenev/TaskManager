@@ -1,13 +1,14 @@
 # AI Integration Guide — TaskManager
 
----
+```yaml
 ai_integration:
   version: 1.0
   context_files:
     - AGENTS.md
-    - research.md
-    - plan.md
+    - AI_GUIDE.md
     - decisions.md
+    - plan.md
+    - research.md
   trace_dir: traces/
   reset_policy:
     trigger:
@@ -24,7 +25,7 @@ ai_integration:
     - "plan_has_active_step"
     - "recent_trace_updated"
     - "base_files_exist"
----
+```
 
 ## 🎯 Purpose
 This guide defines how any AI assistant, coding agent, or automation pipeline
