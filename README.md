@@ -224,3 +224,64 @@ erDiagram
     ROLE ||--o{ USER_ROLE : maps
     USER ||--o{ USER_ROLE : maps
 ```
+
+---
+
+## 📘 AI System Overview
+
+TaskManager is fully integrated with an **AI Governance & Context Engineering System**
+based on the **ACE-FCA (Advanced Context Engineering — Frequent Compaction Approach)** standard.
+
+This framework ensures that all AI-assisted and automated development remains  
+**structured, reproducible, transparent, and human-reviewable**.
+
+---
+
+### 🧠 Core AI Artifacts (`/AI`)
+
+| File / Folder | Purpose |
+|----------------|----------|
+| [`AI/README.md`](./AI/README.md) | Overview of AI governance logic and workflow phases. |
+| [`AI/AGENTS.md`](./AI/AGENTS.md) | Rules for AI context management and compaction policy. |
+| [`AI/AI_GUIDE.md`](./AI/AI_GUIDE.md) | Integration manual for AI assistants, Copilot, and CI tools. |
+| [`AI/plan.md`](./AI/plan.md) | Active roadmap of AI-driven development steps. |
+| [`AI/research.md`](./AI/research.md) | Technical findings and contextual data for planning. |
+| [`AI/decisions.md`](./AI/decisions.md) | Architecture Decision Records (ADRs). |
+| [`AI/traces/`](./AI/traces/) | Historical logs of all AI actions and completed steps. |
+
+---
+
+### ⚙️ GitHub Automation (`/.github`)
+
+| File / Workflow | Description |
+|------------------|-------------|
+| [`PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md) | Standardized PR template for AI-assisted and manual submissions. |
+| [`workflows/ai-validation.yml`](./.github/workflows/ai-validation.yml) | Validates all AI artifacts and ACE-FCA compliance for each PR. |
+| [`workflows/ai-auto-trace.yml`](./.github/workflows/ai-auto-trace.yml) | Automatically appends trace entries after each merge. |
+| [`workflows/README.md`](./.github/workflows/README.md) | Documentation for all GitHub workflows. |
+
+---
+
+### 🧩 Governance Principles
+
+- 🧠 **AI never acts blindly** — it follows explicit context from `research.md`, `plan.md`, and `decisions.md`.  
+- 🧾 **All AI actions are logged** — every merge creates a trace file in `AI/traces/`.  
+- 🧩 **All contributions are reviewable** — human reviewers validate only `plan` and `decisions`, not raw code.  
+- 🧼 **Context hygiene enforced** — the AI resets and compacts memory according to `AGENTS.md`.  
+
+---
+
+### 🚀 Validation & Transparency
+
+| Workflow | Status |
+|-----------|---------|
+| AI Validation | ![AI Validation](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-validation.yml/badge.svg) |
+| AI Auto-Trace | ![AI Auto-Trace](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-auto-trace.yml/badge.svg) |
+
+---
+
+> 💡 **Tip:** Before making changes with AI assistance, always review  
+> [`AI/AI_GUIDE.md`](./AI/AI_GUIDE.md) to understand context loading, reset, and compaction rules.
+
+---
+
