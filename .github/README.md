@@ -22,7 +22,7 @@ Located under [`.github/workflows/`](./workflows/):
 |-----------|----------|
 | `ai-validation.yml` | Validates AI artifacts (`AI/` folder) on each Pull Request. |
 | `ai-auto-trace.yml` | Automatically generates new trace entries after each merge. |
-| `test.yml` | Standard build and run tests workflow. |
+| `test.yml` | Standard build and run C#/NET tests workflow. |
 
 All AI-related workflows adhere to the **ACE-FCA** (Advanced Context Engineering) specification
 defined in [`AI/AI_GUIDE.md`](../AI/AI_GUIDE.md).
