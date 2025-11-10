@@ -293,7 +293,7 @@ graph LR
     C["🧮 Core Testing Layer<br/>(Execution Engine, 'Input → Action → Observation → Assertion → Report' Cycle)"]
     D["🧰 Infrastructure & Orchestration<br/>(CI/CD, Jenkins, GitHub Actions, Azure Pipelines)"]
     E["📦 System Under Test (SUT)<br/>(Web App, Desktop, API, DB, Cloud)"]
-    F["💻 Monitoring<br/>(Grafana, Loki, Serilog, Elastic Search, Cloud Systems)"]
+    F["💻 Monitoring<br/>(Grafana, Loki, Serilog, Elasticsearch, Cloud Systems)"]
 
     A --> B
     B --> C
