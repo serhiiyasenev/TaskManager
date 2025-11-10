@@ -286,6 +286,8 @@ This framework ensures that all AI-assisted and automated development remains
 
 ---
 
+### 🧪 AI & QA
+
 ```mermaid
 graph LR
     A["🧠 AI Assistive Layer<br/>(Arcetix, OpenAI, Testim, Mabl, Anthropic)"]
