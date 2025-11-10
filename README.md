@@ -286,3 +286,24 @@ This framework ensures that all AI-assisted and automated development remains
 
 ---
 
+```mermaid
+graph LR
+    A["🧠 AI Assistive Layer<br/>(Arcetix, OpenAI, Testim, Mabl, Anthropic)"]
+    B["⚙️ Automation Framework Layer<br/>(Playwright, Selenium, Cypress, Robot Framework)"]
+    C["🧮 Core Testing Layer<br/>(Execution Engine, 'Input → Action → Observation → Assertion → Report' Cycle)"]
+    D["🧰 Infrastructure & Orchestration<br/>(CI/CD, Jenkins, GitHub Actions, Azure Pipelines)"]
+    E["📦 System Under Test (SUT)<br/>(Web App, Desktop, API, DB, Cloud)"]
+    F["💻 Monitoring<br/>(Grafana, Loki, Serilog, Elastic Search, Cloud Systems)"]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+
+    A -.->|Generates & Optimizes Tests| B
+    B -.->|Executes Tests| C
+    C -.->|Reports Results| D
+    D -.->|Deploys & Monitors| E
+    E -.->|Feeds Metrics| F
+```
