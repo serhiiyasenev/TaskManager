@@ -299,7 +299,6 @@ graph LR
     B --> C
     C --> D
     D --> E
-    E --> F
 
     A -.->|Generates & Optimizes Tests| B
     B -.->|Executes Tests| C
