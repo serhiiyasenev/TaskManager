@@ -1,5 +1,4 @@
-﻿using BLL.Exceptions;
-using BLL.Services;
+﻿using BLL.Services;
 using DAL.Entities;
 using DAL.Repositories.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -39,8 +38,9 @@ public class ProjectsServiceTests
         var result = await sut.GetProjectsAsync();
 
         // Assert
-        Assert.Equal(2, result.Count);
-        Assert.Collection(result, p => Assert.Equal(1, p.Id), p => Assert.Equal(2, p.Id));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.Count);
+        Assert.Collection(result.Value!, p => Assert.Equal(1, p.Id), p => Assert.Equal(2, p.Id));
     }
 
     [Fact]
@@ -57,28 +57,33 @@ public class ProjectsServiceTests
         var result = await sut.GetProjectByIdAsync(5);
 
         // Assert
-        Assert.Equal(project, result);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(project, result.Value);
 
         _logger.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Start work on project 5")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Retrieving project 5")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task GetProjectByIdAsync_NotFound_Throws()
+    public async Task GetProjectByIdAsync_NotFound_ReturnsFailure()
     {
         // Arrange
         _projects.Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((Project?)null);
 
         var sut = CreateSut();
 
-        // Act and Assert
-        await Assert.ThrowsAsync<NotFoundException>(() => sut.GetProjectByIdAsync(99));
+        // Act
+        var result = await sut.GetProjectByIdAsync(99);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Error.NotFound", result.Error.Code);
     }
 
     [Fact]
@@ -107,44 +112,50 @@ public class ProjectsServiceTests
         var after = DateTime.UtcNow;
 
         // Assert
-        Assert.Same(project, result);
-        Assert.Equal(0, result.Id);
-        Assert.True(result.CreatedAt >= before && result.CreatedAt <= after);
+        Assert.True(result.IsSuccess);
+        Assert.Same(project, result.Value);
+        Assert.Equal(0, result.Value!.Id);
+        Assert.True(result.Value!.CreatedAt >= before && result.Value!.CreatedAt <= after);
 
         _projects.Verify(r => r.AddAsync(project, It.IsAny<CancellationToken>()), Times.Once);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task AddProjectAsync_MissingAuthor_ThrowsNotFound_NoAddNoSave()
+    public async Task AddProjectAsync_MissingAuthor_ReturnsFailure_NoAddNoSave()
     {
         // Arrange
         _users.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
-        _teams.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Team, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-
-        var project = new Project { Name = "X", Description = "Y", AuthorId = 999, TeamId = 1, Deadline = DateTime.UtcNow };
 
         var sut = CreateSut();
+        var project = new Project { Name = "P", Description = "D", AuthorId = 999, TeamId = 1, Deadline = DateTime.UtcNow };
 
-        // Act and Assert
-        await Assert.ThrowsAsync<NotFoundException>(() => sut.AddProjectAsync(project));
+        // Act
+        var result = await sut.AddProjectAsync(project);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Error.NotFound", result.Error.Code);
         _projects.Verify(r => r.AddAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()), Times.Never);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task AddProjectAsync_MissingTeam_ThrowsNotFound_NoAddNoSave()
+    public async Task AddProjectAsync_MissingTeam_ReturnsFailure_NoAddNoSave()
     {
         // Arrange
         _users.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _teams.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Team, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        var project = new Project { Name = "X", Description = "Y", AuthorId = 1, TeamId = 999, Deadline = DateTime.UtcNow };
-
         var sut = CreateSut();
+        var project = new Project { Name = "P", Description = "D", AuthorId = 1, TeamId = 999, Deadline = DateTime.UtcNow };
 
-        // Act and Assert
-        await Assert.ThrowsAsync<NotFoundException>(() => sut.AddProjectAsync(project));
+        // Act
+        var result = await sut.AddProjectAsync(project);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Error.NotFound", result.Error.Code);
         _projects.Verify(r => r.AddAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()), Times.Never);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -184,7 +195,8 @@ public class ProjectsServiceTests
         var result = await sut.UpdateProjectByIdAsync(7, update);
 
         // Assert
-        Assert.Same(existing, result);
+        Assert.True(result.IsSuccess);
+        Assert.Same(existing, result.Value);
         Assert.Equal("New", existing.Name);
         Assert.Equal("NewD", existing.Description);
         Assert.Equal(10, existing.AuthorId);
@@ -196,21 +208,25 @@ public class ProjectsServiceTests
     }
 
     [Fact]
-    public async Task UpdateProjectByIdAsync_NotFound_Throws()
+    public async Task UpdateProjectByIdAsync_NotFound_ReturnsFailure()
     {
         // Arrange
         _projects.Setup(r => r.GetByIdAsync(123, It.IsAny<CancellationToken>())).ReturnsAsync((Project?)null);
 
         var sut = CreateSut();
 
-        // Act and Assert
-        await Assert.ThrowsAsync<NotFoundException>(() => sut.UpdateProjectByIdAsync(123, new Project()));
+        // Act
+        var result = await sut.UpdateProjectByIdAsync(123, new Project());
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Error.NotFound", result.Error.Code);
         _projects.Verify(r => r.Update(It.IsAny<Project>()), Times.Never);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task UpdateProjectByIdAsync_MissingAuthor_Throws_NotUpdated()
+    public async Task UpdateProjectByIdAsync_MissingAuthor_ReturnsFailure_NotUpdated()
     {
         // Arrange
         var existing = new Project { Id = 1, Name = "P", Description = "D", AuthorId = 1, TeamId = 1, Deadline = DateTime.UtcNow };
@@ -221,15 +237,18 @@ public class ProjectsServiceTests
 
         var sut = CreateSut();
 
-        // Act and Assert
-        await Assert.ThrowsAsync<NotFoundException>(() =>
-            sut.UpdateProjectByIdAsync(1, new Project { AuthorId = 999, TeamId = 1, Name = "N", Description = "D", Deadline = DateTime.UtcNow }));
+        // Act
+        var result = await sut.UpdateProjectByIdAsync(1, new Project { AuthorId = 999, TeamId = 1, Name = "N", Description = "D", Deadline = DateTime.UtcNow });
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Error.NotFound", result.Error.Code);
         _projects.Verify(r => r.Update(It.IsAny<Project>()), Times.Never);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task UpdateProjectByIdAsync_MissingTeam_Throws_NotUpdated()
+    public async Task UpdateProjectByIdAsync_MissingTeam_ReturnsFailure_NotUpdated()
     {
         // Arrange
         var existing = new Project { Id = 1, Name = "P", Description = "D", AuthorId = 1, TeamId = 1, Deadline = DateTime.UtcNow };
@@ -240,9 +259,12 @@ public class ProjectsServiceTests
 
         var sut = CreateSut();
 
-        // Act and Assert
-        await Assert.ThrowsAsync<NotFoundException>(() =>
-            sut.UpdateProjectByIdAsync(1, new Project { AuthorId = 1, TeamId = 999, Name = "N", Description = "D", Deadline = DateTime.UtcNow }));
+        // Act
+        var result = await sut.UpdateProjectByIdAsync(1, new Project { AuthorId = 1, TeamId = 999, Name = "N", Description = "D", Deadline = DateTime.UtcNow });
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Error.NotFound", result.Error.Code);
         _projects.Verify(r => r.Update(It.IsAny<Project>()), Times.Never);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -266,7 +288,7 @@ public class ProjectsServiceTests
     }
 
     [Fact]
-    public async Task DeleteProjectByIdAsync_NotFound_Throws()
+    public async Task DeleteProjectByIdAsync_NotFound_ReturnsFailure()
     {
         // Arrange
         _projects.Setup(r => r.GetByIdAsync(77, It.IsAny<CancellationToken>())).ReturnsAsync((Project?)null);
@@ -274,9 +296,11 @@ public class ProjectsServiceTests
         var sut = CreateSut();
 
         // Act
-        await Assert.ThrowsAsync<NotFoundException>(() => sut.DeleteProjectByIdAsync(77));
+        var result = await sut.DeleteProjectByIdAsync(77);
 
         // Assert
+        Assert.True(result.IsFailure);
+        Assert.Equal("Error.NotFound", result.Error.Code);
         _projects.Verify(r => r.Remove(It.IsAny<Project>()), Times.Never);
         _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

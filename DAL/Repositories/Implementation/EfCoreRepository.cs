@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DAL.Repositories.Implementation;
 
-internal sealed class EfCoreRepository<T>(TaskContext db) : IRepository<T> where T : class
+public sealed class EfCoreRepository<T>(TaskContext db) : IRepository<T> where T : class
 {
     private DbSet<T> Set => db.Set<T>();
 

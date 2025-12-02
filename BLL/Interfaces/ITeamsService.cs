@@ -1,14 +1,14 @@
-﻿using BLL.Models.Teams;
+﻿using BLL.Common;
+using BLL.Models.Teams;
 using DAL.Entities;
-using Task = System.Threading.Tasks.Task;
 
 namespace BLL.Interfaces;
 
 public interface ITeamsService
 {
-    Task<List<Team>> GetTeamsAsync();
-    Task<Team> GetTeamByIdAsync(int id);
-    Task<Team> AddTeamAsync(CreateTeamDto team);
-    Task<Team> UpdateTeamByIdAsync(int id, UpdateTeamDto team);
-    Task DeleteTeamByIdAsync(int id);
+    Task<Result<List<Team>>> GetTeamsAsync(CancellationToken ct = default);
+    Task<Result<Team>> GetTeamByIdAsync(int id, CancellationToken ct = default);
+    Task<Result<Team>> AddTeamAsync(CreateTeamDto team, CancellationToken ct = default);
+    Task<Result<Team>> UpdateTeamByIdAsync(int id, UpdateTeamDto team, CancellationToken ct = default);
+    Task<Result> DeleteTeamByIdAsync(int id, CancellationToken ct = default);
 }

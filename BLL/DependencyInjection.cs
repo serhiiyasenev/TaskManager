@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace BLL;
@@ -31,13 +32,22 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<TaskContext>()
             .AddDefaultTokenProviders();
 
+        var jwtKey = configuration["Jwt:Key"];
+        if (string.IsNullOrWhiteSpace(jwtKey))
+        {
+            throw new InvalidOperationException("JWT Key is not configured in appsettings.json");
+        }
+
+        // Use SHA256 hash of the key to ensure it's exactly 256 bits (32 bytes)
+        var keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(jwtKey));
+
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
+                    IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
                     ValidateIssuer = false,
                     ValidateAudience = false,
                     ValidateLifetime = true,

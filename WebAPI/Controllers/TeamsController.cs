@@ -1,3 +1,4 @@
+using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Teams;
 using DAL.Entities;
@@ -11,37 +12,50 @@ public class TeamsController(ITeamsService teamsService) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(List<Team>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<Team>>> GetAll()
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<List<Team>>> GetAll(CancellationToken ct)
     {
-        return Ok(await teamsService.GetTeamsAsync());
+        var result = await teamsService.GetTeamsAsync(ct);
+        return result.ToActionResult();
     }
 
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(Team), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Team>> GetById([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<Team>> GetById([FromRoute] int id, CancellationToken ct)
     {
-        return Ok(await teamsService.GetTeamByIdAsync(id));
+        var result = await teamsService.GetTeamByIdAsync(id, ct);
+        return result.ToActionResult();
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(Team), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Team>> Add([FromBody] CreateTeamDto team)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<Team>> Add([FromBody] CreateTeamDto team, CancellationToken ct)
     {
-        return Ok(await teamsService.AddTeamAsync(team));
+        var result = await teamsService.AddTeamAsync(team, ct);
+        return result.ToActionResult();
     }
 
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(Team), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Team>> Update([FromRoute] int id, [FromBody] UpdateTeamDto team)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<Team>> Update([FromRoute] int id, [FromBody] UpdateTeamDto team, CancellationToken ct)
     {
-        return Ok(await teamsService.UpdateTeamByIdAsync(id, team));
+        var result = await teamsService.UpdateTeamByIdAsync(id, team, ct);
+        return result.ToActionResult();
     }
 
     [HttpDelete("{id}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<ActionResult<Team>> DeleteById([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult> DeleteById([FromRoute] int id, CancellationToken ct)
     {
-        await teamsService.DeleteTeamByIdAsync(id);
-        return NoContent();
+        var result = await teamsService.DeleteTeamByIdAsync(id, ct);
+        return result.ToActionResult();
     }
 }

@@ -1,6 +1,6 @@
+using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Users;
-using DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -38,35 +38,45 @@ public class UsersController(IUsersService usersService, IAuthService authServic
     [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
     [SwaggerResponse(401, "Invalid credentials")]
     [SwaggerResponse(403, "Forbidden")]
-    public async Task<ActionResult<List<UserDto>>> GetAll()
+    [SwaggerResponse(500, "Internal server error")]
+    public async Task<ActionResult<List<UserDto>>> GetAll(CancellationToken ct)
     {
-        return Ok(await usersService.GetUsersAsync());
+        var result = await usersService.GetUsersAsync(ct);
+        return result.ToActionResult();
     }
 
     [HttpGet("{id}")]
     [SwaggerOperation(Summary = "Get user by Id")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<UserDto>> GetById([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UserDto>> GetById([FromRoute] int id, CancellationToken ct)
     {
-        return Ok(await usersService.GetUserByIdAsync(id));
+        var result = await usersService.GetUserByIdAsync(id, ct);
+        return result.ToActionResult();
     }
 
     [HttpPut("{id}")]
     [SwaggerOperation(Summary = "Update user by Id")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<UserDto>> Update([FromRoute] int id, [FromBody] UpdateUserDto user)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UserDto>> Update([FromRoute] int id, [FromBody] UpdateUserDto user, CancellationToken ct)
     {
-        return Ok(await usersService.UpdateUserByIdAsync(id, user));
+        var result = await usersService.UpdateUserByIdAsync(id, user, ct);
+        return result.ToActionResult();
     }
 
     [Authorize]
     [HttpDelete("{id}")]
     [SwaggerOperation(Summary = "Delete user by Id", Description = "Only a authenticated user can delete users.")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerResponse(401, "Invalid credentials")]
-    public async Task<ActionResult<Team>> DeleteById([FromRoute] int id)
+    [SwaggerResponse(500, "Internal server error")]
+    public async Task<ActionResult> DeleteById([FromRoute] int id, CancellationToken ct)
     {
-        await usersService.DeleteUserByIdAsync(id);
-        return NoContent();
+        var result = await usersService.DeleteUserByIdAsync(id, ct);
+        return result.ToActionResult();
     }
 }
