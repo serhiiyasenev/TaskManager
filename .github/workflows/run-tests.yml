@@ -61,7 +61,7 @@ jobs:
     - name: Extract coverage percent
       id: coverage
       run: |
-        value=$(jq '.linecoverage' CoverageReport/Summary.json | xargs printf "%.2f")
+        value=$(jq '.summary.linecoverage' CoverageReport/Summary.json | xargs printf "%.2f")
         echo "value=$value" >> $GITHUB_OUTPUT
 
     - name: Add comment to PR
