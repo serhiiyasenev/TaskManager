@@ -39,11 +39,16 @@ jobs:
 
     - name: Install ReportGenerator
       run: dotnet tool install -g dotnet-reportgenerator-globaltool
+    
+    - name: Debug — list coverage files
+      run: |
+        echo "Searching for coverage files..."
+        find . -name "*coverage*" -type f -print
 
-    - name: Generate coverage report + badge
+    - name: Generate coverage report
       run: |
         reportgenerator \
-          -reports:"**/coverage.cobertura.xml" \
+          -reports:"**/TestResults/**/coverage*.*" \
           -targetdir:"CoverageReport" \
           -reporttypes:"HtmlInline_AzurePipelines;JsonSummary;Badges"
 
@@ -70,6 +75,7 @@ jobs:
     - name: Update coverage badge in README
       if: github.ref == 'refs/heads/main'
       run: |
+        git rm -f coverage-badge.svg || true
         cp CoverageReport/badge.svg coverage-badge.svg
         sed -i 's|!\[coverage\](.*)|![coverage](./coverage-badge.svg)|' README.md
 
