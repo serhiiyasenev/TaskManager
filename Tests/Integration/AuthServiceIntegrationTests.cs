@@ -301,10 +301,11 @@ public class AuthServiceIntegrationTests : IDisposable
             new RegisterUserDto("user3", "First3", "Last3", "user3@example.com", "Password123!")
         };
 
-        // Act
+        // Act - Register users and collect results using Select pattern
         var results = await System.Threading.Tasks.Task.WhenAll(
             users.Select(userDto => service.RegisterAsync(userDto)));
         
+        // Assert all registrations succeeded
         Assert.All(results, result => Assert.Equal("User registered successfully.", result));
 
         // Assert
