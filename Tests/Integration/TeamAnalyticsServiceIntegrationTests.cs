@@ -1,7 +1,6 @@
 using BLL.Services.Analytics;
 using DAL.Entities;
 using DAL.Repositories.Implementation;
-using System.Linq;
 using Xunit;
 
 namespace Tests.Integration;
