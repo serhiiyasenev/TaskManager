@@ -302,11 +302,10 @@ public class AuthServiceIntegrationTests : IDisposable
         };
 
         // Act
-        foreach (var userDto in users)
-        {
-            var result = await service.RegisterAsync(userDto);
-            Assert.Equal("User registered successfully.", result);
-        }
+        var results = await System.Threading.Tasks.Task.WhenAll(
+            users.Select(userDto => service.RegisterAsync(userDto)));
+        
+        Assert.All(results, result => Assert.Equal("User registered successfully.", result));
 
         // Assert
         var allUsers = await _context.Users.ToListAsync();
