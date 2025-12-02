@@ -12,7 +12,7 @@ using System.Security.Claims;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
 
-namespace Tests;
+namespace Tests.Unit;
 
 public class AuthServiceTests
 {
@@ -228,7 +228,7 @@ public class AuthServiceTests
         var store = new Mock<IUserStore<User>>();
         return new Mock<UserManager<User>>(
             store.Object,
-            null, null, null, null, null, null, null, null
+            null!, null!, null!, null!, null!, null!, null!, null!
         );
     }
 
@@ -241,7 +241,7 @@ public class AuthServiceTests
             userManager,
             contextAccessor.Object,
             claimsFactory.Object,
-            null, null, null, null
+            null!, null!, null!, null!
         );
     }
 

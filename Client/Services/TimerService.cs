@@ -5,18 +5,18 @@ namespace Client.Services
 {
     public class TimerService : ITimerService
     {
-        private Timer _timer;
+        private readonly Timer _timer;
 
         public TimerService(double interval)
         {
             _timer = new Timer(interval);
-            _timer.Elapsed += OnElapsed;
+            _timer.Elapsed += OnElapsed!;
         }
 
         public double Interval
         {
-            get { return _timer.Interval; }
-            set { _timer.Interval = value; }
+            get => _timer.Interval;
+            set => _timer.Interval = value;
         }
 
         public event ElapsedEventHandler? Elapsed;
@@ -33,7 +33,7 @@ namespace Client.Services
 
         public void Dispose()
         {
-            _timer.Elapsed -= OnElapsed;
+            _timer.Elapsed -= OnElapsed!;
             _timer.Dispose();
         }
 

@@ -1,3 +1,5 @@
+using AutoMapper;
+using BLL.Mapping;
 using BLL.Services;
 using DAL.Entities;
 using DAL.Enum;
@@ -5,10 +7,11 @@ using DAL.Repositories.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Linq.Expressions;
+using MockQueryable;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
 
-namespace Tests;
+namespace Tests.Unit;
 
 public class TasksServiceTests
 {
@@ -18,6 +21,13 @@ public class TasksServiceTests
     private readonly Mock<IRepository<ExecutedTask>> _executedTasks = new();
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<ILogger<TasksService>> _logger = new();
+    private readonly IMapper _mapper;
+
+    public TasksServiceTests()
+    {
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        _mapper = config.CreateMapper();
+    }
 
     private TasksService CreateSut() => new(
         _tasks.Object,
@@ -25,6 +35,7 @@ public class TasksServiceTests
         _projects.Object,
         _executedTasks.Object,
         _uow.Object,
+        _mapper,
         _logger.Object);
 
     [Fact]
@@ -33,12 +44,14 @@ public class TasksServiceTests
         // Arrange
         var data = new List<DAL.Entities.Task>
         {
-            new() { Id = 1, Name = "Task1", Description = "D1", ProjectId = 1, PerformerId = 1, State = TaskState.ToDo },
-            new() { Id = 2, Name = "Task2", Description = "D2", ProjectId = 1, PerformerId = 2, State = TaskState.InProgress }
+            new() { Id = 1, Name = "Task1", Description = "D1", ProjectId = 1, PerformerId = 1, State = TaskState.ToDo, 
+                    Performer = new User { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@test.com" } },
+            new() { Id = 2, Name = "Task2", Description = "D2", ProjectId = 1, PerformerId = 2, State = TaskState.InProgress,
+                    Performer = new User { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@test.com" } }
         };
 
-        _tasks.Setup(r => r.ListAsync(It.IsAny<Expression<Func<DAL.Entities.Task, bool>>?>(), It.IsAny<CancellationToken>()))
-              .ReturnsAsync(data);
+        _tasks.Setup(r => r.Query())
+              .Returns(data.BuildMock());
 
         var sut = CreateSut();
 
@@ -64,10 +77,12 @@ public class TasksServiceTests
             Description = "D5", 
             ProjectId = 1, 
             PerformerId = 1, 
-            State = TaskState.ToDo 
+            State = TaskState.ToDo,
+            Performer = new User { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@test.com" }
         };
-        _tasks.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
-              .ReturnsAsync(task);
+        
+        _tasks.Setup(r => r.Query())
+              .Returns(new List<DAL.Entities.Task> { task }.BuildMock());
 
         var sut = CreateSut();
 
@@ -76,15 +91,16 @@ public class TasksServiceTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal(task, result.Value);
+        Assert.Equal(5, result.Value!.Id);
+        Assert.Equal("Task5", result.Value!.Name);
     }
 
     [Fact]
     public async Task GetTaskByIdAsync_NotFound_ReturnsFailure()
     {
         // Arrange
-        _tasks.Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>()))
-              .ReturnsAsync((DAL.Entities.Task?)null);
+        _tasks.Setup(r => r.Query())
+              .Returns(new List<DAL.Entities.Task>().BuildMock());
 
         var sut = CreateSut();
 

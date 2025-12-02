@@ -13,6 +13,8 @@ public class MappingProfile : Profile
     {
         // User mappings
         CreateMap<User, UserDto>();
+        CreateMap<User, UserBasicDto>();
+        CreateMap<User, UserDetailDto>();
         CreateMap<RegisterUserDto, User>()
             .ForMember(dest => dest.RegisteredAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
             .ForMember(dest => dest.Id, opt => opt.Ignore());
@@ -24,15 +26,23 @@ public class MappingProfile : Profile
         // Project mappings
         CreateMap<Project, ProjectDto>();
         CreateMap<Project, FullProjectDto>();
+        CreateMap<Project, ProjectDetailDto>();
 
         // Task mappings
         CreateMap<DAL.Entities.Task, TaskDto>()
             .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State.ToString()));
         
         CreateMap<DAL.Entities.Task, TaskWithPerformerDto>();
+        CreateMap<DAL.Entities.Task, TaskBasicDto>()
+            .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State.ToString()));
+        CreateMap<DAL.Entities.Task, TaskDetailDto>()
+            .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State.ToString()));
 
         // Team mappings
         CreateMap<Team, TeamDto>();
+        CreateMap<Team, TeamBasicDto>();
+        CreateMap<Team, TeamDetailDto>()
+            .ForMember(dest => dest.Users, opt => opt.MapFrom(src => src.Users));
         CreateMap<Team, TeamWithMembersDto>()
             .ForMember(dest => dest.Members, opt => opt.MapFrom(src => src.Users));
         

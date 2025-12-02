@@ -1,8 +1,10 @@
-﻿using BLL.Common;
+﻿using AutoMapper;
+using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Users;
 using DAL.Entities;
 using DAL.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BLL.Services;
@@ -11,16 +13,22 @@ public class UsersService(
     IRepository<User> users,
     IReadRepository<Team> teams,
     IUnitOfWork uow,
+    IMapper mapper,
     ILogger<UsersService> logger) : IUsersService
 {
-    public async Task<Result<List<UserDto>>> GetUsersAsync(CancellationToken ct = default)
+    public async Task<Result<List<UserDetailDto>>> GetUsersAsync(CancellationToken ct = default)
     {
         try
         {
-            var entities = await users.ListAsync(null, ct);
-            var dtos = entities.Select(u => new UserDto(u.Id, u.TeamId, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay)).ToList();
+            var entities = await users.Query()
+                .Include(u => u.Team)
+                .Include(u => u.Tasks)
+                .AsNoTracking()
+                .ToListAsync(ct);
+            
+            var dtos = mapper.Map<List<UserDetailDto>>(entities);
             logger.LogInformation("Retrieved {Count} users", dtos.Count);
-            return Result<List<UserDto>>.Success(dtos);
+            return Result<List<UserDetailDto>>.Success(dtos);
         }
         catch (Exception ex)
         {
@@ -29,20 +37,25 @@ public class UsersService(
         }
     }
 
-    public async Task<Result<UserDto>> GetUserByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Result<UserDetailDto>> GetUserByIdAsync(int id, CancellationToken ct = default)
     {
         try
         {
-            var user = await users.GetByIdAsync(id, ct);
+            var user = await users.Query()
+                .Include(u => u.Team)
+                .Include(u => u.Tasks)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id, ct);
+            
             if (user == null)
             {
                 logger.LogWarning("User with ID {UserId} was not found", id);
                 return Error.NotFound("User", id);
             }
 
-            var dto = new UserDto(user.Id, user.TeamId, user.FirstName, user.LastName, user.Email, user.RegisteredAt, user.BirthDay);
+            var dto = mapper.Map<UserDetailDto>(user);
             logger.LogInformation("Retrieved user {UserId}", id);
-            return Result<UserDto>.Success(dto);
+            return Result<UserDetailDto>.Success(dto);
         }
         catch (Exception ex)
         {

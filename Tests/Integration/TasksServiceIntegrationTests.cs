@@ -1,3 +1,5 @@
+using AutoMapper;
+using BLL.Mapping;
 using BLL.Services;
 using DAL.Entities;
 using DAL.Enum;
@@ -11,6 +13,7 @@ namespace Tests.Integration;
 public class TasksServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
     private readonly Mock<ILogger<TasksService>> _logger = new();
+    private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
 
     private TasksService CreateService()
     {
@@ -20,7 +23,7 @@ public class TasksServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
         var executedTaskRepo = new EfCoreRepository<ExecutedTask>(fixture.Context);
         var uow = new UnitOfWork(fixture.Context);
 
-        return new TasksService(taskRepo, userRepo, projectRepo, executedTaskRepo, uow, _logger.Object);
+        return new TasksService(taskRepo, userRepo, projectRepo, executedTaskRepo, uow, _mapper, _logger.Object);
     }
 
     [Fact]

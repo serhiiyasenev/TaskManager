@@ -13,19 +13,19 @@ namespace WebAPI.Controllers;
 public class TasksController(ITasksService tasksService, IQueueService queueService) : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType(typeof(List<Task>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<TaskDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<List<Task>>> GetAll(CancellationToken ct)
+    public async Task<ActionResult<List<TaskDetailDto>>> GetAll(CancellationToken ct)
     {
         var result = await tasksService.GetTasksAsync(ct);
         return result.ToActionResult();
     }
 
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(Task), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TaskDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<Task>> GetById([FromRoute] int id, CancellationToken ct)
+    public async Task<ActionResult<TaskDetailDto>> GetById([FromRoute] int id, CancellationToken ct)
     {
         var result = await tasksService.GetTaskByIdAsync(id, ct);
         return result.ToActionResult();

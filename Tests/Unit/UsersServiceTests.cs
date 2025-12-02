@@ -1,3 +1,5 @@
+using AutoMapper;
+using BLL.Mapping;
 using BLL.Services;
 using BLL.Models.Users;
 using DAL.Entities;
@@ -6,8 +8,9 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using System.Linq.Expressions;
+using MockQueryable;
 
-namespace Tests;
+namespace Tests.Unit;
 
 public class UsersServiceTests
 {
@@ -15,8 +18,15 @@ public class UsersServiceTests
     private readonly Mock<IReadRepository<Team>> _teams = new();
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<ILogger<UsersService>> _logger = new();
+    private readonly IMapper _mapper;
 
-    private UsersService CreateSut() => new(_users.Object, _teams.Object, _uow.Object, _logger.Object);
+    public UsersServiceTests()
+    {
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        _mapper = config.CreateMapper();
+    }
+
+    private UsersService CreateSut() => new(_users.Object, _teams.Object, _uow.Object, _mapper, _logger.Object);
 
     [Fact]
     public async System.Threading.Tasks.Task GetUsersAsync_ReturnsAllUsers()
@@ -24,10 +34,10 @@ public class UsersServiceTests
         // Arrange
         var data = new List<User>
         {
-            new() { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@test.com", RegisteredAt = DateTime.UtcNow },
-            new() { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@test.com", RegisteredAt = DateTime.UtcNow }
+            new() { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@test.com", RegisteredAt = DateTime.UtcNow, Tasks = new List<DAL.Entities.Task>() },
+            new() { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@test.com", RegisteredAt = DateTime.UtcNow, Tasks = new List<DAL.Entities.Task>() }
         };
-        _users.Setup(r => r.ListAsync(null, It.IsAny<CancellationToken>())).ReturnsAsync(data);
+        _users.Setup(r => r.Query()).Returns(data.BuildMock());
         var sut = CreateSut();
 
         // Act
@@ -42,8 +52,8 @@ public class UsersServiceTests
     public async System.Threading.Tasks.Task GetUserByIdAsync_Found_ReturnsUser()
     {
         // Arrange
-        var user = new User { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@test.com", RegisteredAt = DateTime.UtcNow };
-        _users.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        var user = new User { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@test.com", RegisteredAt = DateTime.UtcNow, Tasks = new List<DAL.Entities.Task>() };
+        _users.Setup(r => r.Query()).Returns(new List<User> { user }.BuildMock());
         var sut = CreateSut();
 
         // Act
@@ -58,7 +68,7 @@ public class UsersServiceTests
     public async System.Threading.Tasks.Task GetUserByIdAsync_NotFound_ReturnsFailure()
     {
         // Arrange
-        _users.Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _users.Setup(r => r.Query()).Returns(new List<User>().BuildMock());
         var sut = CreateSut();
 
         // Act

@@ -11,19 +11,19 @@ namespace WebAPI.Controllers;
 public class TeamsController(ITeamsService teamsService) : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType(typeof(List<Team>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<TeamDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<List<Team>>> GetAll(CancellationToken ct)
+    public async Task<ActionResult<List<TeamDetailDto>>> GetAll(CancellationToken ct)
     {
         var result = await teamsService.GetTeamsAsync(ct);
         return result.ToActionResult();
     }
 
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(Team), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TeamDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<Team>> GetById([FromRoute] int id, CancellationToken ct)
+    public async Task<ActionResult<TeamDetailDto>> GetById([FromRoute] int id, CancellationToken ct)
     {
         var result = await teamsService.GetTeamByIdAsync(id, ct);
         return result.ToActionResult();

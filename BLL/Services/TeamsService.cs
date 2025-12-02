@@ -1,8 +1,10 @@
-﻿using BLL.Common;
+﻿using AutoMapper;
+using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Teams;
 using DAL.Entities;
 using DAL.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BLL.Services;
@@ -10,15 +12,21 @@ namespace BLL.Services;
 public class TeamsService(
     IRepository<Team> teams,
     IUnitOfWork uow,
+    IMapper mapper,
     ILogger<TeamsService> logger) : ITeamsService
 {
-    public async Task<Result<List<Team>>> GetTeamsAsync(CancellationToken ct = default)
+    public async Task<Result<List<TeamDetailDto>>> GetTeamsAsync(CancellationToken ct = default)
     {
         try
         {
-            var teamList = await teams.ListAsync(null, ct);
-            logger.LogInformation("Retrieved {Count} teams", teamList.Count);
-            return Result<List<Team>>.Success(teamList);
+            var teamList = await teams.Query()
+                .Include(t => t.Users)
+                .AsNoTracking()
+                .ToListAsync(ct);
+            
+            var dtos = mapper.Map<List<TeamDetailDto>>(teamList);
+            logger.LogInformation("Retrieved {Count} teams", dtos.Count);
+            return Result<List<TeamDetailDto>>.Success(dtos);
         }
         catch (Exception ex)
         {
@@ -27,19 +35,24 @@ public class TeamsService(
         }
     }
 
-    public async Task<Result<Team>> GetTeamByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Result<TeamDetailDto>> GetTeamByIdAsync(int id, CancellationToken ct = default)
     {
         try
         {
-            var team = await teams.GetByIdAsync(id, ct);
+            var team = await teams.Query()
+                .Include(t => t.Users)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == id, ct);
+            
             if (team == null)
             {
                 logger.LogWarning("Team with ID {TeamId} was not found", id);
                 return Error.NotFound("Team", id);
             }
 
+            var dto = mapper.Map<TeamDetailDto>(team);
             logger.LogInformation("Retrieved team {TeamId}", id);
-            return Result<Team>.Success(team);
+            return Result<TeamDetailDto>.Success(dto);
         }
         catch (Exception ex)
         {

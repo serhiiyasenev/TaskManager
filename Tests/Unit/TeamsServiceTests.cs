@@ -1,3 +1,5 @@
+using AutoMapper;
+using BLL.Mapping;
 using BLL.Services;
 using DAL.Entities;
 using DAL.Repositories.Interfaces;
@@ -5,16 +7,24 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using BLL.Models.Teams;
+using MockQueryable;
 
-namespace Tests;
+namespace Tests.Unit;
 
 public class TeamsServiceTests
 {
     private readonly Mock<IRepository<Team>> _teams = new();
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<ILogger<TeamsService>> _logger = new();
+    private readonly IMapper _mapper;
 
-    private TeamsService CreateSut() => new(_teams.Object, _uow.Object, _logger.Object);
+    public TeamsServiceTests()
+    {
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        _mapper = config.CreateMapper();
+    }
+
+    private TeamsService CreateSut() => new(_teams.Object, _uow.Object, _mapper, _logger.Object);
 
     [Fact]
     public async System.Threading.Tasks.Task GetTeamsAsync_ReturnsAllTeams()
@@ -22,10 +32,10 @@ public class TeamsServiceTests
         // Arrange
         var data = new List<Team>
         {
-            new() { Id = 1, Name = "Team1", CreatedAt = DateTime.UtcNow },
-            new() { Id = 2, Name = "Team2", CreatedAt = DateTime.UtcNow }
+            new() { Id = 1, Name = "Team1", CreatedAt = DateTime.UtcNow, Users = new List<User>() },
+            new() { Id = 2, Name = "Team2", CreatedAt = DateTime.UtcNow, Users = new List<User>() }
         };
-        _teams.Setup(r => r.ListAsync(null, It.IsAny<CancellationToken>())).ReturnsAsync(data);
+        _teams.Setup(r => r.Query()).Returns(data.BuildMock());
         var sut = CreateSut();
 
         // Act
@@ -40,8 +50,8 @@ public class TeamsServiceTests
     public async System.Threading.Tasks.Task GetTeamByIdAsync_Found_ReturnsTeam()
     {
         // Arrange
-        var team = new Team { Id = 1, Name = "Team1", CreatedAt = DateTime.UtcNow };
-        _teams.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(team);
+        var team = new Team { Id = 1, Name = "Team1", CreatedAt = DateTime.UtcNow, Users = new List<User>() };
+        _teams.Setup(r => r.Query()).Returns(new List<Team> { team }.BuildMock());
         var sut = CreateSut();
 
         // Act
@@ -49,14 +59,15 @@ public class TeamsServiceTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal(team, result.Value);
+        Assert.Equal(1, result.Value!.Id);
+        Assert.Equal("Team1", result.Value!.Name);
     }
 
     [Fact]
     public async System.Threading.Tasks.Task GetTeamByIdAsync_NotFound_ReturnsFailure()
     {
         // Arrange
-        _teams.Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((Team?)null);
+        _teams.Setup(r => r.Query()).Returns(new List<Team>().BuildMock());
         var sut = CreateSut();
 
         // Act

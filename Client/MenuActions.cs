@@ -165,7 +165,7 @@ namespace Client
             var queries = new Queries(methods, HttpClient);
 
             TimerService = new TimerService(delayMilliseconds);
-            TimerService.Elapsed += queries.ExecuteRandomTask;
+            TimerService.Elapsed += queries.ExecuteRandomTask!;
             TimerService.Start();
 
             await Console.Out.WriteLineAsync($"\n Timer Service Started with Delay/Interval in '{delayMilliseconds}' Milliseconds");

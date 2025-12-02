@@ -1,5 +1,6 @@
 using BLL.Common;
 using BLL.Interfaces;
+using BLL.Models.Projects;
 using DAL.Entities;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,19 +11,19 @@ namespace WebAPI.Controllers;
 public class ProjectsController(IProjectsService projectsService) : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType(typeof(List<Project>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<ProjectDetailDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<List<Project>>> GetAll(CancellationToken ct)
+    public async Task<ActionResult<List<ProjectDetailDto>>> GetAll(CancellationToken ct)
     {
         var result = await projectsService.GetProjectsAsync(ct);
         return result.ToActionResult();
     }
 
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(Project), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProjectDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<Project>> GetById([FromRoute] int id, CancellationToken ct)
+    public async Task<ActionResult<ProjectDetailDto>> GetById([FromRoute] int id, CancellationToken ct)
     {
         var result = await projectsService.GetProjectByIdAsync(id, ct);
         return result.ToActionResult();

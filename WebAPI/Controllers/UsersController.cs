@@ -35,11 +35,11 @@ public class UsersController(IUsersService usersService, IAuthService authServic
     [HttpGet]
     [Authorize(Roles = "admin")]
     [SwaggerOperation(Summary = "Get all users", Description = "Only a user who is authenticated as an **admin** can view the entire list of users.")]
-    [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<UserDetailDto>), StatusCodes.Status200OK)]
     [SwaggerResponse(401, "Invalid credentials")]
     [SwaggerResponse(403, "Forbidden")]
     [SwaggerResponse(500, "Internal server error")]
-    public async Task<ActionResult<List<UserDto>>> GetAll(CancellationToken ct)
+    public async Task<ActionResult<List<UserDetailDto>>> GetAll(CancellationToken ct)
     {
         var result = await usersService.GetUsersAsync(ct);
         return result.ToActionResult();
@@ -47,10 +47,10 @@ public class UsersController(IUsersService usersService, IAuthService authServic
 
     [HttpGet("{id}")]
     [SwaggerOperation(Summary = "Get user by Id")]
-    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UserDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<UserDto>> GetById([FromRoute] int id, CancellationToken ct)
+    public async Task<ActionResult<UserDetailDto>> GetById([FromRoute] int id, CancellationToken ct)
     {
         var result = await usersService.GetUserByIdAsync(id, ct);
         return result.ToActionResult();

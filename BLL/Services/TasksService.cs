@@ -1,8 +1,11 @@
-﻿using BLL.Common;
+﻿using AutoMapper;
+using BLL.Common;
 using BLL.Interfaces;
+using BLL.Models.Tasks;
 using DAL.Entities;
 using DAL.Enum;
 using DAL.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BLL.Services;
@@ -13,16 +16,22 @@ public class TasksService(
     IReadRepository<Project> projects,
     IRepository<ExecutedTask> executedTasks,
     IUnitOfWork uow,
+    IMapper mapper,
     ILogger<TasksService> logger)
     : ITasksService
 {
-    public async Task<Result<List<DAL.Entities.Task>>> GetTasksAsync(CancellationToken ct = default)
+    public async Task<Result<List<TaskDetailDto>>> GetTasksAsync(CancellationToken ct = default)
     {
         try
         {
-            var taskList = await tasks.ListAsync(null, ct);
-            logger.LogInformation("Retrieved {Count} tasks", taskList.Count);
-            return Result<List<DAL.Entities.Task>>.Success(taskList);
+            var taskList = await tasks.Query()
+                .Include(t => t.Performer)
+                .AsNoTracking()
+                .ToListAsync(ct);
+            
+            var dtos = mapper.Map<List<TaskDetailDto>>(taskList);
+            logger.LogInformation("Retrieved {Count} tasks", dtos.Count);
+            return Result<List<TaskDetailDto>>.Success(dtos);
         }
         catch (Exception ex)
         {
@@ -31,12 +40,15 @@ public class TasksService(
         }
     }
 
-    public async Task<Result<DAL.Entities.Task>> GetTaskByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Result<TaskDetailDto>> GetTaskByIdAsync(int id, CancellationToken ct = default)
     {
         try
         {
             logger.LogInformation("Retrieving task {TaskId}", id);
-            var task = await tasks.GetByIdAsync(id, ct);
+            var task = await tasks.Query()
+                .Include(t => t.Performer)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == id, ct);
 
             if (task is null)
             {
@@ -44,7 +56,8 @@ public class TasksService(
                 return Error.NotFound(nameof(DAL.Entities.Task), id);
             }
 
-            return Result<DAL.Entities.Task>.Success(task);
+            var dto = mapper.Map<TaskDetailDto>(task);
+            return Result<TaskDetailDto>.Success(dto);
         }
         catch (Exception ex)
         {

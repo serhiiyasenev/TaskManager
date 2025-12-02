@@ -1,5 +1,7 @@
-﻿using BLL.Common;
+﻿using AutoMapper;
+using BLL.Common;
 using BLL.Interfaces;
+using BLL.Models.Projects;
 using DAL.Entities;
 using DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -11,11 +13,12 @@ public class ProjectsService(
     IRepository<Project> projects,
     IReadRepository<User> users,
     IReadRepository<Team> teams,
-    IUnitOfWork uow, 
+    IUnitOfWork uow,
+    IMapper mapper,
     ILogger<ProjectsService> logger)
     : IProjectsService
 {
-    public async Task<Result<List<Project>>> GetProjectsAsync(CancellationToken ct = default)
+    public async Task<Result<List<ProjectDetailDto>>> GetProjectsAsync(CancellationToken ct = default)
     {
         try
         {
@@ -32,8 +35,9 @@ public class ProjectsService(
                 .AsNoTracking()
                 .ToListAsync(ct);
             
-            logger.LogInformation("Retrieved {Count} projects", projectList.Count);
-            return Result<List<Project>>.Success(projectList);
+            var dtos = mapper.Map<List<ProjectDetailDto>>(projectList);
+            logger.LogInformation("Retrieved {Count} projects", dtos.Count);
+            return Result<List<ProjectDetailDto>>.Success(dtos);
         }
         catch (Exception ex)
         {
@@ -42,7 +46,7 @@ public class ProjectsService(
         }
     }
 
-    public async Task<Result<Project>> GetProjectByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Result<ProjectDetailDto>> GetProjectByIdAsync(int id, CancellationToken ct = default)
     {
         try
         {
@@ -66,7 +70,8 @@ public class ProjectsService(
                 return Error.NotFound(nameof(Project), id);
             }
 
-            return Result<Project>.Success(project);
+            var dto = mapper.Map<ProjectDetailDto>(project);
+            return Result<ProjectDetailDto>.Success(dto);
         }
         catch (Exception ex)
         {

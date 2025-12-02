@@ -1,13 +1,16 @@
-﻿using BLL.Services;
+﻿using AutoMapper;
+using BLL.Mapping;
+using BLL.Services;
 using DAL.Entities;
 using DAL.Repositories.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Linq.Expressions;
+using MockQueryable;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
 
-namespace Tests;
+namespace Tests.Unit;
 
 public class ProjectsServiceTests
 {
@@ -16,7 +19,15 @@ public class ProjectsServiceTests
     private readonly Mock<IReadRepository<Team>> _teams = new();
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<ILogger<ProjectsService>> _logger = new();
-    private ProjectsService CreateSut() => new(_projects.Object, _users.Object, _teams.Object, _uow.Object, _logger.Object);
+    private readonly IMapper _mapper;
+
+    public ProjectsServiceTests()
+    {
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        _mapper = config.CreateMapper();
+    }
+
+    private ProjectsService CreateSut() => new(_projects.Object, _users.Object, _teams.Object, _uow.Object, _mapper, _logger.Object);
 
     [Fact]
     public async Task GetProjectsAsync_ReturnsAll()
@@ -24,13 +35,15 @@ public class ProjectsServiceTests
         // Arrange
         var data = new List<Project>
         {
-            new() { Id = 1, Name = "P1", Description = "D1", AuthorId = 1, TeamId = 1, Deadline = DateTime.UtcNow },
-            new() { Id = 2, Name = "P2", Description = "D2", AuthorId = 2, TeamId = 2, Deadline = DateTime.UtcNow },
+            new() { Id = 1, Name = "P1", Description = "D1", AuthorId = 1, TeamId = 1, Deadline = DateTime.UtcNow, 
+                    Author = new User(), Team = new Team(), Tasks = new List<DAL.Entities.Task>() },
+            new() { Id = 2, Name = "P2", Description = "D2", AuthorId = 2, TeamId = 2, Deadline = DateTime.UtcNow,
+                    Author = new User(), Team = new Team(), Tasks = new List<DAL.Entities.Task>() },
         };
 
         _projects
-            .Setup(r => r.ListAsync(It.IsAny<Expression<Func<Project, bool>>?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(data);
+            .Setup(r => r.Query())
+            .Returns(data.BuildMock());
 
         var sut = CreateSut();
 
@@ -47,9 +60,11 @@ public class ProjectsServiceTests
     public async Task GetProjectByIdAsync_Found_ReturnsProject_AndLogsInfo()
     {
         // Arrange
-        var project = new Project { Id = 5, Name = "P5", Description = "D5", AuthorId = 1, TeamId = 1, Deadline = DateTime.UtcNow };
-        _projects.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(project);
+        var project = new Project { Id = 5, Name = "P5", Description = "D5", AuthorId = 1, TeamId = 1, Deadline = DateTime.UtcNow,
+                                   Author = new User(), Team = new Team(), Tasks = new List<DAL.Entities.Task>() };
+        
+        _projects.Setup(r => r.Query())
+                 .Returns(new List<Project> { project }.BuildMock());
 
         var sut = CreateSut();
 
@@ -58,7 +73,8 @@ public class ProjectsServiceTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal(project, result.Value);
+        Assert.Equal(5, result.Value!.Id);
+        Assert.Equal("P5", result.Value!.Name);
 
         _logger.Verify(
             x => x.Log(
@@ -74,7 +90,8 @@ public class ProjectsServiceTests
     public async Task GetProjectByIdAsync_NotFound_ReturnsFailure()
     {
         // Arrange
-        _projects.Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((Project?)null);
+        _projects.Setup(r => r.Query())
+                 .Returns(new List<Project>().BuildMock());
 
         var sut = CreateSut();
 

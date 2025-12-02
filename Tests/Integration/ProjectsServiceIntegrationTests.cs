@@ -1,3 +1,5 @@
+using AutoMapper;
+using BLL.Mapping;
 using BLL.Services;
 using DAL.Entities;
 using DAL.Repositories.Implementation;
@@ -10,6 +12,7 @@ namespace Tests.Integration;
 public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
     private readonly Mock<ILogger<ProjectsService>> _logger = new();
+    private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
 
     // Don't reset database - use shared fixture data
 
@@ -20,7 +23,7 @@ public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFi
         var teamRepo = new EfCoreRepository<Team>(fixture.Context);
         var uow = new UnitOfWork(fixture.Context);
 
-        return new ProjectsService(projectRepo, userRepo, teamRepo, uow, _logger.Object);
+        return new ProjectsService(projectRepo, userRepo, teamRepo, uow, _mapper, _logger.Object);
     }
 
     [Fact]
