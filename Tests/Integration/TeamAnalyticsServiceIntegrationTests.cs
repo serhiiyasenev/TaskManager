@@ -92,16 +92,13 @@ public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
         // Assert
         Assert.NotNull(result);
         
-        foreach (var team in result)
+        foreach (var team in result.Where(t => t.Members.Count > 1))
         {
-            if (team.Members.Count > 1)
+            // Verify members within each team are sorted by RegisteredAt descending
+            for (int i = 0; i < team.Members.Count - 1; i++)
             {
-                // Verify members within each team are sorted by RegisteredAt descending
-                for (int i = 0; i < team.Members.Count - 1; i++)
-                {
-                    Assert.True(team.Members[i].RegisteredAt >= team.Members[i + 1].RegisteredAt,
-                        $"Members not sorted by RegisteredAt descending in team {team.Name}");
-                }
+                Assert.True(team.Members[i].RegisteredAt >= team.Members[i + 1].RegisteredAt,
+                    $"Members not sorted by RegisteredAt descending in team {team.Name}");
             }
         }
     }
