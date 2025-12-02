@@ -53,7 +53,15 @@ public class DatabaseFixture : IDisposable
             TeamId = 2
         };
 
-        Context.Users.AddRange(user1, user2, user3);
+        var user4 = new User("user4", "Serhii", "Test", "serhii@test.com")
+        {
+            Id = 4,
+            Email = "serhii@test.com",
+            RegisteredAt = DateTime.UtcNow,
+            TeamId = 2
+        };
+
+        Context.Users.AddRange(user1, user2, user3, user4);
 
         // Create test projects
         var project1 = new Project
