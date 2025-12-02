@@ -1,0 +1,38 @@
+name: Run Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore TaskManager.sln
+
+    - name: Build solution
+      run: dotnet build TaskManager.sln --configuration Release --no-restore
+
+    - name: Run tests with Coverlet
+      run: |
+        dotnet test TaskManager.sln \
+          --settings .runsettings \
+          --logger "trx;LogFileName=test_results.trx" \
+          --no-build \
+          --configuration Release
