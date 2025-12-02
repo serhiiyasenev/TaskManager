@@ -8,20 +8,13 @@ using RabbitMQ.Client;
 
 namespace BLL.Services;
 
-public class RabbitMqService : IQueueService
+public class RabbitMqService(
+    IOptions<RabbitMqOptions> options,
+    ILogger<RabbitMqService> logger)
+    : IQueueService
 {
-    private readonly RabbitMqOptions _options;
-    private readonly ILogger<RabbitMqService> _logger;
-    private readonly IAsyncPolicy _resiliencePolicy;
-
-    public RabbitMqService(
-        IOptions<RabbitMqOptions> options,
-        ILogger<RabbitMqService> logger)
-    {
-        _options = options.Value;
-        _logger = logger;
-        _resiliencePolicy = ResiliencePolicies.CreateRabbitMqPolicy(logger);
-    }
+    private readonly RabbitMqOptions _options = options.Value;
+    private readonly IAsyncPolicy _resiliencePolicy = ResiliencePolicies.CreateRabbitMqPolicy(logger);
 
     public async Task<bool> PostValue(string message, CancellationToken ct = default)
     {
@@ -60,7 +53,7 @@ public class RabbitMqService : IQueueService
                     body: body,
                     cancellationToken: ct);
 
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Message published to queue {QueueName} with ID {MessageId}",
                     _options.QueueName,
                     messageId);
@@ -70,7 +63,7 @@ public class RabbitMqService : IQueueService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to publish message to RabbitMQ queue {QueueName} after all retries", _options.QueueName);
+            logger.LogError(ex, "Failed to publish message to RabbitMQ queue {QueueName} after all retries", _options.QueueName);
             return false;
         }
     }

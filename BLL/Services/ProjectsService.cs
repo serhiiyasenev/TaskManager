@@ -2,6 +2,7 @@
 using BLL.Interfaces;
 using DAL.Entities;
 using DAL.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BLL.Services;
@@ -18,7 +19,19 @@ public class ProjectsService(
     {
         try
         {
-            var projectList = await projects.ListAsync(null, ct);
+            var projectList = await projects.Query()
+                .Include(p => p.Author)
+                    .ThenInclude(a => a.Team)
+                .Include(p => p.Author)
+                    .ThenInclude(a => a.Tasks)
+                .Include(p => p.Team)
+                    .ThenInclude(t => t.Users)
+                .Include(p => p.Tasks)
+                    .ThenInclude(t => t.Performer)
+                .AsSplitQuery()
+                .AsNoTracking()
+                .ToListAsync(ct);
+            
             logger.LogInformation("Retrieved {Count} projects", projectList.Count);
             return Result<List<Project>>.Success(projectList);
         }
@@ -34,7 +47,18 @@ public class ProjectsService(
         try
         {
             logger.LogInformation("Retrieving project {ProjectId}", id);
-            var project = await projects.GetByIdAsync(id, ct);
+            var project = await projects.Query()
+                .Include(p => p.Author)
+                    .ThenInclude(a => a.Team)
+                .Include(p => p.Author)
+                    .ThenInclude(a => a.Tasks)
+                .Include(p => p.Team)
+                    .ThenInclude(t => t.Users)
+                .Include(p => p.Tasks)
+                    .ThenInclude(t => t.Performer)
+                .AsSplitQuery()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == id, ct);
             
             if (project is null)
             {
