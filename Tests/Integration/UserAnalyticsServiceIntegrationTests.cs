@@ -63,16 +63,13 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
         // Assert
         Assert.NotNull(result);
         
-        foreach (var user in result)
+        foreach (var user in result.Where(u => u.Tasks.Count > 1))
         {
-            if (user.Tasks.Count > 1)
+            // Verify tasks are sorted by name length descending
+            for (int i = 0; i < user.Tasks.Count - 1; i++)
             {
-                // Verify tasks are sorted by name length descending
-                for (int i = 0; i < user.Tasks.Count - 1; i++)
-                {
-                    Assert.True(user.Tasks[i].Name.Length >= user.Tasks[i + 1].Name.Length,
-                        $"Tasks not sorted by name length descending for user {user.FirstName}");
-                }
+                Assert.True(user.Tasks[i].Name.Length >= user.Tasks[i + 1].Name.Length,
+                    $"Tasks not sorted by name length descending for user {user.FirstName}");
             }
         }
     }
