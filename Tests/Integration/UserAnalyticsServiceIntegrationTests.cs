@@ -7,7 +7,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class UserAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database collection")]
+public class UserAnalyticsServiceIntegrationTests : IAsyncLifetime
 {
     private readonly DatabaseFixture _fixture;
 
@@ -358,6 +359,7 @@ public class UserAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
         // Assert
         Assert.NotNull(result);
         Assert.Empty(result);
+        // Database will be reset by DisposeAsync
     }
 
     [Fact]

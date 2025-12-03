@@ -10,7 +10,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TasksServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database collection")]
+public class TasksServiceIntegrationTests : IAsyncLifetime
 {
     private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<TasksService>> _logger = new();
@@ -410,7 +411,7 @@ public class TasksServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsy
             PerformerId = 1,
             State = TaskState.ToDo
         });
-        var addResult2 = await service.AddTaskAsync(new DAL.Entities.Task
+        await service.AddTaskAsync(new DAL.Entities.Task
         {
             Name = "Temp Task 2",
             Description = "Test",

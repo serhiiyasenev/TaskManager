@@ -9,7 +9,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class ProjectsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database collection")]
+public class ProjectsServiceIntegrationTests : IAsyncLifetime
 {
     private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<ProjectsService>> _logger = new();
