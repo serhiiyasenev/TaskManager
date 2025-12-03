@@ -5,17 +5,20 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database collection")]
+public class TaskAnalyticsServiceIntegrationTests
 {
-    public System.Threading.Tasks.Task InitializeAsync()
+    private readonly DatabaseFixture _fixture;
+
+    public TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture)
     {
-        return System.Threading.Tasks.Task.CompletedTask;
+        _fixture = fixture;
     }
 
     private TaskAnalyticsService CreateService()
     {
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
-        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(_fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
 
         return new TaskAnalyticsService(taskRepo, projectRepo);
     }
@@ -202,8 +205,8 @@ public class TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
         // Arrange
         var service = CreateService();
         // Create a project with no tasks
-        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
         
         var newProject = new Project
         {

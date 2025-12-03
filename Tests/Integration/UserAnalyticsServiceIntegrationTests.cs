@@ -7,24 +7,21 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database collection")]
+public class UserAnalyticsServiceIntegrationTests
 {
-    public System.Threading.Tasks.Task InitializeAsync()
-    {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
+    private readonly DatabaseFixture _fixture;
 
-    public System.Threading.Tasks.Task DisposeAsync()
+    public UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture)
     {
-        fixture.ResetDatabase();
-        return System.Threading.Tasks.Task.CompletedTask;
+        _fixture = fixture;
     }
 
     private UserAnalyticsService CreateService()
     {
-        var userRepo = new EfCoreRepository<User>(fixture.Context);
-        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
+        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(_fixture.Context);
 
         return new UserAnalyticsService(userRepo, projectRepo, taskRepo);
     }
@@ -194,11 +191,11 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
         
         // Create a user with specific tasks
-        var userRepo = new EfCoreRepository<User>(fixture.Context);
+        var userRepo = new EfCoreRepository<User>(_fixture.Context);
         var testUser = new User("testanalytics", "Test", "Analytics", "testanalytics@test.com")
         {
             RegisteredAt = DateTime.UtcNow,
@@ -266,8 +263,8 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var userRepo = new EfCoreRepository<User>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
         
         // Create a user with no projects
         var testUser = new User("noprojects", "No", "Projects", "noprojects@test.com")
@@ -292,8 +289,8 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var userRepo = new EfCoreRepository<User>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
         
         // Create a user with no tasks
         var testUser = new User("notasks", "No", "Tasks", "notasks@test.com")
@@ -335,12 +332,38 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     [Fact]
     public async System.Threading.Tasks.Task GetSortedUsersWithSortedTasksAsync_NoUsersWithTasks_ReturnsUsersWithEmptyTaskLists()
     {
-        // Arrange
-        var service = CreateService();
-
-        // Remove all tasks but keep users
-        fixture.Context.Tasks.RemoveRange(fixture.Context.Tasks);
-        await fixture.Context.SaveChangesAsync();
+        // Arrange - Use an isolated context for this destructive test
+        var options = new DbContextOptionsBuilder<DAL.Context.TaskContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        
+        using var isolatedContext = new DAL.Context.TaskContext(options);
+        
+        // Seed only users with no tasks
+        var team = new Team { Id = 1, Name = "Test Team", CreatedAt = DateTime.UtcNow };
+        isolatedContext.Teams.Add(team);
+        
+        var user1 = new User("user1", "John", "Doe", "john@example.com")
+        {
+            Id = 1,
+            Email = "john@example.com",
+            RegisteredAt = DateTime.UtcNow,
+            TeamId = 1
+        };
+        var user2 = new User("user2", "Jane", "Smith", "jane@example.com")
+        {
+            Id = 2,
+            Email = "jane@example.com",
+            RegisteredAt = DateTime.UtcNow,
+            TeamId = 1
+        };
+        isolatedContext.Users.AddRange(user1, user2);
+        await isolatedContext.SaveChangesAsync();
+        
+        var userRepo = new EfCoreRepository<User>(isolatedContext);
+        var projectRepo = new EfCoreRepository<Project>(isolatedContext);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(isolatedContext);
+        var service = new UserAnalyticsService(userRepo, projectRepo, taskRepo);
 
         // Act
         var result = await service.GetSortedUsersWithSortedTasksAsync();
@@ -356,11 +379,11 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
 
         // Get the existing project's CreatedAt to ensure our new projects are newer
-        var existingProject = await fixture.Context.Projects.FirstOrDefaultAsync(p => p.AuthorId == 1);
+        var existingProject = await _fixture.Context.Projects.FirstOrDefaultAsync(p => p.AuthorId == 1);
         var baseDate = existingProject?.CreatedAt ?? DateTime.UtcNow.AddDays(-20);
 
         // Create multiple projects for user 1 with dates newer than existing

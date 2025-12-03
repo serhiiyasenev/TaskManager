@@ -11,28 +11,22 @@ using Xunit;
 namespace Tests.Integration;
 
 [Collection("Database collection")]
-public class UsersServiceIntegrationTests : IAsyncLifetime
+public class UsersServiceIntegrationTests
 {
+    private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<UsersService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
-    private readonly DatabaseFixture fixture;
 
     public UsersServiceIntegrationTests(DatabaseFixture fixture)
     {
-        this.fixture = fixture;
+        _fixture = fixture;
     }
-    public System.Threading.Tasks.Task InitializeAsync()
-    {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
-
-    // Removed DisposeAsync to avoid resetting shared fixture after each test.
 
     private UsersService CreateService()
     {
-        var userRepo = new EfCoreRepository<User>(fixture.Context);
-        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
 
         return new UsersService(userRepo, teamRepo, uow, _mapper, _logger.Object);
     }

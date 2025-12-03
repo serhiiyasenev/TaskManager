@@ -9,28 +9,24 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database collection")]
+public class ProjectsServiceIntegrationTests
 {
+    private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<ProjectsService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
 
-    public System.Threading.Tasks.Task InitializeAsync()
+    public ProjectsServiceIntegrationTests(DatabaseFixture fixture)
     {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
-
-    public System.Threading.Tasks.Task DisposeAsync()
-    {
-        fixture.ResetDatabase();
-        return System.Threading.Tasks.Task.CompletedTask;
+        _fixture = fixture;
     }
 
     private ProjectsService CreateService()
     {
-        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
-        var userRepo = new EfCoreRepository<User>(fixture.Context);
-        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
+        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
 
         return new ProjectsService(projectRepo, userRepo, teamRepo, uow, _mapper, _logger.Object);
     }

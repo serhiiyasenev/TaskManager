@@ -10,14 +10,22 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TeamsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
+[Collection("Database collection")]
+public class TeamsServiceIntegrationTests
 {
+    private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<TeamsService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
+
+    public TeamsServiceIntegrationTests(DatabaseFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
     private TeamsService CreateService()
     {
-        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
 
         return new TeamsService(teamRepo, uow, _mapper, _logger.Object);
     }

@@ -10,17 +10,25 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TasksServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
+[Collection("Database collection")]
+public class TasksServiceIntegrationTests
 {
+    private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<TasksService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
+
+    public TasksServiceIntegrationTests(DatabaseFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
     private TasksService CreateService()
     {
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
-        var userRepo = new EfCoreRepository<User>(fixture.Context);
-        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
-        var executedTaskRepo = new EfCoreRepository<ExecutedTask>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(_fixture.Context);
+        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
+        var executedTaskRepo = new EfCoreRepository<ExecutedTask>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
 
         return new TasksService(taskRepo, userRepo, projectRepo, executedTaskRepo, uow, _mapper, _logger.Object);
     }
