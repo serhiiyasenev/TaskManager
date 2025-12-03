@@ -7,15 +7,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class UserAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
-    private readonly DatabaseFixture _fixture;
-
-    public UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture)
-    {
-        _fixture = fixture;
-    }
-
     public System.Threading.Tasks.Task InitializeAsync()
     {
         return System.Threading.Tasks.Task.CompletedTask;
@@ -23,15 +16,15 @@ public class UserAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
 
     public System.Threading.Tasks.Task DisposeAsync()
     {
-        _fixture.ResetDatabase();
+        fixture.ResetDatabase();
         return System.Threading.Tasks.Task.CompletedTask;
     }
 
     private UserAnalyticsService CreateService()
     {
-        var userRepo = new EfCoreRepository<User>(_fixture.Context);
-        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(_fixture.Context);
+        var userRepo = new EfCoreRepository<User>(fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
 
         return new UserAnalyticsService(userRepo, projectRepo, taskRepo);
     }
@@ -201,11 +194,11 @@ public class UserAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
     {
         // Arrange
         var service = CreateService();
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(_fixture.Context);
-        var uow = new UnitOfWork(_fixture.Context);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
+        var uow = new UnitOfWork(fixture.Context);
         
         // Create a user with specific tasks
-        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var userRepo = new EfCoreRepository<User>(fixture.Context);
         var testUser = new User("testanalytics", "Test", "Analytics", "testanalytics@test.com")
         {
             RegisteredAt = DateTime.UtcNow,
@@ -273,8 +266,8 @@ public class UserAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
     {
         // Arrange
         var service = CreateService();
-        var userRepo = new EfCoreRepository<User>(_fixture.Context);
-        var uow = new UnitOfWork(_fixture.Context);
+        var userRepo = new EfCoreRepository<User>(fixture.Context);
+        var uow = new UnitOfWork(fixture.Context);
         
         // Create a user with no projects
         var testUser = new User("noprojects", "No", "Projects", "noprojects@test.com")
@@ -299,8 +292,8 @@ public class UserAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
     {
         // Arrange
         var service = CreateService();
-        var userRepo = new EfCoreRepository<User>(_fixture.Context);
-        var uow = new UnitOfWork(_fixture.Context);
+        var userRepo = new EfCoreRepository<User>(fixture.Context);
+        var uow = new UnitOfWork(fixture.Context);
         
         // Create a user with no tasks
         var testUser = new User("notasks", "No", "Tasks", "notasks@test.com")
@@ -340,24 +333,22 @@ public class UserAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task GetSortedUsersWithSortedTasksAsync_EmptyDatabase_ReturnsEmptyList()
+    public async System.Threading.Tasks.Task GetSortedUsersWithSortedTasksAsync_NoUsersWithTasks_ReturnsUsersWithEmptyTaskLists()
     {
         // Arrange
         var service = CreateService();
-        
-        // Clear all data in correct order (children first, then parents)
-        _fixture.Context.Tasks.RemoveRange(_fixture.Context.Tasks);
-        _fixture.Context.Projects.RemoveRange(_fixture.Context.Projects);
-        _fixture.Context.Users.RemoveRange(_fixture.Context.Users);
-        _fixture.Context.Teams.RemoveRange(_fixture.Context.Teams);
-        await _fixture.Context.SaveChangesAsync();
+
+        // Remove all tasks but keep users
+        fixture.Context.Tasks.RemoveRange(fixture.Context.Tasks);
+        await fixture.Context.SaveChangesAsync();
 
         // Act
         var result = await service.GetSortedUsersWithSortedTasksAsync();
 
         // Assert
         Assert.NotNull(result);
-        Assert.Empty(result);
+        Assert.True(result.Count > 0, "Should have users");
+        Assert.All(result, user => Assert.Empty(user.Tasks));
     }
 
     [Fact]
@@ -365,11 +356,11 @@ public class UserAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
     {
         // Arrange
         var service = CreateService();
-        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
-        var uow = new UnitOfWork(_fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
+        var uow = new UnitOfWork(fixture.Context);
 
         // Get the existing project's CreatedAt to ensure our new projects are newer
-        var existingProject = await _fixture.Context.Projects.FirstOrDefaultAsync(p => p.AuthorId == 1);
+        var existingProject = await fixture.Context.Projects.FirstOrDefaultAsync(p => p.AuthorId == 1);
         var baseDate = existingProject?.CreatedAt ?? DateTime.UtcNow.AddDays(-20);
 
         // Create multiple projects for user 1 with dates newer than existing

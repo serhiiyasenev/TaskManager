@@ -6,15 +6,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class ProjectAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class ProjectAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
-    private readonly DatabaseFixture _fixture;
-
-    public ProjectAnalyticsServiceIntegrationTests(DatabaseFixture fixture)
-    {
-        _fixture = fixture;
-    }
-
     public System.Threading.Tasks.Task InitializeAsync()
     {
         return System.Threading.Tasks.Task.CompletedTask;
@@ -22,16 +15,16 @@ public class ProjectAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFix
 
     public System.Threading.Tasks.Task DisposeAsync()
     {
-        _fixture.ResetDatabase();
+        fixture.ResetDatabase();
         return System.Threading.Tasks.Task.CompletedTask;
     }
 
     private ProjectAnalyticsService CreateService()
     {
-        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
-        var userRepo = new EfCoreRepository<User>(_fixture.Context);
-        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(_fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
+        var userRepo = new EfCoreRepository<User>(fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
 
         return new ProjectAnalyticsService(projectRepo, userRepo, teamRepo, taskRepo);
     }

@@ -9,16 +9,10 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class ProjectsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
-    private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<ProjectsService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
-
-    public ProjectsServiceIntegrationTests(DatabaseFixture fixture)
-    {
-        _fixture = fixture;
-    }
 
     public System.Threading.Tasks.Task InitializeAsync()
     {
@@ -27,16 +21,16 @@ public class ProjectsServiceIntegrationTests : IClassFixture<DatabaseFixture>, I
 
     public System.Threading.Tasks.Task DisposeAsync()
     {
-        _fixture.ResetDatabase();
+        fixture.ResetDatabase();
         return System.Threading.Tasks.Task.CompletedTask;
     }
 
     private ProjectsService CreateService()
     {
-        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
-        var userRepo = new EfCoreRepository<User>(_fixture.Context);
-        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
-        var uow = new UnitOfWork(_fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
+        var userRepo = new EfCoreRepository<User>(fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
+        var uow = new UnitOfWork(fixture.Context);
 
         return new ProjectsService(projectRepo, userRepo, teamRepo, uow, _mapper, _logger.Object);
     }
@@ -54,7 +48,6 @@ public class ProjectsServiceIntegrationTests : IClassFixture<DatabaseFixture>, I
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.True(result.Value.Count >= 2, $"Expected at least 2 projects, got {result.Value.Count}");
-        // Note: Other tests may have added projects, so we just check for at least the seed data
     }
 
     [Fact]
