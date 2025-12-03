@@ -10,7 +10,12 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class UsersServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database collection")]
+public class UsersServiceIntegrationTests : IAsyncLifetime
+public class DatabaseCollection : ICollectionFixture<DatabaseFixture> { }
+
+[Collection("Database collection")]
+public class UsersServiceIntegrationTests : IAsyncLifetime
 {
     private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<UsersService>> _logger = new();
