@@ -12,6 +12,12 @@ public class TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
         return System.Threading.Tasks.Task.CompletedTask;
     }
 
+    public System.Threading.Tasks.Task DisposeAsync()
+    {
+        fixture.ResetDatabase();
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
     private TaskAnalyticsService CreateService()
     {
         var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
