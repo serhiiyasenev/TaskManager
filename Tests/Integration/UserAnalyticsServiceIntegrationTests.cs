@@ -345,12 +345,15 @@ public class UserAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
         // Arrange
         var service = CreateService();
         
-        // Clear all data in correct order (children first, then parents)
-        _fixture.Context.Tasks.RemoveRange(_fixture.Context.Tasks);
-        _fixture.Context.Projects.RemoveRange(_fixture.Context.Projects);
-        _fixture.Context.Users.RemoveRange(_fixture.Context.Users);
-        _fixture.Context.Teams.RemoveRange(_fixture.Context.Teams);
-        await _fixture.Context.SaveChangesAsync();
+        // Clear all data in correct order (children first, then parents) using a new, isolated context
+        using (var isolatedContext = new DAL.DbContext(_fixture.Context.Options))
+        {
+            isolatedContext.Tasks.RemoveRange(isolatedContext.Tasks);
+            isolatedContext.Projects.RemoveRange(isolatedContext.Projects);
+            isolatedContext.Users.RemoveRange(isolatedContext.Users);
+            isolatedContext.Teams.RemoveRange(isolatedContext.Teams);
+            await isolatedContext.SaveChangesAsync();
+        }
 
         // Act
         var result = await service.GetSortedUsersWithSortedTasksAsync();
