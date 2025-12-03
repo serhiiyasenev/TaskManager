@@ -2,8 +2,12 @@ using DAL.Context;
 using DAL.Entities;
 using DAL.Enum;
 using Microsoft.EntityFrameworkCore;
+using Xunit;
 
 namespace Tests.Integration;
+
+[CollectionDefinition("Database collection")]
+public class DatabaseCollection : ICollectionFixture<DatabaseFixture> { }
 
 public class DatabaseFixture : IDisposable
 {
