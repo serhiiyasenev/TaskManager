@@ -46,36 +46,68 @@ public class UserAnalyticsService(
     {
         var userDto = await users.Query()
             .Where(u => u.Id == userId)
-            .Select(u => new UserDto(u.Id, u.TeamId, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay))
+            .Select(u => new UserDto(
+                u.Id,
+                u.TeamId,
+                u.FirstName,
+                u.LastName,
+                u.Email,
+                u.RegisteredAt,
+                u.BirthDay
+            ))
             .FirstOrDefaultAsync();
+
+        if (userDto == null)
+            return null;
 
         var lastProject = await projects.Query()
             .Where(p => p.AuthorId == userId)
             .OrderByDescending(p => p.CreatedAt)
-            .Select(p => new ProjectDto(p.Id, p.Name, p.Description, p.CreatedAt, p.Deadline))
+            .Select(p => new ProjectDto(
+                p.Id,
+                p.Name,
+                p.Description,
+                p.CreatedAt,
+                p.Deadline
+            ))
             .FirstOrDefaultAsync();
 
-        var lastProjectTasksCount = lastProject is null ? 0 : await tasks.Query().CountAsync(t => t.ProjectId == lastProject.Id);
+        var lastProjectTasksCount = lastProject == null
+            ? 0
+            : await tasks.Query().CountAsync(t => t.ProjectId == lastProject.Id);
 
         var notFinishedOrCanceledTasksCount = await tasks.Query()
-            .CountAsync(t => t.PerformerId == userId &&
-                             (t.State == TaskState.ToDo || t.State == TaskState.InProgress || t.State == TaskState.Canceled));
+            .CountAsync(t =>
+                t.PerformerId == userId &&
+                (t.State == TaskState.ToDo ||
+                 t.State == TaskState.InProgress ||
+                 t.State == TaskState.Canceled)
+            );
 
-        var userTasks = await tasks.Query()
+        var now = DateTime.UtcNow;
+        var longestTask = await tasks.Query()
             .Where(t => t.PerformerId == userId)
-            .Select(t => new { t.Id, t.Name, t.Description, t.State, t.CreatedAt, t.FinishedAt })
-            .ToListAsync();
-
-        var longestTask = userTasks.AsQueryable()
-            .OrderByDescending(t => (t.FinishedAt ?? DateTime.UtcNow).Ticks - t.CreatedAt.Ticks)
+            .OrderByDescending(t =>
+                (t.FinishedAt ?? now) - t.CreatedAt
+            )
             .Select(t => new TaskDto(
-                t.Id, t.Name, t.Description,
+                t.Id,
+                t.Name,
+                t.Description,
                 t.State == TaskState.ToDo ? "To Do" :
                 t.State == TaskState.InProgress ? "In Progress" :
                 t.State == TaskState.Done ? "Done" : "Canceled",
-                t.CreatedAt, t.FinishedAt))
-            .FirstOrDefault();
+                t.CreatedAt,
+                t.FinishedAt
+            ))
+            .FirstOrDefaultAsync();
 
-        return new UserInfoDto(userDto, lastProject, lastProjectTasksCount, notFinishedOrCanceledTasksCount, longestTask);
+        return new UserInfoDto(
+            userDto,
+            lastProject,
+            lastProjectTasksCount,
+            notFinishedOrCanceledTasksCount,
+            longestTask
+        );
     }
 }
