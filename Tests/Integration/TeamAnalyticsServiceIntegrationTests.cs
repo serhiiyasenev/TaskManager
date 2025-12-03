@@ -5,15 +5,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TeamAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
-    private readonly DatabaseFixture _fixture;
-
-    public TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture)
-    {
-        _fixture = fixture;
-    }
-
     public System.Threading.Tasks.Task InitializeAsync()
     {
         return System.Threading.Tasks.Task.CompletedTask;
@@ -21,14 +14,14 @@ public class TeamAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
 
     public System.Threading.Tasks.Task DisposeAsync()
     {
-        _fixture.ResetDatabase();
+        fixture.ResetDatabase();
         return System.Threading.Tasks.Task.CompletedTask;
     }
 
     private TeamAnalyticsService CreateService()
     {
-        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
-        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
+        var userRepo = new EfCoreRepository<User>(fixture.Context);
 
         return new TeamAnalyticsService(teamRepo, userRepo);
     }
@@ -170,9 +163,9 @@ public class TeamAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
     {
         // Arrange
         var service = CreateService();
-        var userRepo = new EfCoreRepository<User>(_fixture.Context);
-        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
-        var uow = new UnitOfWork(_fixture.Context);
+        var userRepo = new EfCoreRepository<User>(fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
+        var uow = new UnitOfWork(fixture.Context);
         
         // Create a test team and users with specific birth years
         var testTeam = new Team { Name = "Test Team Analytics", CreatedAt = DateTime.UtcNow };

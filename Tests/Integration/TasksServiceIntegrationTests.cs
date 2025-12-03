@@ -10,16 +10,10 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TasksServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class TasksServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
-    private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<TasksService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
-
-    public TasksServiceIntegrationTests(DatabaseFixture fixture)
-    {
-        _fixture = fixture;
-    }
 
     public System.Threading.Tasks.Task InitializeAsync()
     {
@@ -28,17 +22,17 @@ public class TasksServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsy
 
     public System.Threading.Tasks.Task DisposeAsync()
     {
-        _fixture.ResetDatabase();
+        fixture.ResetDatabase();
         return System.Threading.Tasks.Task.CompletedTask;
     }
 
     private TasksService CreateService()
     {
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(_fixture.Context);
-        var userRepo = new EfCoreRepository<User>(_fixture.Context);
-        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
-        var executedTaskRepo = new EfCoreRepository<ExecutedTask>(_fixture.Context);
-        var uow = new UnitOfWork(_fixture.Context);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
+        var userRepo = new EfCoreRepository<User>(fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
+        var executedTaskRepo = new EfCoreRepository<ExecutedTask>(fixture.Context);
+        var uow = new UnitOfWork(fixture.Context);
 
         return new TasksService(taskRepo, userRepo, projectRepo, executedTaskRepo, uow, _mapper, _logger.Object);
     }

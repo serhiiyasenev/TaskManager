@@ -1,20 +1,12 @@
 using BLL.Services.Analytics;
 using DAL.Entities;
 using DAL.Repositories.Implementation;
-using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Tests.Integration;
 
-public class TaskAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
-    private readonly DatabaseFixture _fixture;
-
-    public TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture)
-    {
-        _fixture = fixture;
-    }
-
     public System.Threading.Tasks.Task InitializeAsync()
     {
         return System.Threading.Tasks.Task.CompletedTask;
@@ -22,14 +14,14 @@ public class TaskAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
 
     public System.Threading.Tasks.Task DisposeAsync()
     {
-        _fixture.ResetDatabase();
+        fixture.ResetDatabase();
         return System.Threading.Tasks.Task.CompletedTask;
     }
 
     private TaskAnalyticsService CreateService()
     {
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(_fixture.Context);
-        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
 
         return new TaskAnalyticsService(taskRepo, projectRepo);
     }
@@ -216,8 +208,8 @@ public class TaskAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
         // Arrange
         var service = CreateService();
         // Create a project with no tasks
-        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
-        var uow = new UnitOfWork(_fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
+        var uow = new UnitOfWork(fixture.Context);
         
         var newProject = new Project
         {

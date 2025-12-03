@@ -11,20 +11,10 @@ using Xunit;
 namespace Tests.Integration;
 
 [Collection("Database collection")]
-public class UsersServiceIntegrationTests : IAsyncLifetime
-public class DatabaseCollection : ICollectionFixture<DatabaseFixture> { }
-
-[Collection("Database collection")]
-public class UsersServiceIntegrationTests : IAsyncLifetime
+public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
-    private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<UsersService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
-
-    public UsersServiceIntegrationTests(DatabaseFixture fixture)
-    {
-        _fixture = fixture;
-    }
 
     public System.Threading.Tasks.Task InitializeAsync()
     {
@@ -33,15 +23,15 @@ public class UsersServiceIntegrationTests : IAsyncLifetime
 
     public System.Threading.Tasks.Task DisposeAsync()
     {
-        _fixture.ResetDatabase();
+        fixture.ResetDatabase();
         return System.Threading.Tasks.Task.CompletedTask;
     }
 
     private UsersService CreateService()
     {
-        var userRepo = new EfCoreRepository<User>(_fixture.Context);
-        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
-        var uow = new UnitOfWork(_fixture.Context);
+        var userRepo = new EfCoreRepository<User>(fixture!.Context);
+        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
+        var uow = new UnitOfWork(fixture.Context);
 
         return new UsersService(userRepo, teamRepo, uow, _mapper, _logger.Object);
     }
@@ -285,13 +275,12 @@ public class UsersServiceIntegrationTests : IAsyncLifetime
         // Arrange
         var service = CreateService();
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var result = await service.GetUsersAsync(cts.Token);
 
         // Assert
-        // The operation should complete (either success or failure) without throwing
         Assert.NotNull(result);
     }
 }
