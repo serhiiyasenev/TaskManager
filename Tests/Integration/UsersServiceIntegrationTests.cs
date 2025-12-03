@@ -215,7 +215,7 @@ public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
     {
         // Arrange
         var service = CreateService();
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         cts.Cancel();
 
         // Act
