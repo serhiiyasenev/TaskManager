@@ -42,7 +42,7 @@ public class UserAnalyticsService(
         }).ToList();
     }
 
-    public async Task<UserInfoDto?> GetUserInfoAsync(int userId)
+    public async Task<UserInfoDto> GetUserInfoAsync(int userId)
     {
         var userDto = await users.Query()
             .Where(u => u.Id == userId)
@@ -67,7 +67,7 @@ public class UserAnalyticsService(
             .Select(t => new { t.Id, t.Name, t.Description, t.State, t.CreatedAt, t.FinishedAt })
             .ToListAsync();
 
-        var longestTask = userTasks
+        var longestTask = userTasks.AsQueryable()
             .OrderByDescending(t => (t.FinishedAt ?? DateTime.UtcNow) - t.CreatedAt)
             .Select(t => new TaskDto(
                 t.Id, t.Name, t.Description,
