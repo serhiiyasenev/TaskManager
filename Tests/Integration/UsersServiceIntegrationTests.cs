@@ -29,7 +29,7 @@ public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
 
     private UsersService CreateService()
     {
-        var userRepo = new EfCoreRepository<User>(fixture!.Context);
+        var userRepo = new EfCoreRepository<User>(fixture.Context);
         var teamRepo = new EfCoreRepository<Team>(fixture.Context);
         var uow = new UnitOfWork(fixture.Context);
 
