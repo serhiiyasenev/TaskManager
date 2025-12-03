@@ -262,8 +262,9 @@ public class AuthServiceIntegrationTests : IDisposable
         Assert.NotNull(user);
 
         // Create roles first
-        var roleManager = new RoleManager<IdentityRole<int>>(
-            new Microsoft.AspNetCore.Identity.EntityFrameworkCore.RoleStore<IdentityRole<int>, TaskContext, int>(_context),
+        using var roleStore = new Microsoft.AspNetCore.Identity.EntityFrameworkCore.RoleStore<IdentityRole<int>, TaskContext, int>(_context);
+        using var roleManager = new RoleManager<IdentityRole<int>>(
+            roleStore,
             null!, null!, null!, null!);
         
         await roleManager.CreateAsync(new IdentityRole<int>("Admin"));
