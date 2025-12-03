@@ -6,7 +6,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TaskAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database collection")]
+public class TaskAnalyticsServiceIntegrationTests : IAsyncLifetime
 {
     private readonly DatabaseFixture _fixture;
 
@@ -15,10 +16,7 @@ public class TaskAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixtur
         _fixture = fixture;
     }
 
-    public System.Threading.Tasks.Task InitializeAsync()
-    {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
+    public System.Threading.Tasks.Task InitializeAsync() => System.Threading.Tasks.Task.CompletedTask;
 
     public System.Threading.Tasks.Task DisposeAsync()
     {

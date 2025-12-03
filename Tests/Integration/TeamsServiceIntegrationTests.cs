@@ -10,7 +10,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TeamsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database collection")]
+public class TeamsServiceIntegrationTests : IAsyncLifetime
 {
     private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<TeamsService>> _logger = new();
@@ -21,10 +22,7 @@ public class TeamsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsy
         _fixture = fixture;
     }
 
-    public System.Threading.Tasks.Task InitializeAsync()
-    {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
+    public System.Threading.Tasks.Task InitializeAsync() => System.Threading.Tasks.Task.CompletedTask;
 
     public System.Threading.Tasks.Task DisposeAsync()
     {

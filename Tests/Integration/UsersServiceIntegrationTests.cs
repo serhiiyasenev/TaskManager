@@ -12,10 +12,6 @@ namespace Tests.Integration;
 
 [Collection("Database collection")]
 public class UsersServiceIntegrationTests : IAsyncLifetime
-public class DatabaseCollection : ICollectionFixture<DatabaseFixture> { }
-
-[Collection("Database collection")]
-public class UsersServiceIntegrationTests : IAsyncLifetime
 {
     private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<UsersService>> _logger = new();
@@ -26,10 +22,7 @@ public class UsersServiceIntegrationTests : IAsyncLifetime
         _fixture = fixture;
     }
 
-    public System.Threading.Tasks.Task InitializeAsync()
-    {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
+    public System.Threading.Tasks.Task InitializeAsync() => System.Threading.Tasks.Task.CompletedTask;
 
     public System.Threading.Tasks.Task DisposeAsync()
     {
