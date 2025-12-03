@@ -185,14 +185,20 @@ public class DatabaseFixture : IDisposable
         Context.ChangeTracker.Clear();
         
         // Remove all data
+        ClearDatabase();
+        
+        // Re-seed
+        SeedTestData().Wait();
+    }
+
+    public void ClearDatabase()
+    {
+        // Remove all data in correct order (children first, then parents)
         Context.Tasks.RemoveRange(Context.Tasks);
         Context.Projects.RemoveRange(Context.Projects);
         Context.Users.RemoveRange(Context.Users);
         Context.Teams.RemoveRange(Context.Teams);
         Context.SaveChanges();
-        
-        // Re-seed
-        SeedTestData().Wait();
     }
 
     public void Dispose()
