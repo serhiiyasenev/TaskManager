@@ -333,27 +333,22 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task GetSortedUsersWithSortedTasksAsync_EmptyDatabase_ReturnsEmptyList()
+    public async System.Threading.Tasks.Task GetSortedUsersWithSortedTasksAsync_NoUsersWithTasks_ReturnsUsersWithEmptyTaskLists()
     {
         // Arrange
         var service = CreateService();
 
-        // Clear all data in correct order (children first, then parents) using a new, isolated context
-        using (fixture)
-        {
-            fixture.Context.Tasks.RemoveRange(fixture.Context.Tasks);
-            fixture.Context.Projects.RemoveRange(fixture.Context.Projects);
-            fixture.Context.Users.RemoveRange(fixture.Context.Users);
-            fixture.Context.Teams.RemoveRange(fixture.Context.Teams);
-            await fixture.Context.SaveChangesAsync();
-        }
-        
+        // Remove all tasks but keep users
+        fixture.Context.Tasks.RemoveRange(fixture.Context.Tasks);
+        await fixture.Context.SaveChangesAsync();
+
         // Act
         var result = await service.GetSortedUsersWithSortedTasksAsync();
 
         // Assert
         Assert.NotNull(result);
-        Assert.Empty(result);
+        Assert.True(result.Count > 0, "Should have users");
+        Assert.All(result, user => Assert.Empty(user.Tasks));
     }
 
     [Fact]

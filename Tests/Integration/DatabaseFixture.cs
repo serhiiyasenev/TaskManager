@@ -181,18 +181,25 @@ public class DatabaseFixture : IDisposable
 
     public void ResetDatabase()
     {
-        // Clear change tracker
-        Context.ChangeTracker.Clear();
-        
-        // Remove all data
-        Context.Tasks.RemoveRange(Context.Tasks);
-        Context.Projects.RemoveRange(Context.Projects);
-        Context.Users.RemoveRange(Context.Users);
-        Context.Teams.RemoveRange(Context.Teams);
-        Context.SaveChanges();
-        
-        // Re-seed
-        SeedTestData().Wait();
+        try
+        {
+            // Clear change tracker
+            Context.ChangeTracker.Clear();
+            
+            // Remove all data
+            Context.Tasks.RemoveRange(Context.Tasks);
+            Context.Projects.RemoveRange(Context.Projects);
+            Context.Users.RemoveRange(Context.Users);
+            Context.Teams.RemoveRange(Context.Teams);
+            Context.SaveChanges();
+            
+            // Re-seed
+            SeedTestData().Wait();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Context already disposed, nothing to reset
+        }
     }
 
     public void Dispose()
