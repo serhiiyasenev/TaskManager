@@ -346,6 +346,9 @@ public class UserAnalyticsServiceIntegrationTests : IAsyncLifetime
         // Arrange
         var service = CreateService();
         
+        // Note: Intentionally clearing data inline rather than using ResetDatabase() 
+        // because we need an empty database (no seeded data) for this specific test.
+        // ResetDatabase() clears and re-seeds data, but this test requires no data.
         // Clear all data in correct order (children first, then parents)
         _fixture.Context.Tasks.RemoveRange(_fixture.Context.Tasks);
         _fixture.Context.Projects.RemoveRange(_fixture.Context.Projects);
