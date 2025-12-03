@@ -10,22 +10,10 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TeamsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class TeamsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
     private readonly Mock<ILogger<TeamsService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
-
-    public System.Threading.Tasks.Task InitializeAsync()
-    {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
-
-    public System.Threading.Tasks.Task DisposeAsync()
-    {
-        fixture.ResetDatabase();
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
-
     private TeamsService CreateService()
     {
         var teamRepo = new EfCoreRepository<Team>(fixture.Context);
