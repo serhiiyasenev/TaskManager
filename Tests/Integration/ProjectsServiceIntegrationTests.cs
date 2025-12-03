@@ -9,21 +9,10 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
     private readonly Mock<ILogger<ProjectsService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
-
-    public System.Threading.Tasks.Task InitializeAsync()
-    {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
-
-    public System.Threading.Tasks.Task DisposeAsync()
-    {
-        fixture.ResetDatabase();
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
 
     private ProjectsService CreateService()
     {

@@ -5,13 +5,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
-    public System.Threading.Tasks.Task InitializeAsync()
-    {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
-
     private TaskAnalyticsService CreateService()
     {
         var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);

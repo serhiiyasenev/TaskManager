@@ -7,19 +7,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
-    public System.Threading.Tasks.Task InitializeAsync()
-    {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
-
-    public System.Threading.Tasks.Task DisposeAsync()
-    {
-        fixture.ResetDatabase();
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
-
     private UserAnalyticsService CreateService()
     {
         var userRepo = new EfCoreRepository<User>(fixture.Context);
@@ -337,18 +326,35 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
+
+        // Get all existing tasks before removal to restore later
+        var existingTasks = await fixture.Context.Tasks.ToListAsync();
 
         // Remove all tasks but keep users
         fixture.Context.Tasks.RemoveRange(fixture.Context.Tasks);
         await fixture.Context.SaveChangesAsync();
 
-        // Act
-        var result = await service.GetSortedUsersWithSortedTasksAsync();
+        try
+        {
+            // Act
+            var result = await service.GetSortedUsersWithSortedTasksAsync();
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.True(result.Count > 0, "Should have users");
-        Assert.All(result, user => Assert.Empty(user.Tasks));
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Count > 0, "Should have users");
+            Assert.All(result, user => Assert.Empty(user.Tasks));
+        }
+        finally
+        {
+            // Restore the tasks
+            foreach (var task in existingTasks)
+            {
+                fixture.Context.Entry(task).State = EntityState.Detached;
+            }
+            await fixture.Context.Tasks.AddRangeAsync(existingTasks);
+            await fixture.Context.SaveChangesAsync();
+        }
     }
 
     [Fact]
