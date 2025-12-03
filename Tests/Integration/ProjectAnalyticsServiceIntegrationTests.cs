@@ -6,14 +6,32 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class ProjectAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
+public class ProjectAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
+    private readonly DatabaseFixture _fixture;
+
+    public ProjectAnalyticsServiceIntegrationTests(DatabaseFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    public System.Threading.Tasks.Task InitializeAsync()
+    {
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
+    public System.Threading.Tasks.Task DisposeAsync()
+    {
+        _fixture.ResetDatabase();
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
     private ProjectAnalyticsService CreateService()
     {
-        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
-        var userRepo = new EfCoreRepository<User>(fixture.Context);
-        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
+        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
+        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(_fixture.Context);
 
         return new ProjectAnalyticsService(projectRepo, userRepo, teamRepo, taskRepo);
     }
@@ -217,5 +235,19 @@ public class ProjectAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : 
         Assert.NotNull(result);
         Assert.NotNull(result.Items);
         Assert.All(result.Items, p => Assert.Contains("Alpha", p.Team.Name));
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task GetProjectsByTeamSizeAsync_WithZeroSize_ReturnsEmptyList()
+    {
+        // Arrange
+        var service = CreateService();
+
+        // Act
+        var result = await service.GetProjectsByTeamSizeAsync(0);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
     }
 }

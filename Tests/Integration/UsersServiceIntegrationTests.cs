@@ -10,16 +10,33 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
+public class UsersServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
+    private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<UsersService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
 
+    public UsersServiceIntegrationTests(DatabaseFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    public System.Threading.Tasks.Task InitializeAsync()
+    {
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
+    public System.Threading.Tasks.Task DisposeAsync()
+    {
+        _fixture.ResetDatabase();
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
     private UsersService CreateService()
     {
-        var userRepo = new EfCoreRepository<User>(fixture.Context);
-        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
 
         return new UsersService(userRepo, teamRepo, uow, _mapper, _logger.Object);
     }
@@ -208,6 +225,53 @@ public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
         Assert.True(result.IsFailure);
         Assert.Equal("Error.NotFound", result.Error.Code);
         Assert.Contains("User with ID 999 was not found", result.Error.Message);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task UpdateUserByIdAsync_ChangeTeam_UpdatesSuccessfully()
+    {
+        // Arrange
+        var service = CreateService();
+        var dto = new UpdateUserDto
+        {
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@example.com",
+            UserName = "john",
+            TeamId = 2,
+            BirthDay = DateTime.UtcNow.AddYears(-30)
+        };
+
+        // Act
+        var result = await service.UpdateUserByIdAsync(1, dto);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.TeamId);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task UpdateUserByIdAsync_UpdateBirthDay_UpdatesSuccessfully()
+    {
+        // Arrange
+        var service = CreateService();
+        var newBirthDay = new DateTime(1990, 5, 15);
+        var dto = new UpdateUserDto
+        {
+            FirstName = "Jane",
+            LastName = "Smith",
+            Email = "jane@example.com",
+            UserName = "jane",
+            TeamId = 1,
+            BirthDay = newBirthDay
+        };
+
+        // Act
+        var result = await service.UpdateUserByIdAsync(2, dto);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(newBirthDay, result.Value!.BirthDay);
     }
 
     [Fact]

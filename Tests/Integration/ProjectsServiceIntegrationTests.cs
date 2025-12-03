@@ -9,19 +9,34 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
+public class ProjectsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
+    private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<ProjectsService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
 
-    // Don't reset database - use shared fixture data
+    public ProjectsServiceIntegrationTests(DatabaseFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    public System.Threading.Tasks.Task InitializeAsync()
+    {
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
+    public System.Threading.Tasks.Task DisposeAsync()
+    {
+        _fixture.ResetDatabase();
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
 
     private ProjectsService CreateService()
     {
-        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
-        var userRepo = new EfCoreRepository<User>(fixture.Context);
-        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var projectRepo = new EfCoreRepository<Project>(_fixture.Context);
+        var userRepo = new EfCoreRepository<User>(_fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
 
         return new ProjectsService(projectRepo, userRepo, teamRepo, uow, _mapper, _logger.Object);
     }
@@ -299,5 +314,95 @@ public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFi
         // Assert
         // The operation should complete (either success or failure) without throwing
         Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task AddProjectAsync_WithPastDeadline_CreatesProjectSuccessfully()
+    {
+        // Arrange
+        var service = CreateService();
+        var pastDeadline = DateTime.UtcNow.AddDays(-10);
+        var project = new Project
+        {
+            Name = "Past Deadline Project",
+            Description = "Project with past deadline",
+            AuthorId = 1,
+            TeamId = 1,
+            Deadline = pastDeadline
+        };
+
+        // Act
+        var result = await service.AddProjectAsync(project);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(pastDeadline, result.Value!.Deadline);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task UpdateProjectByIdAsync_ChangeTeamAndAuthor_UpdatesBothSuccessfully()
+    {
+        // Arrange
+        var service = CreateService();
+        var addResult = await service.AddProjectAsync(new Project
+        {
+            Name = "Original Project",
+            Description = "Original",
+            AuthorId = 1,
+            TeamId = 1,
+            Deadline = DateTime.UtcNow.AddDays(30)
+        });
+        var projectId = addResult.Value!.Id;
+
+        var updatedProject = new Project
+        {
+            Name = "Updated Project",
+            Description = "Updated",
+            AuthorId = 2,
+            TeamId = 2,
+            Deadline = DateTime.UtcNow.AddDays(60)
+        };
+
+        // Act
+        var result = await service.UpdateProjectByIdAsync(projectId, updatedProject);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.AuthorId);
+        Assert.Equal(2, result.Value!.TeamId);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task GetProjectsAsync_AfterMultipleOperations_ReturnsCorrectCount()
+    {
+        // Arrange
+        var service = CreateService();
+        var initialResult = await service.GetProjectsAsync();
+        var initialCount = initialResult.Value!.Count;
+
+        // Add 2 projects
+        await service.AddProjectAsync(new Project
+        {
+            Name = "Test Project 1",
+            Description = "Test 1",
+            AuthorId = 1,
+            TeamId = 1,
+            Deadline = DateTime.UtcNow.AddDays(30)
+        });
+        await service.AddProjectAsync(new Project
+        {
+            Name = "Test Project 2",
+            Description = "Test 2",
+            AuthorId = 2,
+            TeamId = 2,
+            Deadline = DateTime.UtcNow.AddDays(30)
+        });
+
+        // Act
+        var result = await service.GetProjectsAsync();
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(initialCount + 2, result.Value!.Count);
     }
 }

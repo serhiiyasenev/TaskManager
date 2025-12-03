@@ -10,15 +10,32 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TeamsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
+public class TeamsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
+    private readonly DatabaseFixture _fixture;
     private readonly Mock<ILogger<TeamsService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
 
+    public TeamsServiceIntegrationTests(DatabaseFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    public System.Threading.Tasks.Task InitializeAsync()
+    {
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
+    public System.Threading.Tasks.Task DisposeAsync()
+    {
+        _fixture.ResetDatabase();
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
     private TeamsService CreateService()
     {
-        var teamRepo = new EfCoreRepository<Team>(fixture.Context);
-        var uow = new UnitOfWork(fixture.Context);
+        var teamRepo = new EfCoreRepository<Team>(_fixture.Context);
+        var uow = new UnitOfWork(_fixture.Context);
 
         return new TeamsService(teamRepo, uow, _mapper, _logger.Object);
     }
@@ -167,6 +184,49 @@ public class TeamsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
         Assert.True(result.IsFailure);
         Assert.Equal("Error.NotFound", result.Error.Code);
         Assert.Contains("Team with ID 999 was not found", result.Error.Message);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task AddTeamAsync_MultipleTeams_AllCreatedSuccessfully()
+    {
+        // Arrange
+        var service = CreateService();
+        var team1Dto = new CreateTeamDto("Development Team");
+        var team2Dto = new CreateTeamDto("QA Team");
+
+        // Act
+        var result1 = await service.AddTeamAsync(team1Dto);
+        var result2 = await service.AddTeamAsync(team2Dto);
+
+        // Assert
+        Assert.True(result1.IsSuccess);
+        Assert.True(result2.IsSuccess);
+        Assert.NotEqual(result1.Value!.Id, result2.Value!.Id);
+        Assert.Equal("Development Team", result1.Value!.Name);
+        Assert.Equal("QA Team", result2.Value!.Name);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task UpdateTeamByIdAsync_UpdateMultipleTimes_LastUpdatePersists()
+    {
+        // Arrange
+        var service = CreateService();
+        var createDto = new CreateTeamDto("Original Team");
+        var createResult = await service.AddTeamAsync(createDto);
+        var teamId = createResult.Value!.Id;
+
+        // Act
+        await service.UpdateTeamByIdAsync(teamId, new UpdateTeamDto("First Update"));
+        await service.UpdateTeamByIdAsync(teamId, new UpdateTeamDto("Second Update"));
+        var finalResult = await service.UpdateTeamByIdAsync(teamId, new UpdateTeamDto("Final Update"));
+
+        // Assert
+        Assert.True(finalResult.IsSuccess);
+        Assert.Equal("Final Update", finalResult.Value!.Name);
+        
+        // Verify persistence
+        var getResult = await service.GetTeamByIdAsync(teamId);
+        Assert.Equal("Final Update", getResult.Value!.Name);
     }
 
     [Fact]
