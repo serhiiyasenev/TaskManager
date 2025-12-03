@@ -42,7 +42,7 @@ public class UserAnalyticsService(
         }).ToList();
     }
 
-    public async Task<UserInfoDto?> GetUserInfoAsync(int userId)
+    public async Task<UserInfoDto> GetUserInfoAsync(int userId)
     {
         var userDto = await users.Query()
             .Where(u => u.Id == userId)
