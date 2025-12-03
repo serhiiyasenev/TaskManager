@@ -26,11 +26,7 @@ public class UsersServiceIntegrationTests : IAsyncLifetime
         return System.Threading.Tasks.Task.CompletedTask;
     }
 
-    public System.Threading.Tasks.Task DisposeAsync()
-    {
-        fixture.ResetDatabase();
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
+    // Removed DisposeAsync to avoid resetting shared fixture after each test.
 
     private UsersService CreateService()
     {
