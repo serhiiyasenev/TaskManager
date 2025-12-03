@@ -5,7 +5,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TeamAnalyticsServiceIntegrationTests : IClassFixture<DatabaseFixture>, IAsyncLifetime
+[Collection("Database collection")]
+public class TeamAnalyticsServiceIntegrationTests : IAsyncLifetime
 {
     private readonly DatabaseFixture _fixture;
 
