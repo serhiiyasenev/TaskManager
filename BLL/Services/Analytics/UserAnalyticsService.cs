@@ -48,7 +48,6 @@ public class UserAnalyticsService(
             .Where(u => u.Id == userId)
             .Select(u => new UserDto(u.Id, u.TeamId, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay))
             .FirstOrDefaultAsync();
-        if (userDto is null) return null;
 
         var lastProject = await projects.Query()
             .Where(p => p.AuthorId == userId)
