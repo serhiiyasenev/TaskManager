@@ -133,9 +133,9 @@ public class ProjectAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : 
         // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Items);
-        
+        Assert.True(result.Items.Count > 1);
         // Verify descending order by tasks count
-        for (int i = 0; i < result.Items.Count - 1; i++)
+        for (var i = 0; i < result.Items.Count - 1; i++)
         {
             Assert.True(result.Items[i].Tasks.Count >= result.Items[i + 1].Tasks.Count);
         }
@@ -156,9 +156,9 @@ public class ProjectAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : 
         // Assert
         Assert.NotNull(result);
         Assert.NotNull(result.Items);
-        
+        Assert.True(result.Items.Count > 1);
         // Verify ascending order by name
-        for (int i = 0; i < result.Items.Count - 1; i++)
+        for (var i = 0; i < result.Items.Count - 1; i++)
         {
             Assert.True(string.Compare(result.Items[i].Name, result.Items[i + 1].Name, StringComparison.Ordinal) <= 0);
         }

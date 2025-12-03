@@ -8,6 +8,8 @@ namespace Tests.Integration;
 
 public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
+    private static readonly SemaphoreSlim SingleTestSemaphore = new(1, 1);
+
     private UserAnalyticsService CreateService()
     {
         var userRepo = new EfCoreRepository<User>(fixture.Context);
@@ -42,7 +44,7 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
 
         // Assert
         Assert.NotNull(result);
-        
+        Assert.True(result.Count > 1);
         // Verify users are sorted by first name
         for (var i = 0; i < result.Count - 1; i++)
         {
@@ -77,30 +79,38 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     [Fact]
     public async System.Threading.Tasks.Task GetSortedUsersWithSortedTasksAsync_VerifyUserStructure()
     {
-        // Arrange
-        var service = CreateService();
-
-        // Act
-        var result = await service.GetSortedUsersWithSortedTasksAsync();
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.True(result.Count > 1);
-        foreach (var user in result)
+        await SingleTestSemaphore.WaitAsync();
+        try
         {
-            Assert.True(user.Id > 0);
-            Assert.False(string.IsNullOrEmpty(user.FirstName));
-            Assert.False(string.IsNullOrEmpty(user.LastName));
-            Assert.False(string.IsNullOrEmpty(user.Email));
-            Assert.True(user.RegisteredAt <= DateTime.UtcNow);
-            Assert.NotNull(user.Tasks);
-            Assert.True(user.Tasks.Count > 1);
-            foreach (var task in user.Tasks)
+            // Arrange
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetSortedUsersWithSortedTasksAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Count > 1);
+            foreach (var user in result)
             {
-                Assert.True(task.Id > 0);
-                Assert.False(string.IsNullOrEmpty(task.Name));
-                Assert.NotNull(task.State);
+                Assert.True(user.Id > 0);
+                Assert.False(string.IsNullOrEmpty(user.FirstName));
+                Assert.False(string.IsNullOrEmpty(user.LastName));
+                Assert.False(string.IsNullOrEmpty(user.Email));
+                Assert.True(user.RegisteredAt <= DateTime.UtcNow);
+                Assert.NotNull(user.Tasks);
+                Assert.True(user.Tasks.Count > 0);
+                foreach (var task in user.Tasks)
+                {
+                    Assert.True(task.Id > 0);
+                    Assert.False(string.IsNullOrEmpty(task.Name));
+                    Assert.NotNull(task.State);
+                }
             }
+        }
+        finally
+        {
+            SingleTestSemaphore.Release();
         }
     }
 
@@ -110,21 +120,14 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
         // Arrange
         var service = CreateService();
 
-        // Act & Assert
-        // Note: This test may fail with InMemory database due to DateDiffSecond
-        try
-        {
-            var result = await service.GetUserInfoAsync(1);
-            Assert.NotNull(result);
-            Assert.NotNull(result.User);
-            Assert.Equal(1, result.User.Id);
-            Assert.True(result.NotFinishedOrCanceledTasksCount >= 0);
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("DateDiffSecond"))
-        {
-            // Expected with InMemory database - test passes as method is correctly implemented
-            Assert.True(true);
-        }
+        // Act
+        var result = await service.GetUserInfoAsync(1);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotNull(result.User);
+        Assert.Equal(1, result.User.Id);
+        Assert.True(result.NotFinishedOrCanceledTasksCount >= 0);
     }
 
     [Fact]
@@ -145,25 +148,19 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        // User 1 is the author of Project Alpha
 
-        // Act & Assert
-        try
+        // Act
+        var result = await service.GetUserInfoAsync(1);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotNull(result.User);
+
+        if (result.LastProject != null)
         {
-            var result = await service.GetUserInfoAsync(1);
-            Assert.NotNull(result);
-            Assert.NotNull(result.User);
-            
-            if (result.LastProject != null)
-            {
-                Assert.True(result.LastProject.Id > 0);
-                Assert.False(string.IsNullOrEmpty(result.LastProject.Name));
-                Assert.True(result.LastProjectTasksCount >= 0);
-            }
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("DateDiffSecond"))
-        {
-            Assert.True(true);
+            Assert.True(result.LastProject.Id > 0);
+            Assert.False(string.IsNullOrEmpty(result.LastProject.Name));
+            Assert.True(result.LastProjectTasksCount >= 0);
         }
     }
 
@@ -172,23 +169,17 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        // User 1 has tasks
 
-        // Act & Assert
-        try
+        // Act
+        var result = await service.GetUserInfoAsync(1);
+
+        // Assert
+        Assert.NotNull(result);
+
+        if (result.LongestTask != null)
         {
-            var result = await service.GetUserInfoAsync(1);
-            Assert.NotNull(result);
-            
-            if (result.LongestTask != null)
-            {
-                Assert.True(result.LongestTask.Id > 0);
-                Assert.False(string.IsNullOrEmpty(result.LongestTask.Name));
-            }
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("DateDiffSecond"))
-        {
-            Assert.True(true);
+            Assert.True(result.LongestTask.Id > 0);
+            Assert.False(string.IsNullOrEmpty(result.LongestTask.Name));
         }
     }
 
@@ -258,18 +249,10 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
         await taskRepo.AddAsync(canceledTask);
         await uow.SaveChangesAsync();
 
-        // Act & Assert
-        try
-        {
-            var result = await service.GetUserInfoAsync(testUser.Id);
-            Assert.NotNull(result);
-            // Should count ToDo, InProgress, and Canceled (not Done)
-            Assert.Equal(3, result.NotFinishedOrCanceledTasksCount);
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("DateDiffSecond"))
-        {
-            Assert.True(true);
-        }
+        var result = await service.GetUserInfoAsync(testUser.Id);
+        Assert.NotNull(result);
+        // Should count 3 states: ToDo, InProgress, Done
+        Assert.Equal(3, result.NotFinishedOrCanceledTasksCount);
     }
 
     [Fact]
@@ -329,22 +312,17 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
         // Arrange
         var service = CreateService();
 
-        // Act & Assert
-        try
-        {
-            var result = await service.GetUserInfoAsync(1);
-            Assert.NotNull(result);
-            Assert.NotNull(result.User);
-            Assert.True(result.User.Id > 0);
-            Assert.False(string.IsNullOrEmpty(result.User.FirstName));
-            Assert.False(string.IsNullOrEmpty(result.User.LastName));
-            Assert.False(string.IsNullOrEmpty(result.User.Email));
-            Assert.True(result.NotFinishedOrCanceledTasksCount >= 0);
-            Assert.True(result.LastProjectTasksCount >= 0);
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("DateDiffSecond"))
-        {
-            Assert.True(true);
-        }
+        // Act
+        var result = await service.GetUserInfoAsync(1);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotNull(result.User);
+        Assert.True(result.User.Id > 0);
+        Assert.False(string.IsNullOrEmpty(result.User.FirstName));
+        Assert.False(string.IsNullOrEmpty(result.User.LastName));
+        Assert.False(string.IsNullOrEmpty(result.User.Email));
+        Assert.True(result.NotFinishedOrCanceledTasksCount >= 0);
+        Assert.True(result.LastProjectTasksCount >= 0);
     }
 }

@@ -52,7 +52,6 @@ public class TeamsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
         Assert.NotNull(result.Value);
         Assert.Equal(1, result.Value.Id);
         Assert.NotNull(result.Value.Name);
-        // Note: Name may have been updated by other tests
     }
 
     [Fact]
@@ -176,7 +175,7 @@ public class TeamsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
         // Arrange
         var service = CreateService();
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var result = await service.GetTeamsAsync(cts.Token);

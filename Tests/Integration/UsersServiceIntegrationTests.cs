@@ -181,7 +181,7 @@ public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
         var service = CreateService();
         
         // Use user 3 which should have no dependencies
-        var userId = 3;
+        const int userId = 5;
 
         // Act
         var result = await service.DeleteUserByIdAsync(userId);

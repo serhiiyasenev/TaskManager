@@ -1,6 +1,7 @@
 using BLL.Services.Analytics;
 using DAL.Entities;
 using DAL.Repositories.Implementation;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Tests.Integration;
@@ -42,14 +43,18 @@ public class TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        // User 3 might not have tasks
 
         // Act
-        var result = await service.GetTasksCountInProjectsByUserIdAsync(3);
+        var result = await service.GetTasksCountInProjectsByUserIdAsync(5);
+        var values = result.Select(e => e.Value).ToList();
 
         // Assert
         Assert.NotNull(result);
-        // Result could be empty or have projects with 0 tasks
+        Assert.NotNull(result.Count > 1);
+        foreach (var value in values)
+        {
+            Assert.True(value == 0);
+        }
     }
 
     [Fact]
@@ -63,7 +68,7 @@ public class TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
 
         // Assert
         Assert.NotNull(result);
-        // Should return empty or all projects with 0 count
+        Assert.NotNull(result.Count > 1);
     }
 
     [Fact]

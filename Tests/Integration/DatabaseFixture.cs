@@ -61,7 +61,15 @@ public class DatabaseFixture : IDisposable
             TeamId = 2
         };
 
-        Context.Users.AddRange(user1, user2, user3, user4);
+        var user5 = new User("user5", "5", "Test", "5@test.com")
+        {
+            Id = 5,
+            Email = "5@test.com",
+            RegisteredAt = DateTime.UtcNow,
+            TeamId = 2
+        };
+
+        Context.Users.AddRange(user1, user2, user3, user4, user5);
 
         // Create test projects
         var project1 = new Project
@@ -86,7 +94,18 @@ public class DatabaseFixture : IDisposable
             Deadline = DateTime.UtcNow.AddDays(60)
         };
 
-        Context.Projects.AddRange(project1, project2);
+        var project3 = new Project
+        {
+            Id = 3,
+            Name = "Project 3",
+            Description = "3 test project",
+            AuthorId = 4,
+            TeamId = 2,
+            CreatedAt = DateTime.UtcNow,
+            Deadline = DateTime.UtcNow.AddDays(60)
+        };
+
+        Context.Projects.AddRange(project1, project2, project3);
 
         // Create test tasks
         var task1 = new DAL.Entities.Task
@@ -111,7 +130,51 @@ public class DatabaseFixture : IDisposable
             CreatedAt = DateTime.UtcNow
         };
 
-        Context.Tasks.AddRange(task1, task2);
+        var task3 = new DAL.Entities.Task
+        {
+            Id = 3,
+            Name = "Task 3",
+            Description = "3 test task",
+            ProjectId = 1,
+            PerformerId = 1,
+            State = TaskState.Done,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var task4 = new DAL.Entities.Task
+        {
+            Id = 4,
+            Name = "Task 4",
+            Description = "4 test task",
+            ProjectId = 1,
+            PerformerId = 2,
+            State = TaskState.Canceled,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var task5 = new DAL.Entities.Task
+        {
+            Id = 5,
+            Name = "Task 5",
+            Description = "5 test task",
+            ProjectId = 2,
+            PerformerId = 3,
+            State = TaskState.ToDo,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var task6 = new DAL.Entities.Task
+        {
+            Id = 6,
+            Name = "Task 6",
+            Description = "6 test task",
+            ProjectId = 2,
+            PerformerId = 4,
+            State = TaskState.InProgress,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        Context.Tasks.AddRange(task1, task2, task3, task4, task5, task6);
 
         await Context.SaveChangesAsync();
     }

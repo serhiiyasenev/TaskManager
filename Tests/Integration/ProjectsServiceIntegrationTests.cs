@@ -257,13 +257,13 @@ public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFi
         var service = CreateService();
 
         // Act
-        var result = await service.DeleteProjectByIdAsync(2);
+        var result = await service.DeleteProjectByIdAsync(3);
 
         // Assert
         Assert.True(result.IsSuccess);
 
         // Verify it's deleted
-        var getResult = await service.GetProjectByIdAsync(2);
+        var getResult = await service.GetProjectByIdAsync(3);
         Assert.True(getResult.IsFailure);
         Assert.Equal("Error.NotFound", getResult.Error.Code);
     }
@@ -289,7 +289,7 @@ public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFi
         // Arrange
         var service = CreateService();
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         // Note: The service catches exceptions and returns Result.Failure
