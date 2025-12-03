@@ -84,10 +84,27 @@ public class UserAnalyticsService(
                  t.State == TaskState.Canceled)
             );
 
+        // Capture current UTC time outside the query to avoid client evaluation.
+        // EF will pass this value as a SQL parameter (@__now_0).
         var now = DateTime.UtcNow;
+
+        // We intentionally use TimeSpan subtraction instead of EF.Functions.DateDiff*.
+        //
+        // Reason:
+        // - DateDiff* methods are supported ONLY by SQL Server provider.
+        // - InMemory and SQLite providers do NOT support DateDiff translation, 
+        //   causing EF to switch to client-evaluation → InvalidOperationException.
+        // - Subtracting DateTime values ((FinishedAt ?? now) - CreatedAt) is fully 
+        //   translatable by EF Core for ALL providers:
+        //      • SQL Server → translated to DATEDIFF_BIG(...)
+        //      • SQLite → translated to julianday(...) math
+        //      • InMemory → evaluated safely in-memory without exceptions
+        //
+        // This makes the query portable, testable, and fully server-evaluated whenever possible.
         var longestTask = await tasks.Query()
             .Where(t => t.PerformerId == userId)
             .OrderByDescending(t =>
+                // EF Core 10 can translate DateTime subtraction into provider-specific SQL/time math.
                 (t.FinishedAt ?? now) - t.CreatedAt
             )
             .Select(t => new TaskDto(
@@ -101,6 +118,7 @@ public class UserAnalyticsService(
                 t.FinishedAt
             ))
             .FirstOrDefaultAsync();
+
 
         return new UserInfoDto(
             userDto,
