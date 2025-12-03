@@ -5,19 +5,8 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
-    public System.Threading.Tasks.Task InitializeAsync()
-    {
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
-
-    public System.Threading.Tasks.Task DisposeAsync()
-    {
-        fixture.ResetDatabase();
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
-
     private TeamAnalyticsService CreateService()
     {
         var teamRepo = new EfCoreRepository<Team>(fixture.Context);
