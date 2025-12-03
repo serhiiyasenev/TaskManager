@@ -68,7 +68,7 @@ public class UserAnalyticsService(
             .ToListAsync();
 
         var longestTask = userTasks.AsQueryable()
-            .OrderByDescending(t => (t.FinishedAt ?? DateTime.UtcNow) - t.CreatedAt)
+            .OrderByDescending(t => (t.FinishedAt ?? DateTime.UtcNow).Ticks - t.CreatedAt.Ticks)
             .Select(t => new TaskDto(
                 t.Id, t.Name, t.Description,
                 t.State == TaskState.ToDo ? "To Do" :
