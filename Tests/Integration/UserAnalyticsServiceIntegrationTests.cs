@@ -326,7 +326,6 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
 
         // Get all existing tasks before removal to restore later
         var existingTasks = await fixture.Context.Tasks.ToListAsync();
