@@ -44,7 +44,7 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
         Assert.NotNull(result);
         
         // Verify users are sorted by first name
-        for (int i = 0; i < result.Count - 1; i++)
+        for (var i = 0; i < result.Count - 1; i++)
         {
             Assert.True(string.Compare(result[i].FirstName, result[i + 1].FirstName, StringComparison.Ordinal) <= 0,
                 $"Users not sorted by FirstName: {result[i].FirstName} should come before {result[i + 1].FirstName}");
@@ -62,17 +62,14 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
 
         // Assert
         Assert.NotNull(result);
-        
-        foreach (var user in result)
+        var users = result.Where(u => u.Tasks.Count > 1).ToList();
+        Assert.True(users.Count > 1);
+        foreach (var user in users)
         {
-            if (user.Tasks.Count > 1)
+            for (var i = 0; i < user.Tasks.Count - 1; i++)
             {
-                // Verify tasks are sorted by name length descending
-                for (int i = 0; i < user.Tasks.Count - 1; i++)
-                {
-                    Assert.True(user.Tasks[i].Name.Length >= user.Tasks[i + 1].Name.Length,
-                        $"Tasks not sorted by name length descending for user {user.FirstName}");
-                }
+                Assert.True(user.Tasks[i].Name.Length >= user.Tasks[i + 1].Name.Length,
+                    $"Tasks not sorted by name length descending for user {user.FirstName}");
             }
         }
     }
@@ -88,7 +85,7 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
 
         // Assert
         Assert.NotNull(result);
-        
+        Assert.True(result.Count > 1);
         foreach (var user in result)
         {
             Assert.True(user.Id > 0);
@@ -97,7 +94,7 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
             Assert.False(string.IsNullOrEmpty(user.Email));
             Assert.True(user.RegisteredAt <= DateTime.UtcNow);
             Assert.NotNull(user.Tasks);
-            
+            Assert.True(user.Tasks.Count > 1);
             foreach (var task in user.Tasks)
             {
                 Assert.True(task.Id > 0);
