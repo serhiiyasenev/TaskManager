@@ -11,21 +11,22 @@ using Xunit;
 namespace Tests.Integration;
 
 [Collection("Database collection")]
-public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
+public class UsersServiceIntegrationTests : IAsyncLifetime
 {
     private readonly Mock<ILogger<UsersService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
+    private readonly DatabaseFixture fixture;
 
+    public UsersServiceIntegrationTests(DatabaseFixture fixture)
+    {
+        this.fixture = fixture;
+    }
     public System.Threading.Tasks.Task InitializeAsync()
     {
         return System.Threading.Tasks.Task.CompletedTask;
     }
 
-    public System.Threading.Tasks.Task DisposeAsync()
-    {
-        fixture.ResetDatabase();
-        return System.Threading.Tasks.Task.CompletedTask;
-    }
+    // Removed DisposeAsync to avoid resetting shared fixture after each test.
 
     private UsersService CreateService()
     {
