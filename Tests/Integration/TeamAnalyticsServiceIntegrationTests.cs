@@ -20,14 +20,13 @@ public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var year = 2100; // All users should be born before this year
+        const int year = 2100; // All users should be born before this year
 
         // Act
         var result = await service.GetSortedTeamByMembersWithYearAsync(year);
 
         // Assert
         Assert.NotNull(result);
-        // May or may not have results depending on seed data birth years
     }
 
     [Fact]
@@ -35,7 +34,7 @@ public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var year = 2000;
+        const int year = 2000;
 
         // Act
         var result = await service.GetSortedTeamByMembersWithYearAsync(year);
@@ -47,6 +46,7 @@ public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
         foreach (var team in result)
         {
             Assert.NotNull(team.Members);
+            Assert.True(team.Members.Count > 1);
             foreach (var member in team.Members)
             {
                 Assert.True(member.BirthDay.Year < year, 
@@ -60,22 +60,19 @@ public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var year = 2100;
+        const int year = 2100;
 
         // Act
         var result = await service.GetSortedTeamByMembersWithYearAsync(year);
 
         // Assert
         Assert.NotNull(result);
-        
-        if (result.Count > 1)
+        Assert.True(result.Count > 1);
+        // Verify teams are sorted by name
+        for (var i = 0; i < result.Count - 1; i++)
         {
-            // Verify teams are sorted by name
-            for (int i = 0; i < result.Count - 1; i++)
-            {
-                Assert.True(string.Compare(result[i].Name, result[i + 1].Name, StringComparison.Ordinal) <= 0,
-                    $"Teams not sorted: {result[i].Name} should come before {result[i + 1].Name}");
-            }
+            Assert.True(string.Compare(result[i].Name, result[i + 1].Name, StringComparison.Ordinal) <= 0,
+                $"Teams not sorted: {result[i].Name} should come before {result[i + 1].Name}");
         }
     }
 
@@ -84,24 +81,22 @@ public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var year = 2100;
+        const int year = 2100;
 
         // Act
         var result = await service.GetSortedTeamByMembersWithYearAsync(year);
 
         // Assert
         Assert.NotNull(result);
-        
-        foreach (var team in result)
+        var teams = result.Where(t => t.Members.Count > 1).ToList();
+        Assert.True(teams.Count > 1);
+        foreach (var team in teams)
         {
-            if (team.Members.Count > 1)
+            // Verify members within each team are sorted by RegisteredAt descending
+            for (var i = 0; i < team.Members.Count - 1; i++)
             {
-                // Verify members within each team are sorted by RegisteredAt descending
-                for (int i = 0; i < team.Members.Count - 1; i++)
-                {
-                    Assert.True(team.Members[i].RegisteredAt >= team.Members[i + 1].RegisteredAt,
-                        $"Members not sorted by RegisteredAt descending in team {team.Name}");
-                }
+                Assert.True(team.Members[i].RegisteredAt >= team.Members[i + 1].RegisteredAt,
+                    $"Members not sorted by RegisteredAt descending in team {team.Name}");
             }
         }
     }
@@ -111,7 +106,7 @@ public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var year = 1; // No users should be born before year 1 (default DateTime is year 1)
+        const int year = 1; // No users should be born before year 1 (default DateTime is year 1)
 
         // Act
         var result = await service.GetSortedTeamByMembersWithYearAsync(year);
@@ -127,20 +122,20 @@ public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     {
         // Arrange
         var service = CreateService();
-        var year = 2100;
+        const int year = 2100;
 
         // Act
         var result = await service.GetSortedTeamByMembersWithYearAsync(year);
 
         // Assert
         Assert.NotNull(result);
-        
+        Assert.True(result.Count > 1);
         foreach (var team in result)
         {
             Assert.True(team.Id > 0);
             Assert.False(string.IsNullOrEmpty(team.Name));
             Assert.NotNull(team.Members);
-            
+            Assert.True(team.Members.Count > 1);
             foreach (var member in team.Members)
             {
                 Assert.True(member.Id > 0);
@@ -189,13 +184,9 @@ public class TeamAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
 
         // Assert
         Assert.NotNull(result);
-        
-        var testTeamResult = result.FirstOrDefault(t => t.Name == "Test Team Analytics");
-        if (testTeamResult != null)
-        {
-            // Should only include the old user
-            Assert.Contains(testTeamResult.Members, m => m.FirstName == "Old");
-            Assert.DoesNotContain(testTeamResult.Members, m => m.FirstName == "Young");
-        }
+        var testTeamResult = result.First(t => t.Name == "Test Team Analytics");
+        // Should only include the old user
+        Assert.Contains(testTeamResult.Members, m => m.FirstName == "Old");
+        Assert.DoesNotContain(testTeamResult.Members, m => m.FirstName == "Young");
     }
 }
