@@ -80,8 +80,15 @@ jobs:
       if: github.ref == 'refs/heads/main'
       run: |
         git rm -f coverage-badge.svg || true
-        cp CoverageReport/Badges/LineCoverageBadge.svg coverage-badge.svg
-        sed -i 's|!\[coverage\](.*)|![coverage](./coverage-badge.svg)|' README.md
+
+        if [[ -f CoverageReport/badge_linecoverage.svg ]]; then
+          cp CoverageReport/badge_linecoverage.svg coverage-badge.svg
+          sed -i 's|!\[coverage\](.*)|![coverage](./coverage-badge.svg)|' README.md
+        else
+          echo "❗ Coverage badge not found: CoverageReport/badge_linecoverage.svg"
+          echo "Skipping badge update."
+          exit 0
+        fi
 
     - name: Commit badge update
       if: github.ref == 'refs/heads/main'
