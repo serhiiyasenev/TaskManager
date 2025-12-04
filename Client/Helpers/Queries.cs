@@ -17,6 +17,8 @@ public class Queries(List<Func<Task>> tasks, HttpClient? httpClient)
             var model = new ExecutedTaskDto { TaskId = taskId, TaskName = tasks[randomIndex].Method.Name };
 
             var addedTask = await AddExecutedTaskAsync(model);
+
+            await Console.Out.WriteLineAsync($"ExecuteRandomTask {addedTask!.TaskId}");
         }
         catch (Exception ex)
         {

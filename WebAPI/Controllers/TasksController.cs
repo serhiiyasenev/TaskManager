@@ -1,4 +1,5 @@
 using System.Text.Json;
+using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Tasks;
 using DAL.Entities;
@@ -12,36 +13,50 @@ namespace WebAPI.Controllers;
 public class TasksController(ITasksService tasksService, IQueueService queueService) : ControllerBase
 {
     [HttpGet]
-    [ProducesResponseType(typeof(List<Task>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<Task>>> GetAll()
+    [ProducesResponseType(typeof(List<TaskDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<List<TaskDetailDto>>> GetAll(CancellationToken ct)
     {
-        return Ok(await tasksService.GetTasksAsync());
+        var result = await tasksService.GetTasksAsync(ct);
+        return result.ToActionResult();
     }
 
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(Task), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Task>> GetById([FromRoute] int id)
+    [ProducesResponseType(typeof(TaskDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<TaskDetailDto>> GetById([FromRoute] int id, CancellationToken ct)
     {
-        return Ok(await tasksService.GetTaskByIdAsync(id));
+        var result = await tasksService.GetTaskByIdAsync(id, ct);
+        return result.ToActionResult();
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(Task), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Task>> Add([FromBody] Task task)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<Task>> Add([FromBody] Task task, CancellationToken ct)
     {
-        return Ok(await tasksService.AddTaskAsync(task));
+        var result = await tasksService.AddTaskAsync(task, ct);
+        return result.ToActionResult();
     }
 
     [HttpPost("AddExecutedTask")]
     [ProducesResponseType(typeof(ExecutedTaskResult), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ExecutedTaskResult>> AddExecutedTask([FromBody] ExecutedTask executedTask)
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ExecutedTaskResult>> AddExecutedTask([FromBody] ExecutedTask executedTask, CancellationToken ct)
     {
-        var result = await tasksService.AddExecutedTaskAsync(executedTask);
+        var result = await tasksService.AddExecutedTaskAsync(executedTask, ct);
+        
+        if (result.IsFailure)
+            return StatusCode(500, result.Error);
+
         var json = JsonSerializer.Serialize(executedTask);
-        var postedMessageToQueue = await queueService.PostValue(json);
+        var postedMessageToQueue = await queueService.PostValue(json, ct);
         var executedTaskResult = new ExecutedTaskResult
         {
-            Task = result,
+            Task = result.Value!,
             PostedMessageToQueueResult = postedMessageToQueue
         };
         return Ok(executedTaskResult);
@@ -49,16 +64,22 @@ public class TasksController(ITasksService tasksService, IQueueService queueServ
 
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(Task), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Task>> Update([FromRoute] int id, [FromBody] Task task)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<Task>> Update([FromRoute] int id, [FromBody] Task task, CancellationToken ct)
     {
-        return Ok(await tasksService.UpdateTaskByIdAsync(id, task));
+        var result = await tasksService.UpdateTaskByIdAsync(id, task, ct);
+        return result.ToActionResult();
     }
 
     [HttpDelete("{id}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<ActionResult<Task>> DeleteById([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult> DeleteById([FromRoute] int id, CancellationToken ct)
     {
-        await tasksService.DeleteTaskByIdAsync(id);
-        return NoContent();
+        var result = await tasksService.DeleteTaskByIdAsync(id, ct);
+        return result.ToActionResult();
     }
 }

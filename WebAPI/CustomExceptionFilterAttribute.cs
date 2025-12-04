@@ -1,6 +1,4 @@
-﻿using System.Net;
-using BLL.Exceptions;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace WebAPI;
@@ -19,18 +17,5 @@ public class CustomExceptionFilterAttribute : ExceptionFilterAttribute
             error = context.Exception.Message,
             code = statusCode
         });
-    }
-}
-
-public static class ExceptionFilterExtensions
-{
-    public static HttpStatusCode ParseException(this Exception exception)
-    {
-        return exception switch
-        {
-            NotFoundException _ => HttpStatusCode.NotFound,
-            CanNotDeleteException _ => HttpStatusCode.Conflict,
-            _ => HttpStatusCode.InternalServerError
-        };
     }
 }

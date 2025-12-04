@@ -1,13 +1,14 @@
-﻿using DAL.Entities;
-using Task = System.Threading.Tasks.Task;
+﻿using BLL.Common;
+using BLL.Models.Projects;
+using DAL.Entities;
 
 namespace BLL.Interfaces;
 
 public interface IProjectsService
 {
-    Task<List<Project>> GetProjectsAsync();
-    Task<Project> GetProjectByIdAsync(int id);
-    Task<Project> AddProjectAsync(Project project);
-    Task<Project> UpdateProjectByIdAsync(int id, Project project);
-    Task DeleteProjectByIdAsync(int id);
+    Task<Result<List<ProjectDetailDto>>> GetProjectsAsync(CancellationToken ct = default);
+    Task<Result<ProjectDetailDto>> GetProjectByIdAsync(int id, CancellationToken ct = default);
+    Task<Result<Project>> AddProjectAsync(Project project, CancellationToken ct = default);
+    Task<Result<Project>> UpdateProjectByIdAsync(int id, Project project, CancellationToken ct = default);
+    Task<Result> DeleteProjectByIdAsync(int id, CancellationToken ct = default);
 }

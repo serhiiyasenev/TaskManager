@@ -1,18 +1,18 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using BLL.Exceptions;
+﻿using BLL.Exceptions;
 using BLL.Models.Users;
 using BLL.Services;
 using DAL.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
 
-namespace Tests;
+namespace Tests.Unit;
 
 public class AuthServiceTests
 {
@@ -25,8 +25,8 @@ public class AuthServiceTests
                    .ReturnsAsync(IdentityResult.Success);
 
         var signInManager = CreateSignInManager(userManager.Object);
-        var cfg = CreateConfigurationWithJwtKey();
-        var sut = CreateSut(userManager, signInManager, cfg);
+        var jwtOptions = CreateJwtOptions();
+        var sut = CreateSut(userManager, signInManager, jwtOptions);
 
         var dto = new RegisterUserDto(
             UserName: "john",
@@ -56,8 +56,8 @@ public class AuthServiceTests
                    .ReturnsAsync(IdentityResult.Failed(identityErrors));
 
         var signInManager = CreateSignInManager(userManager.Object);
-        var cfg = CreateConfigurationWithJwtKey();
-        var sut = CreateSut(userManager, signInManager, cfg);
+        var jwtOptions = CreateJwtOptions();
+        var sut = CreateSut(userManager, signInManager, jwtOptions);
 
         var dto = new RegisterUserDto(
             UserName: "john",
@@ -81,8 +81,8 @@ public class AuthServiceTests
         userManager.Setup(m => m.FindByEmailAsync("missing@example.com")).ReturnsAsync((User?)null);
 
         var signInManager = CreateSignInManager(userManager.Object);
-        var cfg = CreateConfigurationWithJwtKey();
-        var sut = CreateSut(userManager, signInManager, cfg);
+        var jwtOptions = CreateJwtOptions();
+        var sut = CreateSut(userManager, signInManager, jwtOptions);
         var dto = new LoginUserDto(Email: "missing@example.com", Password: "x");
 
         // Act
@@ -105,8 +105,8 @@ public class AuthServiceTests
         signInManager.Setup(s => s.CheckPasswordSignInAsync(user, "pwd", true))
                      .ReturnsAsync(SignInResult.LockedOut);
 
-        var cfg = CreateConfigurationWithJwtKey();
-        var sut = CreateSut(userManager, signInManager, cfg);
+        var jwtOptions = CreateJwtOptions();
+        var sut = CreateSut(userManager, signInManager, jwtOptions);
         var dto = new LoginUserDto(Email: user.Email, Password: "pwd");
 
         // Act
@@ -129,8 +129,8 @@ public class AuthServiceTests
         signInManager.Setup(s => s.CheckPasswordSignInAsync(user, "pwd", true))
                      .ReturnsAsync(SignInResult.NotAllowed);
 
-        var cfg = CreateConfigurationWithJwtKey();
-        var sut = CreateSut(userManager, signInManager, cfg);
+        var jwtOptions = CreateJwtOptions();
+        var sut = CreateSut(userManager, signInManager, jwtOptions);
         var dto = new LoginUserDto(Email: user.Email, Password: "pwd");
 
         // Act
@@ -144,8 +144,6 @@ public class AuthServiceTests
     public async Task LoginAsync_BadPassword_ThrowsNotFound_AndLogsError()
     {
         // Arrange
-        var logger = new Mock<ILogger<ProjectsService>>();
-
         var user = new User("u", "f", "l", "u@example.com") { Id = 12, Email = "u@example.com" };
 
         var userManager = CreateUserManager();
@@ -155,8 +153,9 @@ public class AuthServiceTests
         signInManager.Setup(s => s.CheckPasswordSignInAsync(user, "wrong", true))
                      .ReturnsAsync(SignInResult.Failed);
 
-        var cfg = CreateConfigurationWithJwtKey();
-        var sut = new AuthService(userManager.Object, signInManager.Object, cfg, logger.Object);
+        var jwtOptions = CreateJwtOptions();
+        var logger = new Mock<ILogger<AuthService>>();
+        var sut = new AuthService(userManager.Object, signInManager.Object, jwtOptions, logger.Object);
         var dto = new LoginUserDto(Email: user.Email, Password: "wrong");
 
         // Act
@@ -198,8 +197,8 @@ public class AuthServiceTests
         signInManager.Setup(s => s.CheckPasswordSignInAsync(user, "Password1!", true))
                      .ReturnsAsync(SignInResult.Success);
 
-        var cfg = CreateConfigurationWithJwtKey("SuperStrongKey_12345678901234567890");
-        var sut = CreateSut(userManager, signInManager, cfg);
+        var jwtOptions = CreateJwtOptions("SuperStrongKey_12345678901234567890");
+        var sut = CreateSut(userManager, signInManager, jwtOptions);
         var dto = new LoginUserDto(Email: user.Email, Password: "Password1!");
 
         // Act
@@ -229,7 +228,7 @@ public class AuthServiceTests
         var store = new Mock<IUserStore<User>>();
         return new Mock<UserManager<User>>(
             store.Object,
-            null, null, null, null, null, null, null, null
+            null!, null!, null!, null!, null!, null!, null!, null!
         );
     }
 
@@ -242,25 +241,28 @@ public class AuthServiceTests
             userManager,
             contextAccessor.Object,
             claimsFactory.Object,
-            null, null, null, null
+            null!, null!, null!, null!
         );
     }
 
-    private static IConfiguration CreateConfigurationWithJwtKey(string key = "VeryStrongAndLongJwtSigningKey_1234567890")
+    private static IOptions<BLL.Configuration.JwtOptions> CreateJwtOptions(string key = "VeryStrongAndLongJwtSigningKey_1234567890")
     {
-        var dict = new Dictionary<string, string?>
+        var options = new BLL.Configuration.JwtOptions
         {
-            ["Jwt:Key"] = key
+            Key = key,
+            Issuer = "TestIssuer",
+            Audience = "TestAudience",
+            ExpirationMinutes = 30
         };
-        return new ConfigurationBuilder().AddInMemoryCollection(dict!).Build();
+        return Options.Create(options);
     }
 
     private static AuthService CreateSut(
         Mock<UserManager<User>> um,
         Mock<SignInManager<User>> sm,
-        IConfiguration cfg,
-        Mock<ILogger<ProjectsService>>? logger = null)
+        IOptions<BLL.Configuration.JwtOptions> jwtOptions,
+        Mock<ILogger<AuthService>>? logger = null)
     {
-        return new AuthService(um.Object, sm.Object, cfg, (logger ?? new Mock<ILogger<ProjectsService>>()).Object);
+        return new AuthService(um.Object, sm.Object, jwtOptions, (logger ?? new Mock<ILogger<AuthService>>()).Object);
     }
 }

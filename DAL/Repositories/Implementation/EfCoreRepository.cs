@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DAL.Repositories.Implementation;
 
-internal sealed class EfCoreRepository<T>(TaskContext db) : IRepository<T> where T : class
+public sealed class EfCoreRepository<T>(TaskContext db) : IRepository<T> where T : class
 {
     private DbSet<T> Set => db.Set<T>();
 
@@ -19,6 +19,35 @@ internal sealed class EfCoreRepository<T>(TaskContext db) : IRepository<T> where
 
     public Task<List<T>> ListAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken ct = default)
         => (predicate is null ? Set.AsNoTracking() : Set.AsNoTracking().Where(predicate)).ToListAsync(ct);
+
+    public async Task<T?> GetByIdWithIncludesAsync(int id, CancellationToken ct = default, params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = Set.AsNoTracking();
+        
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+        
+        return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id, ct);
+    }
+
+    public Task<List<T>> ListWithIncludesAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken ct = default, params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = Set.AsNoTracking();
+        
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+        
+        if (predicate is not null)
+        {
+            query = query.Where(predicate);
+        }
+        
+        return query.ToListAsync(ct);
+    }
 
     public async Task AddAsync(T entity, CancellationToken ct = default)
         => await Set.AddAsync(entity, ct);

@@ -1,14 +1,16 @@
-﻿using DAL.Entities;
+﻿using BLL.Common;
+using BLL.Models.Tasks;
+using DAL.Entities;
 using Task = DAL.Entities.Task;
 
 namespace BLL.Interfaces;
 
 public interface ITasksService
 {
-    Task<List<Task>> GetTasksAsync();
-    Task<Task> GetTaskByIdAsync(int id);
-    Task<Task> AddTaskAsync(Task task);
-    Task<ExecutedTask> AddExecutedTaskAsync(ExecutedTask task);
-    Task<Task> UpdateTaskByIdAsync(int id, Task task);
-    System.Threading.Tasks.Task DeleteTaskByIdAsync(int id);
+    System.Threading.Tasks.Task<Result<List<TaskDetailDto>>> GetTasksAsync(CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result<TaskDetailDto>> GetTaskByIdAsync(int id, CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result<Task>> AddTaskAsync(Task task, CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result<ExecutedTask>> AddExecutedTaskAsync(ExecutedTask task, CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result<Task>> UpdateTaskByIdAsync(int id, Task task, CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result> DeleteTaskByIdAsync(int id, CancellationToken ct = default);
 }
