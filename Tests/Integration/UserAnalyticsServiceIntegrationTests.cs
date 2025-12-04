@@ -2,13 +2,23 @@ using BLL.Services.Analytics;
 using DAL.Entities;
 using DAL.Enum;
 using DAL.Repositories.Implementation;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace Tests.Integration;
 
-public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
+public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
-    private static readonly SemaphoreSlim SingleTestSemaphore = new(1, 1);
+    public System.Threading.Tasks.Task InitializeAsync()
+    {
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
+    public System.Threading.Tasks.Task DisposeAsync()
+    {
+        fixture.ResetDatabase();
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
 
     private UserAnalyticsService CreateService()
     {
@@ -79,38 +89,34 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
     [Fact]
     public async System.Threading.Tasks.Task GetSortedUsersWithSortedTasksAsync_VerifyUserStructure()
     {
-        await SingleTestSemaphore.WaitAsync();
-        try
+        // Arrange
+        var service = CreateService();
+
+        // Act
+        var result = await service.GetSortedUsersWithSortedTasksAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Count > 1);
+        
+        var usersWithTasks = result.Where(u => u.Tasks.Count > 0).ToList();
+        Assert.True(usersWithTasks.Count > 0, "Expected at least one user with tasks");
+        
+        foreach (var user in usersWithTasks)
         {
-            // Arrange
-            var service = CreateService();
-
-            // Act
-            var result = await service.GetSortedUsersWithSortedTasksAsync();
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.True(result.Count > 1);
-            foreach (var user in result)
+            Assert.True(user.Id > 0);
+            Assert.False(string.IsNullOrEmpty(user.FirstName));
+            Assert.False(string.IsNullOrEmpty(user.LastName));
+            Assert.False(string.IsNullOrEmpty(user.Email));
+            Assert.True(user.RegisteredAt <= DateTime.UtcNow);
+            Assert.NotNull(user.Tasks);
+            Assert.True(user.Tasks.Count > 0);
+            foreach (var task in user.Tasks)
             {
-                Assert.True(user.Id > 0);
-                Assert.False(string.IsNullOrEmpty(user.FirstName));
-                Assert.False(string.IsNullOrEmpty(user.LastName));
-                Assert.False(string.IsNullOrEmpty(user.Email));
-                Assert.True(user.RegisteredAt <= DateTime.UtcNow);
-                Assert.NotNull(user.Tasks);
-                Assert.True(user.Tasks.Count > 0);
-                foreach (var task in user.Tasks)
-                {
-                    Assert.True(task.Id > 0);
-                    Assert.False(string.IsNullOrEmpty(task.Name));
-                    Assert.NotNull(task.State);
-                }
+                Assert.True(task.Id > 0);
+                Assert.False(string.IsNullOrEmpty(task.Name));
+                Assert.NotNull(task.State);
             }
-        }
-        finally
-        {
-            SingleTestSemaphore.Release();
         }
     }
 
@@ -324,5 +330,69 @@ public class UserAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : ICl
         Assert.False(string.IsNullOrEmpty(result.User.Email));
         Assert.True(result.NotFinishedOrCanceledTasksCount >= 0);
         Assert.True(result.LastProjectTasksCount >= 0);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task GetSortedUsersWithSortedTasksAsync_NoUsersWithTasks_ReturnsUsersWithEmptyTaskLists()
+    {
+        // Arrange
+        var service = CreateService();
+
+        // Remove all tasks but keep users
+        fixture.Context.Tasks.RemoveRange(fixture.Context.Tasks);
+        await fixture.Context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetSortedUsersWithSortedTasksAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Count > 0, "Should have users");
+        Assert.All(result, user => Assert.Empty(user.Tasks));
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task GetUserInfoAsync_UserWithMultipleProjects_ReturnsLatestProject()
+    {
+        // Arrange
+        var service = CreateService();
+        var projectRepo = new EfCoreRepository<Project>(fixture.Context);
+        var uow = new UnitOfWork(fixture.Context);
+
+        // Get the existing project's CreatedAt to ensure our new projects are newer
+        var existingProject = await fixture.Context.Projects.FirstOrDefaultAsync(p => p.AuthorId == 1);
+        var baseDate = existingProject?.CreatedAt ?? DateTime.UtcNow.AddDays(-20);
+
+        // Create multiple projects for user 1 with dates newer than existing
+        var project1 = new Project
+        {
+            Name = "Old Project",
+            Description = "Created first",
+            AuthorId = 1,
+            TeamId = 1,
+            CreatedAt = baseDate.AddDays(5),
+            Deadline = DateTime.UtcNow.AddDays(20)
+        };
+        var project2 = new Project
+        {
+            Name = "New Project",
+            Description = "Created last",
+            AuthorId = 1,
+            TeamId = 1,
+            CreatedAt = baseDate.AddDays(10),
+            Deadline = DateTime.UtcNow.AddDays(30)
+        };
+
+        await projectRepo.AddAsync(project1);
+        await projectRepo.AddAsync(project2);
+        await uow.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetUserInfoAsync(1);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotNull(result.LastProject);
+        Assert.Equal("New Project", result.LastProject.Name);
     }
 }

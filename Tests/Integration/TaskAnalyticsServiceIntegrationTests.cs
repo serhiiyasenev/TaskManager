@@ -1,13 +1,23 @@
 using BLL.Services.Analytics;
 using DAL.Entities;
 using DAL.Repositories.Implementation;
-using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Tests.Integration;
 
-public class TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
+public class TaskAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
+    public System.Threading.Tasks.Task InitializeAsync()
+    {
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
+    public System.Threading.Tasks.Task DisposeAsync()
+    {
+        fixture.ResetDatabase();
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
     private TaskAnalyticsService CreateService()
     {
         var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);

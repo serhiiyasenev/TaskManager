@@ -14,7 +14,6 @@ public class TasksServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
 {
     private readonly Mock<ILogger<TasksService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
-
     private TasksService CreateService()
     {
         var taskRepo = new EfCoreRepository<DAL.Entities.Task>(fixture.Context);
@@ -273,5 +272,144 @@ public class TasksServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
         Assert.Equal(1, result.Value.TaskId);
         Assert.Equal("Executed Task 1", result.Value.TaskName);
         Assert.True(result.Value.CreatedAt <= DateTime.UtcNow);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task UpdateTaskByIdAsync_ChangeStateFromToDoToDone_SetsFinishedAt()
+    {
+        // Arrange
+        var service = CreateService();
+        var addResult = await service.AddTaskAsync(new DAL.Entities.Task
+        {
+            Name = "New Task",
+            Description = "Test task",
+            ProjectId = 1,
+            PerformerId = 1,
+            State = TaskState.ToDo
+        });
+        var taskId = addResult.Value!.Id;
+
+        var updateTask = new DAL.Entities.Task
+        {
+            Name = "New Task",
+            Description = "Test task",
+            ProjectId = 1,
+            PerformerId = 1,
+            State = TaskState.Done
+        };
+
+        // Act
+        var result = await service.UpdateTaskByIdAsync(taskId, updateTask);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(TaskState.Done, result.Value!.State);
+        Assert.NotNull(result.Value!.FinishedAt);
+        Assert.True(result.Value!.FinishedAt <= DateTime.UtcNow);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task UpdateTaskByIdAsync_ChangeStateFromDoneToInProgress_ClearsFinishedAt()
+    {
+        // Arrange
+        var service = CreateService();
+        var addResult = await service.AddTaskAsync(new DAL.Entities.Task
+        {
+            Name = "Done Task",
+            Description = "Test task",
+            ProjectId = 1,
+            PerformerId = 1,
+            State = TaskState.Done
+        });
+        var taskId = addResult.Value!.Id;
+
+        var updateTask = new DAL.Entities.Task
+        {
+            Name = "Done Task",
+            Description = "Test task",
+            ProjectId = 1,
+            PerformerId = 1,
+            State = TaskState.InProgress
+        };
+
+        // Act
+        var result = await service.UpdateTaskByIdAsync(taskId, updateTask);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(TaskState.InProgress, result.Value!.State);
+        Assert.Null(result.Value!.FinishedAt);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task AddTaskAsync_MultipleTasksToSameProject_AllCreatedSuccessfully()
+    {
+        // Arrange
+        var service = CreateService();
+        var task1 = new DAL.Entities.Task
+        {
+            Name = "Task 1",
+            Description = "First task",
+            ProjectId = 1,
+            PerformerId = 1,
+            State = TaskState.ToDo
+        };
+        var task2 = new DAL.Entities.Task
+        {
+            Name = "Task 2",
+            Description = "Second task",
+            ProjectId = 1,
+            PerformerId = 2,
+            State = TaskState.InProgress
+        };
+
+        // Act
+        var result1 = await service.AddTaskAsync(task1);
+        var result2 = await service.AddTaskAsync(task2);
+
+        // Assert
+        Assert.True(result1.IsSuccess);
+        Assert.True(result2.IsSuccess);
+        Assert.NotEqual(result1.Value!.Id, result2.Value!.Id);
+        Assert.Equal(1, result1.Value!.ProjectId);
+        Assert.Equal(1, result2.Value!.ProjectId);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task GetTasksAsync_AfterAddingAndDeleting_ReturnsCorrectCount()
+    {
+        // Arrange
+        var service = CreateService();
+        var initialResult = await service.GetTasksAsync();
+        var initialCount = initialResult.Value!.Count;
+
+        // Add 2 tasks
+        var addResult1 = await service.AddTaskAsync(new DAL.Entities.Task
+        {
+            Name = "Temp Task 1",
+            Description = "Test",
+            ProjectId = 1,
+            PerformerId = 1,
+            State = TaskState.ToDo
+        });
+        
+        await service.AddTaskAsync(new DAL.Entities.Task
+        {
+            Name = "Temp Task 2",
+            Description = "Test",
+            ProjectId = 1,
+            PerformerId = 1,
+            State = TaskState.ToDo
+        });
+
+        // Delete one task
+        await service.DeleteTaskByIdAsync(addResult1.Value!.Id);
+
+        // Act
+        var result = await service.GetTasksAsync();
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(initialCount + 1, result.Value!.Count);
     }
 }

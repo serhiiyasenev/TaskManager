@@ -10,10 +10,22 @@ using Xunit;
 
 namespace Tests.Integration;
 
-public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
+[Collection("Database collection")]
+public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
     private readonly Mock<ILogger<UsersService>> _logger = new();
     private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
+
+    public System.Threading.Tasks.Task InitializeAsync()
+    {
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+
+    public System.Threading.Tasks.Task DisposeAsync()
+    {
+        fixture.ResetDatabase();
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
 
     private UsersService CreateService()
     {
@@ -211,18 +223,64 @@ public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
     }
 
     [Fact]
+    public async System.Threading.Tasks.Task UpdateUserByIdAsync_ChangeTeam_UpdatesSuccessfully()
+    {
+        // Arrange
+        var service = CreateService();
+        var dto = new UpdateUserDto
+        {
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@example.com",
+            UserName = "john",
+            TeamId = 2,
+            BirthDay = DateTime.UtcNow.AddYears(-30)
+        };
+
+        // Act
+        var result = await service.UpdateUserByIdAsync(1, dto);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.TeamId);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task UpdateUserByIdAsync_UpdateBirthDay_UpdatesSuccessfully()
+    {
+        // Arrange
+        var service = CreateService();
+        var newBirthDay = new DateTime(1990, 5, 15);
+        var dto = new UpdateUserDto
+        {
+            FirstName = "Jane",
+            LastName = "Smith",
+            Email = "jane@example.com",
+            UserName = "jane",
+            TeamId = 1,
+            BirthDay = newBirthDay
+        };
+
+        // Act
+        var result = await service.UpdateUserByIdAsync(2, dto);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(newBirthDay, result.Value!.BirthDay);
+    }
+
+    [Fact]
     public async System.Threading.Tasks.Task CancellationToken_CancelledOperation_HandledGracefully()
     {
         // Arrange
         var service = CreateService();
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act
         var result = await service.GetUsersAsync(cts.Token);
 
         // Assert
-        // The operation should complete (either success or failure) without throwing
         Assert.NotNull(result);
     }
 }

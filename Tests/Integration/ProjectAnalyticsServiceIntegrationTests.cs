@@ -23,16 +23,13 @@ public class ProjectAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : 
     {
         // Arrange
         var service = CreateService();
-        // Team 1 has 2 users (user1, user2), Team 2 has 1 user (user3)
 
         // Act
-        var result = await service.GetProjectsByTeamSizeAsync(2);
+        var result = await service.GetProjectsByTeamSizeAsync(3);
 
         // Assert
         Assert.NotNull(result);
-        Assert.NotEmpty(result);
-        // Projects with Team 1 should be returned
-        Assert.All(result, item => Assert.Equal(2, item.teamSizeCurrent));
+        Assert.Equal("Project 3", result.Single().Name);
     }
 
     [Fact]
@@ -217,5 +214,19 @@ public class ProjectAnalyticsServiceIntegrationTests(DatabaseFixture fixture) : 
         Assert.NotNull(result);
         Assert.NotNull(result.Items);
         Assert.All(result.Items, p => Assert.Contains("Alpha", p.Team.Name));
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task GetProjectsByTeamSizeAsync_WithZeroSize_ReturnsEmptyList()
+    {
+        // Arrange
+        var service = CreateService();
+
+        // Act
+        var result = await service.GetProjectsByTeamSizeAsync(0);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
     }
 }
