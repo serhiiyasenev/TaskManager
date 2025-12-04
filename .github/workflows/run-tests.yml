@@ -75,29 +75,3 @@ jobs:
         message: |
           ## ✔️ Code Coverage Report
           **Coverage:** `${{ steps.coverage.outputs.value }}%`
-
-    - name: Update coverage badge in README
-      if: github.ref == 'refs/heads/main'
-      run: |
-        git rm -f coverage-badge.svg || true
-
-        if [[ -f CoverageReport/badge_linecoverage.svg ]]; then
-          cp CoverageReport/badge_linecoverage.svg coverage-badge.svg
-          sed -i 's|!\[coverage\](.*)|![coverage](./coverage-badge.svg)|' README.md
-        else
-          echo "❗ Coverage badge not found: CoverageReport/badge_linecoverage.svg"
-          echo "Skipping badge update."
-          exit 0
-        fi
-
-    - name: Commit badge update
-      if: github.ref == 'refs/heads/main'
-      run: |
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
-        git add coverage-badge.svg README.md
-        git commit -m "Update coverage badge [skip ci]" || echo "No changes to commit."
-
-    - name: Push changes
-      if: github.ref == 'refs/heads/main'
-      run: git push
