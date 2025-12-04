@@ -80,7 +80,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       run: |
         git rm -f coverage-badge.svg || true
-        cp CoverageReport/badge.svg coverage-badge.svg
+        cp CoverageReport/Badges/LineCoverageBadge.svg coverage-badge.svg
         sed -i 's|!\[coverage\](.*)|![coverage](./coverage-badge.svg)|' README.md
 
     - name: Commit badge update
