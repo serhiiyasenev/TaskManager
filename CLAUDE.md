@@ -23,6 +23,8 @@ dotnet run --project Notifier
 dotnet run --project Client
 
 # Docker (includes SQL Server, RabbitMQ, WebAPI, Notifier, Client)
+# NOTE: docker-compose.yml currently uses mcr.microsoft.com/dotnet/sdk:9.0 images.
+# For this .NET 10 solution, update those images to .NET 10-compatible tags before running:
 docker-compose up
 ```
 
