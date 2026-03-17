@@ -30,7 +30,7 @@ docker-compose up
 
 This is a .NET 10 layered solution with five projects: three runnable applications/services (WebAPI, Notifier, Client) and two class libraries (BLL, DAL).
 
-- **WebAPI** -- ASP.NET Core REST API. Controllers under `WebAPI/Controllers/`, global exception handling via middleware (`WebAPI/Middleware/`), Swagger with JWT Bearer auth. Default admin credentials are configured via environment-specific seeding/configuration and must not be reused across environments.
+- **WebAPI** -- ASP.NET Core REST API. Controllers under `WebAPI/Controllers/`, global exception handling via middleware (`WebAPI/Middleware/`), Swagger with JWT Bearer auth. A default admin user (e.g., `admin@example.com`) is created via DAL EF Core model seeding/migrations for local/dev and test environments only; production environments must provision admin accounts via environment-specific mechanisms and must not rely on or reuse the seeded default credentials.
 - **BLL** -- Business logic services, AutoMapper profiles (`BLL/Mapping/`), FluentValidation validators (`BLL/Validators/`), configuration options classes (`BLL/Configuration/`). Services return `Result<T>` for operation outcomes.
 - **DAL** -- EF Core with SQL Server. `TaskContext` extends `IdentityDbContext<User, IdentityRole<int>, int>`. Generic repository pattern: `IRepository<T>` / `EfCoreRepository<T>`. Entities: User, Team, Project, Task, ExecutedTask. Migrations in `DAL/Migrations/`.
 - **Notifier** -- Background worker that consumes RabbitMQ messages and broadcasts to clients via SignalR (`ChatHub`).
