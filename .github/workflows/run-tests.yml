@@ -82,7 +82,7 @@ jobs:
         git rm -f coverage-badge.svg || true
         cp CoverageReport/badge.svg coverage-badge.svg
         if grep -q '!\[coverage\]' README.md; then
-          sed -i 's|!\[coverage\](.*)|![coverage](./coverage-badge.svg)|' README.md
+          sed -i 's|!\[coverage\](\([^)]*\))|![coverage](./coverage-badge.svg)|' README.md
         else
           tmpfile=$(mktemp)
           echo '![coverage](./coverage-badge.svg)' > "$tmpfile"
