@@ -73,22 +73,27 @@ jobs:
         value=$(jq '.summary.linecoverage' CoverageReport/Summary.json | xargs printf "%.2f")
         echo "value=$value" >> $GITHUB_OUTPUT
 
+    - name: Generate coverage summary
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: '**/TestResults/**/coverage.cobertura.xml'
+        badge: true
+        format: markdown
+        output: both
+        thresholds: '40 70'
+
     - name: Add coverage comment to PR
       if: github.event_name == 'pull_request'
       uses: marocchino/sticky-pull-request-comment@v2
       with:
-        message: |
-          ## ✔️ Code Coverage Report
-          **Line Coverage:** `${{ steps.coverage.outputs.value }}%`
-
-          📊 [Download full report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        path: code-coverage-results.md
 
     - name: Create coverage badge
       if: github.ref == 'refs/heads/main'
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:
         auth: ${{ secrets.GIST_SECRET }}
-        gistID: ${{ secrets.GIST_ID }}
+        gistID: 43220e786710833306a7a0e291f25449
         filename: coverage.json
         label: coverage
         message: "${{ steps.coverage.outputs.value }}%"
