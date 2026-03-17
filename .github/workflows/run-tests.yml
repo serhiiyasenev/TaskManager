@@ -81,7 +81,12 @@ jobs:
       if: github.ref == 'refs/heads/main'
       run: |
         git rm -f coverage-badge.svg || true
-        badge_file=$(ls CoverageReport/badge*.svg 2>/dev/null | head -n 1 || true)
+        badge_file=""
+        if [ -f "CoverageReport/badge_linecoverage.svg" ]; then
+          badge_file="CoverageReport/badge_linecoverage.svg"
+        else
+          badge_file=$(ls CoverageReport/badge*.svg 2>/dev/null | head -n 1 || true)
+        fi
         if [ -z "$badge_file" ]; then
           echo "No coverage badge SVG found in CoverageReport/."
           echo "Current contents of CoverageReport/:"
