@@ -8,12 +8,17 @@ on:
     branches:
       - main
 
+concurrency:
+  group: coverage-badge-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write
   
 jobs:
   test:
+    if: ${{ github.event_name != 'push' || !((github.actor == 'github-actions' || github.actor == 'github-actions[bot]') && contains(github.event.head_commit.message, '[skip ci]')) }}
     runs-on: ubuntu-latest
 
     steps:
@@ -75,3 +80,60 @@ jobs:
         message: |
           ## ✔️ Code Coverage Report
           **Coverage:** `${{ steps.coverage.outputs.value }}%`
+
+    - name: Update coverage badge in README
+      if: github.ref == 'refs/heads/main'
+      run: |
+        git rm -f coverage-badge.svg || true
+        if [ ! -f "CoverageReport/badge_linecoverage.svg" ]; then
+          echo "badge_linecoverage.svg not found in CoverageReport/."
+          echo "Current contents of CoverageReport/:"
+          ls -la CoverageReport || true
+          exit 1
+        fi
+        cp CoverageReport/badge_linecoverage.svg coverage-badge.svg
+        if grep -q '!\[coverage\]' README.md; then
+          sed -E -i 's|!\[coverage\]\([^)]*\)|![coverage](./coverage-badge.svg)|' README.md
+        else
+          printf '\n![coverage](./coverage-badge.svg)\n' >> README.md
+        fi
+
+    - name: Commit badge update
+      if: github.ref == 'refs/heads/main'
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git add coverage-badge.svg README.md
+        git commit -m "Update coverage badge [skip ci]" || echo "No changes to commit."
+
+    - name: Push changes
+      if: github.ref == 'refs/heads/main'
+      run: |
+        set -e
+        # Ensure we have the latest main from origin
+        git fetch origin main
+
+        max_retries=3
+        attempt=1
+        while [ "$attempt" -le "$max_retries" ]; do
+          echo "Attempt $attempt of $max_retries: rebasing onto origin/main and pushing..."
+          # Rebase our changes onto the latest origin/main
+          if ! git pull --rebase origin main; then
+            echo "Rebase failed; manual intervention may be required."
+            exit 1
+          fi
+
+          if git push origin HEAD:main; then
+            echo "Push succeeded on attempt $attempt."
+            break
+          fi
+
+          echo "Push failed (non-fast-forward or transient issue). Retrying after a short delay..."
+          attempt=$((attempt + 1))
+          sleep 5
+        done
+
+        if [ "$attempt" -gt "$max_retries" ]; then
+          echo "Failed to push changes to main after $max_retries attempts."
+          exit 1
+        fi
