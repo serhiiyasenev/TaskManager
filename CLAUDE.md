@@ -15,7 +15,7 @@ dotnet test TaskManager.sln --settings .runsettings --configuration Release
 dotnet test Tests/Tests.csproj --filter "FullyQualifiedName~TasksServiceIntegrationTests"
 
 # Run a single test method
-dotnet test Tests/Tests.csproj --filter "FullyQualifiedName~TasksServiceIntegrationTests.GetTaskById_ShouldReturnTask"
+dotnet test Tests/Tests.csproj --filter "FullyQualifiedName~TasksServiceIntegrationTests.GetTaskByIdAsync_ExistingId_ReturnsTask"
 
 # Run the system (three separate terminals)
 dotnet run --project WebAPI
