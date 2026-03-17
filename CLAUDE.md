@@ -28,7 +28,7 @@ docker-compose up
 
 ## Architecture
 
-This is a .NET 10 layered solution with five runtime projects:
+This is a .NET 10 layered solution with five projects: three runnable applications/services (WebAPI, Notifier, Client) and two class libraries (BLL, DAL).
 
 - **WebAPI** -- ASP.NET Core REST API. Controllers under `WebAPI/Controllers/`, global exception handling via middleware (`WebAPI/Middleware/`), Swagger with JWT Bearer auth. Default admin credentials are configured via environment-specific seeding/configuration and must not be reused across environments.
 - **BLL** -- Business logic services, AutoMapper profiles (`BLL/Mapping/`), FluentValidation validators (`BLL/Validators/`), configuration options classes (`BLL/Configuration/`). Services return `Result<T>` for operation outcomes.
