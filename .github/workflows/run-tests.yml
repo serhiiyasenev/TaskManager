@@ -81,7 +81,14 @@ jobs:
       if: github.ref == 'refs/heads/main'
       run: |
         git rm -f coverage-badge.svg || true
-        cp CoverageReport/badge.svg coverage-badge.svg
+        badge_file=$(ls CoverageReport/badge*.svg 2>/dev/null | head -n 1 || true)
+        if [ -z "$badge_file" ]; then
+          echo "No coverage badge SVG found in CoverageReport/."
+          echo "Current contents of CoverageReport/:"
+          ls -la CoverageReport || true
+          exit 1
+        fi
+        cp "$badge_file" coverage-badge.svg
         if grep -q '!\[coverage\]' README.md; then
           sed -i 's|!\[coverage\](.*)|![coverage](./coverage-badge.svg)|' README.md
         else
