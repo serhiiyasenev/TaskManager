@@ -90,7 +90,7 @@ jobs:
         fi
         cp "$badge_file" coverage-badge.svg
         if grep -q '!\[coverage\]' README.md; then
-          sed -i 's|!\[coverage\]([^)]*)|![coverage](./coverage-badge.svg)|' README.md
+          sed -i 's|!\[coverage\](\[^)]*\)|![coverage](./coverage-badge.svg)|' README.md
         else
           printf '\n![coverage](./coverage-badge.svg)\n' >> README.md
         fi
