@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: coverage-badge-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write
@@ -104,4 +108,32 @@ jobs:
 
     - name: Push changes
       if: github.ref == 'refs/heads/main'
-      run: git push origin HEAD:main
+      run: |
+        set -e
+        # Ensure we have the latest main from origin
+        git fetch origin main
+
+        max_retries=3
+        attempt=1
+        while [ "$attempt" -le "$max_retries" ]; do
+          echo "Attempt $attempt of $max_retries: rebasing onto origin/main and pushing..."
+          # Rebase our changes onto the latest origin/main
+          if ! git pull --rebase origin main; then
+            echo "Rebase failed; manual intervention may be required."
+            exit 1
+          fi
+
+          if git push origin HEAD:main; then
+            echo "Push succeeded on attempt $attempt."
+            break
+          fi
+
+          echo "Push failed (non-fast-forward or transient issue). Retrying after a short delay..."
+          attempt=$((attempt + 1))
+          sleep 5
+        done
+
+        if [ "$attempt" -gt "$max_retries" ]; then
+          echo "Failed to push changes to main after $max_retries attempts."
+          exit 1
+        fi
