@@ -1,1 +1,9 @@
-{}
+{
+  "version": 1,
+  "profiles": {
+    "default": {
+      "model": "claude-3.5-sonnet",
+      "temperature": 0.2
+    }
+  }
+}
