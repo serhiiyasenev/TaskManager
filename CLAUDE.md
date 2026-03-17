@@ -30,7 +30,7 @@ docker-compose up
 
 ## Architecture
 
-This is a .NET 10 layered solution with five projects: three runnable applications/services (WebAPI, Notifier, Client) and two class libraries (BLL, DAL).
+This is a .NET 10 layered solution with six projects: three runnable applications/services (WebAPI, Notifier, Client), two class libraries (BLL, DAL), and one test project (Tests).
 
 - **WebAPI** -- ASP.NET Core REST API. Controllers under `WebAPI/Controllers/`, global exception handling via middleware (`WebAPI/Middleware/`), Swagger with JWT Bearer auth. A default admin user (e.g., `admin@example.com`) is created via DAL EF Core model seeding/migrations in `TaskContext.OnModelCreating` using `HasData`, and will therefore be created in any environment where migrations are applied (including production). Production deployments must treat this account as a bootstrap mechanism only (e.g., rotate credentials, disable or replace the account) and must not rely on or leave default seeded credentials active in live environments.
 - **BLL** -- Business logic services, AutoMapper profiles (`BLL/Mapping/`), FluentValidation validators (`BLL/Validators/`), configuration options classes (`BLL/Configuration/`). Services return `Result<T>` for operation outcomes.
