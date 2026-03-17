@@ -81,7 +81,15 @@ jobs:
       run: |
         git rm -f coverage-badge.svg || true
         cp CoverageReport/badge.svg coverage-badge.svg
-        sed -i 's|!\[coverage\](.*)|![coverage](./coverage-badge.svg)|' README.md
+        if grep -q '!\[coverage\]' README.md; then
+          sed -i 's|!\[coverage\](.*)|![coverage](./coverage-badge.svg)|' README.md
+        else
+          tmpfile=$(mktemp)
+          echo '![coverage](./coverage-badge.svg)' > "$tmpfile"
+          echo >> "$tmpfile"
+          cat README.md >> "$tmpfile"
+          mv "$tmpfile" README.md
+        fi
 
     - name: Commit badge update
       if: github.ref == 'refs/heads/main'
