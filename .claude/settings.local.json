@@ -15,7 +15,8 @@
       "Bash(gh secret:*)",
       "Bash(gh auth:*)",
       "Bash(gh api:*)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://gist.githubusercontent.com/serhiiyasenev/43220e786710833306a7a0e291f25449/raw/coverage.json\")"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://gist.githubusercontent.com/serhiiyasenev/43220e786710833306a7a0e291f25449/raw/coverage.json\")",
+      "Bash(git pull:*)"
     ]
   }
 }
