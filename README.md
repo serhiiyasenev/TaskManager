@@ -1,5 +1,9 @@
 # 📝 TaskManager
 
+![Tests](https://github.com/serhiiyasenev/TaskManager/actions/workflows/run-tests.yml/badge.svg)
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/serhiiyasenev/43220e786710833306a7a0e291f25449/raw/coverage.json)
+![AI Validation](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-validation.yml/badge.svg)
+
 **TaskManager** is a multi-component project management and task tracking system built with **.NET 10**, **SignalR**, **RabbitMQ**, **Serilog**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
 The system supports **real-time notifications**, **asynchronous task processing**, **analytics**, and **modular expansion**.
 
