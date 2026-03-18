@@ -16,7 +16,9 @@
       "Bash(gh auth:*)",
       "Bash(gh api:*)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://gist.githubusercontent.com/serhiiyasenev/43220e786710833306a7a0e291f25449/raw/coverage.json\")",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(gh run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/serhiiyasenev/43220e786710833306a7a0e291f25449/raw/coverage.json&cacheSeconds=0\")"
     ]
   }
 }
