@@ -20,6 +20,9 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      GIST_SECRET: ${{ secrets.GIST_SECRET }}
+      GIST_ID: ${{ secrets.GIST_ID }}
 
     steps:
     - name: Checkout code
@@ -89,7 +92,7 @@ jobs:
         path: code-coverage-results.md
 
     - name: Create coverage badge
-      if: github.ref == 'refs/heads/main' && secrets.GIST_SECRET != '' && secrets.GIST_ID != ''
+      if: github.ref == 'refs/heads/main' && env.GIST_SECRET != '' && env.GIST_ID != ''
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:
         auth: ${{ secrets.GIST_SECRET }}
