@@ -63,33 +63,17 @@ jobs:
         files: '**/TestResults/**/test_results.trx'
         check_name: 'Test Results'
 
-    - name: Install coverage tools
-      run: |
-        dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.3.9
-        dotnet tool install -g dotnet-coverage --version 17.9.0
+    - name: Install ReportGenerator
+      run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
-    - name: Merge coverage into single Cobertura file
-      run: |
-        mapfile -t files < <(find ./TestResults -type f -name 'coverage.cobertura.xml' | sort -u)
-
-        if [ ${#files[@]} -eq 0 ]; then
-          echo "No coverage files found"
-          exit 1
-        fi
-
-        echo "Found ${#files[@]} coverage file(s):"
-        printf '  %s\n' "${files[@]}"
-
-        dotnet-coverage merge "${files[@]}" \
-          -f cobertura \
-          -o ./TestResults/coverage.merged.cobertura.xml
-
-    - name: Generate coverage report
+    - name: Merge and generate coverage report
       run: |
         reportgenerator \
-          -reports:"./TestResults/coverage.merged.cobertura.xml" \
+          -reports:"./TestResults/**/coverage.cobertura.xml" \
           -targetdir:"CoverageReport" \
-          -reporttypes:"HtmlInline_AzurePipelines;JsonSummary;Badges"
+          -reporttypes:"HtmlInline_AzurePipelines;JsonSummary;Badges;Cobertura"
+
+        cp CoverageReport/Cobertura.xml ./TestResults/coverage.merged.cobertura.xml
 
     - name: Upload coverage report as artifact
       uses: actions/upload-artifact@v4
