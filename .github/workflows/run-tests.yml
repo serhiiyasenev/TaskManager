@@ -44,10 +44,14 @@ jobs:
     - name: Build solution
       run: dotnet build TaskManager.sln --configuration Release --no-restore
 
+    - name: Clean old artifacts
+      run: rm -rf TestResults CoverageReport
+
     - name: Run tests with Coverlet
       run: |
         dotnet test TaskManager.sln \
           --settings .runsettings \
+          --results-directory ./TestResults \
           --logger "trx;LogFileName=test_results.trx" \
           --no-build \
           --configuration Release
@@ -59,13 +63,31 @@ jobs:
         files: '**/TestResults/**/test_results.trx'
         check_name: 'Test Results'
 
-    - name: Install ReportGenerator
-      run: dotnet tool install -g dotnet-reportgenerator-globaltool
+    - name: Install coverage tools
+      run: |
+        dotnet tool install -g dotnet-reportgenerator-globaltool
+        dotnet tool install -g dotnet-coverage
+
+    - name: Merge coverage into single Cobertura file
+      run: |
+        mapfile -t files < <(find ./TestResults -type f -name 'coverage.cobertura.xml' | sort -u)
+
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "No coverage files found"
+          exit 1
+        fi
+
+        echo "Found ${#files[@]} coverage file(s):"
+        printf '  %s\n' "${files[@]}"
+
+        dotnet-coverage merge "${files[@]}" \
+          -f cobertura \
+          -o ./TestResults/coverage.merged.cobertura.xml
 
     - name: Generate coverage report
       run: |
         reportgenerator \
-          -reports:"**/TestResults/**/coverage*.*" \
+          -reports:"./TestResults/coverage.merged.cobertura.xml" \
           -targetdir:"CoverageReport" \
           -reporttypes:"HtmlInline_AzurePipelines;JsonSummary;Badges"
 
@@ -84,7 +106,7 @@ jobs:
     - name: Generate coverage summary
       uses: irongut/CodeCoverageSummary@v1.3.0
       with:
-        filename: '**/TestResults/**/coverage.cobertura.xml'
+        filename: './TestResults/coverage.merged.cobertura.xml'
         badge: true
         format: markdown
         output: both
@@ -94,6 +116,7 @@ jobs:
       if: github.event_name == 'pull_request'
       uses: marocchino/sticky-pull-request-comment@v2
       with:
+        recreate: true
         path: code-coverage-results.md
 
     - name: Create coverage badge
