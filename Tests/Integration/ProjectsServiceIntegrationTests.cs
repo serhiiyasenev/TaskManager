@@ -6,13 +6,14 @@ using DAL.Repositories.Implementation;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Tests.Integration;
 
 public class ProjectsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
     private readonly Mock<ILogger<ProjectsService>> _logger = new();
-    private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
+    private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), NullLoggerFactory.Instance).CreateMapper();
 
     public System.Threading.Tasks.Task InitializeAsync()
     {

@@ -7,13 +7,14 @@ using DAL.Repositories.Implementation;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Tests.Integration;
 
 public class TeamsServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
     private readonly Mock<ILogger<TeamsService>> _logger = new();
-    private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
+    private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), NullLoggerFactory.Instance).CreateMapper();
     private TeamsService CreateService()
     {
         var teamRepo = new EfCoreRepository<Team>(fixture.Context);

@@ -33,7 +33,7 @@ builder.Services.Configure<PaginationOptions>(builder.Configuration.GetSection(P
 builder.Services.Configure<BootstrapAdminOptions>(builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddAutoMapper(_ => { }, typeof(MappingProfile).Assembly);
 
 // Add FluentValidation
 builder.Services.AddFluentValidationAutoValidation();

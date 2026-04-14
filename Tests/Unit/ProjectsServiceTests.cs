@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 ﻿using AutoMapper;
 using BLL.Mapping;
 using BLL.Services;
@@ -23,7 +24,7 @@ public class ProjectsServiceTests
 
     public ProjectsServiceTests()
     {
-        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), NullLoggerFactory.Instance);
         _mapper = config.CreateMapper();
     }
 
