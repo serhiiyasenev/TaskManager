@@ -60,32 +60,36 @@ public sealed class BootstrapAdminHostedService(
         cancellationToken.ThrowIfCancellationRequested();
 
         var user = await userManager.FindByEmailAsync(bootstrap.Email);
-        if (user is null)
+        if (user is not null)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var userName = string.IsNullOrWhiteSpace(bootstrap.UserName)
-                ? bootstrap.Email.Split('@')[0]
-                : bootstrap.UserName;
-
-            user = new User
-            {
-                UserName = userName,
-                Email = bootstrap.Email,
-                FirstName = bootstrap.FirstName,
-                LastName = bootstrap.LastName,
-                EmailConfirmed = bootstrap.EmailConfirmed,
-                RegisteredAt = DateTime.UtcNow
-            };
-
-            var createResult = await userManager.CreateAsync(user, bootstrap.Password);
-            if (!createResult.Succeeded)
-            {
-                throw new InvalidOperationException($"Failed to create bootstrap admin user: {string.Join("; ", createResult.Errors.Select(e => e.Description))}");
-            }
-
-            logger.LogInformation("Bootstrap admin user created.");
+            throw new InvalidOperationException(
+                $"BootstrapAdmin is enabled for '{bootstrap.Email}', but a user with that email already exists. " +
+                "Refusing to modify roles for an existing account during bootstrap. " +
+                "Remove or rename the existing user, choose a different BootstrapAdmin email, or disable BootstrapAdmin after initial setup.");
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
+        var userName = string.IsNullOrWhiteSpace(bootstrap.UserName)
+            ? bootstrap.Email.Split('@')[0]
+            : bootstrap.UserName;
+
+        user = new User
+        {
+            UserName = userName,
+            Email = bootstrap.Email,
+            FirstName = bootstrap.FirstName,
+            LastName = bootstrap.LastName,
+            EmailConfirmed = bootstrap.EmailConfirmed,
+            RegisteredAt = DateTime.UtcNow
+        };
+
+        var createResult = await userManager.CreateAsync(user, bootstrap.Password);
+        if (!createResult.Succeeded)
+        {
+            throw new InvalidOperationException($"Failed to create bootstrap admin user: {string.Join("; ", createResult.Errors.Select(e => e.Description))}");
+        }
+
+        logger.LogInformation("Bootstrap admin user created.");
         cancellationToken.ThrowIfCancellationRequested();
 
         if (!await userManager.IsInRoleAsync(user, AdminRoleName))
