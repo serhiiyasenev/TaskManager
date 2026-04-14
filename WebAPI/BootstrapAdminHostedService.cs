@@ -102,7 +102,6 @@ public sealed class BootstrapAdminHostedService(
         }
 
         logger.LogInformation("Bootstrap admin user created.");
-        var userCreatedDuringBootstrap = true;
         cancellationToken.ThrowIfCancellationRequested();
 
         if (!await userManager.IsInRoleAsync(user, AdminRoleName))
@@ -111,20 +110,18 @@ public sealed class BootstrapAdminHostedService(
             var addRoleResult = await userManager.AddToRoleAsync(user, AdminRoleName);
             if (!addRoleResult.Succeeded)
             {
-                if (userCreatedDuringBootstrap)
+                var roleAssignmentError = $"Failed to assign '{AdminRoleName}' role to bootstrap admin user: {string.Join("; ", addRoleResult.Errors.Select(e => e.Description))}";
+                var roleAssignmentException = new InvalidOperationException(roleAssignmentError);
+                var rollbackResult = await userManager.DeleteAsync(user);
+                if (!rollbackResult.Succeeded)
                 {
-                    var rollbackResult = await userManager.DeleteAsync(user);
-                    if (!rollbackResult.Succeeded)
-                    {
-                        throw new InvalidOperationException(
-                            $"Failed to assign '{AdminRoleName}' role to bootstrap admin user: {string.Join("; ", addRoleResult.Errors.Select(e => e.Description))}. " +
-                            $"Failed to rollback created bootstrap admin user: {string.Join("; ", rollbackResult.Errors.Select(e => e.Description))}");
-                    }
-
-                    logger.LogWarning("Failed to assign admin role to bootstrap user. Created user has been rolled back.");
+                    throw new InvalidOperationException(
+                        $"Failed to rollback created bootstrap admin user: {string.Join("; ", rollbackResult.Errors.Select(e => e.Description))}",
+                        roleAssignmentException);
                 }
 
-                throw new InvalidOperationException($"Failed to assign '{AdminRoleName}' role to bootstrap admin user: {string.Join("; ", addRoleResult.Errors.Select(e => e.Description))}");
+                logger.LogWarning("Failed to assign admin role to bootstrap user. Created user has been rolled back.");
+                throw roleAssignmentException;
             }
         }
 
