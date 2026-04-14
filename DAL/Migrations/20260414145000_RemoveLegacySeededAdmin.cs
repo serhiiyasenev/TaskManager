@@ -11,6 +11,13 @@ namespace DAL.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(
+                """
+                UPDATE [Tasks]
+                SET [PerformerId] = 10
+                WHERE [PerformerId] = 11;
+                """);
+
             migrationBuilder.DeleteData(
                 table: "AspNetUserRoles",
                 keyColumns: new[] { "UserId", "RoleId" },
@@ -34,6 +41,13 @@ namespace DAL.Migrations
                 table: "AspNetUserRoles",
                 columns: new[] { "UserId", "RoleId" },
                 values: new object[] { 11, 1 });
+
+            migrationBuilder.Sql(
+                """
+                UPDATE [Tasks]
+                SET [PerformerId] = 11
+                WHERE [Id] = 16 AND [PerformerId] = 10;
+                """);
         }
     }
 }

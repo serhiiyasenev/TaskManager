@@ -1,4 +1,5 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
+using AutoMapper;
 using BLL;
 using BLL.Configuration;
 using BLL.Interfaces;
@@ -12,6 +13,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using HealthChecks.UI.Client;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.OpenApi;
 using Serilog;
 using System.Text.Json.Serialization;
@@ -33,7 +35,14 @@ builder.Services.Configure<PaginationOptions>(builder.Configuration.GetSection(P
 builder.Services.Configure<BootstrapAdminOptions>(builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(_ => { }, typeof(MappingProfile).Assembly);
+builder.Services.AddSingleton<IMapper>(_ =>
+{
+    var mapperConfiguration = new MapperConfiguration(
+        config => config.AddProfile<MappingProfile>(),
+        NullLoggerFactory.Instance);
+
+    return mapperConfiguration.CreateMapper();
+});
 
 // Add FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
