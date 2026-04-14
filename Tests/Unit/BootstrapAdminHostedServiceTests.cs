@@ -18,17 +18,29 @@ public class BootstrapAdminHostedServiceTests
     {
         // Arrange
         var options = new BootstrapAdminOptions { Enabled = false };
-        var sut = CreateSut(options);
+        var roleManager = CreateRoleManager();
+        var userManager = CreateUserManager();
+        var sut = CreateSut(options, roleManager, userManager);
 
         // Act
         await sut.StartAsync(CancellationToken.None);
+
+        // Assert
+        roleManager.Verify(x => x.RoleExistsAsync(It.IsAny<string>()), Times.Never);
+        roleManager.Verify(x => x.CreateAsync(It.IsAny<IdentityRole<int>>()), Times.Never);
+        userManager.Verify(x => x.FindByEmailAsync(It.IsAny<string>()), Times.Never);
+        userManager.Verify(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+        userManager.Verify(x => x.AddToRoleAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
     }
 
-    [Fact]
-    public async Task StartAsync_EnabledWithoutEmailOrPassword_ThrowsInvalidOperationException()
+    [Theory]
+    [InlineData("", "Password1!")]
+    [InlineData("admin@example.com", "")]
+    [InlineData("", "")]
+    public async Task StartAsync_EnabledWithoutEmailOrPassword_ThrowsInvalidOperationException(string email, string password)
     {
         // Arrange
-        var options = new BootstrapAdminOptions { Enabled = true, Email = "", Password = "" };
+        var options = new BootstrapAdminOptions { Enabled = true, Email = email, Password = password };
         var sut = CreateSut(options);
 
         // Act
