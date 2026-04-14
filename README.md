@@ -44,12 +44,12 @@ The system supports **real-time notifications**, **asynchronous task processing*
 
 ---
 
-## 📊 Main Types of Code Coverage
+## 📊 Main types of Code Coverage
 - **Line coverage** — what % of lines of code were executed by tests.
 - **Statement coverage** — what % of instructions/operators were executed.
 - **Branch coverage** — what % of condition branches (`if/else`, `switch`, `case`) were passed.
 - **Condition coverage** — whether individual Boolean conditions were checked inside complex expressions.
-- **Function / Method coverage** — what % of methods or functions were called by tests.
+- **Functions and Methods coverage** — what % of methods or functions were called by tests.
 - **Path coverage** — what % of possible code execution paths were passed.
 
 ---
