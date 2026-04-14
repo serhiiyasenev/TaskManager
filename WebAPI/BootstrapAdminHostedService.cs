@@ -16,6 +16,8 @@ public sealed class BootstrapAdminHostedService(
 
     public async SystemTask StartAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var bootstrap = options.Value;
         if (!bootstrap.Enabled)
         {
@@ -37,12 +39,17 @@ public sealed class BootstrapAdminHostedService(
             throw new InvalidOperationException("BootstrapAdmin Email is not a valid email address.", ex);
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
+
         using var scope = serviceProvider.CreateScope();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (!await roleManager.RoleExistsAsync(AdminRoleName))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var roleCreateResult = await roleManager.CreateAsync(new IdentityRole<int>(AdminRoleName));
             if (!roleCreateResult.Succeeded)
             {
@@ -50,9 +57,12 @@ public sealed class BootstrapAdminHostedService(
             }
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
+
         var user = await userManager.FindByEmailAsync(bootstrap.Email);
         if (user is null)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var userName = string.IsNullOrWhiteSpace(bootstrap.UserName)
                 ? bootstrap.Email.Split('@')[0]
                 : bootstrap.UserName;
@@ -76,8 +86,11 @@ public sealed class BootstrapAdminHostedService(
             logger.LogInformation("Bootstrap admin user created.");
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (!await userManager.IsInRoleAsync(user, AdminRoleName))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var addRoleResult = await userManager.AddToRoleAsync(user, AdminRoleName);
             if (!addRoleResult.Succeeded)
             {
