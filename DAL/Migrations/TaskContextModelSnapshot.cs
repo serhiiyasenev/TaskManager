@@ -404,7 +404,7 @@ namespace DAL.Migrations
                             CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Users/Teams grid",
                             Name = "Scaffold admin UI",
-                            PerformerId = 11,
+                            PerformerId = 10,
                             ProjectId = 6,
                             State = 1
                         },
@@ -807,26 +807,6 @@ namespace DAL.Migrations
                         },
                         new
                         {
-                            Id = 11,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1985, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "22222222-2222-2222-2222-222222222222",
-                            Email = "admin@example.com",
-                            EmailConfirmed = true,
-                            FirstName = "System",
-                            LastName = "Admin",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "ADMIN@EXAMPLE.COM",
-                            NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 22, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "11111111-1111-1111-1111-111111111111",
-                            TwoFactorEnabled = false,
-                            UserName = "admin"
-                        },
-                        new
-                        {
                             Id = 12,
                             AccessFailedCount = 0,
                             BirthDay = new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
@@ -968,13 +948,6 @@ namespace DAL.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 11,
-                            RoleId = 1
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>

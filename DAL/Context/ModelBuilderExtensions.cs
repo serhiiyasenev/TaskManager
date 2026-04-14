@@ -309,27 +309,6 @@ namespace DAL.Context
                 },
                 new User
                 {
-                    Id = 11,
-                    TeamId = null,
-                    UserName = "admin",
-                    NormalizedUserName = Normalize("admin"),
-                    Email = "admin@example.com",
-                    NormalizedEmail = Normalize("admin@example.com"),
-                    FirstName = "System",
-                    LastName = "Admin",
-                    RegisteredAt = t0.AddDays(-10),
-                    EmailConfirmed = true,
-                    PasswordHash = pwdHash,
-                    SecurityStamp = SeedConstants.AdminSecurityStamp,
-                    ConcurrencyStamp = SeedConstants.AdminConcurrencyStamp,
-                    PhoneNumberConfirmed = false,
-                    TwoFactorEnabled = false,
-                    LockoutEnabled = false,
-                    AccessFailedCount = 0,
-                    BirthDay = new DateTime(1985, 01, 01),
-                },
-                new User
-                {
                     Id = 12,
                     TeamId = null,
                     UserName = "service.bot",
@@ -358,14 +337,6 @@ namespace DAL.Context
                     Name = "admin",
                     NormalizedName = "ADMIN",
                     ConcurrencyStamp = SeedConstants.RoleAdminConcurrencyStamp
-                }
-            );
-
-            modelBuilder.Entity<IdentityUserRole<int>>().HasData(
-                new IdentityUserRole<int>
-                {
-                    UserId = 11,
-                    RoleId = 1
                 }
             );
 
@@ -405,7 +376,7 @@ namespace DAL.Context
                 new Task { Id = 15, ProjectId = 5, PerformerId = 10, Name = "Logs pipeline", Description = "Serilog + sinks", State = TaskState.ToDo, CreatedAt = t0.AddDays(2), FinishedAt = null },
 
                 // Project 6 (Admin Panel)
-                new Task { Id = 16, ProjectId = 6, PerformerId = 11, Name = "Scaffold admin UI", Description = "Users/Teams grid", State = TaskState.InProgress, CreatedAt = t0.AddDays(-3), FinishedAt = null },
+                new Task { Id = 16, ProjectId = 6, PerformerId = 10, Name = "Scaffold admin UI", Description = "Users/Teams grid", State = TaskState.InProgress, CreatedAt = t0.AddDays(-3), FinishedAt = null },
                 new Task { Id = 17, ProjectId = 6, PerformerId = 12, Name = "RBAC in UI", Description = "Guarded routes", State = TaskState.ToDo, CreatedAt = t0, FinishedAt = null },
                 new Task { Id = 18, ProjectId = 6, PerformerId = 12, Name = "Audit logs view", Description = "Filters & export", State = TaskState.ToDo, CreatedAt = t0.AddDays(1), FinishedAt = null },
                 new Task { Id = 19, ProjectId = 6, PerformerId = 12, Name = "Audit Tests", Description = "Test & report", State = TaskState.InProgress, CreatedAt = t0.AddDays(1), FinishedAt = null }
@@ -425,9 +396,6 @@ namespace DAL.Context
 
         private static class SeedConstants
         {
-            public const string AdminSecurityStamp = "11111111-1111-1111-1111-111111111111";
-            public const string AdminConcurrencyStamp = "22222222-2222-2222-2222-222222222222";
-
             public const string BotSecurityStamp = "33333333-3333-3333-3333-333333333333";
             public const string BotConcurrencyStamp = "44444444-4444-4444-4444-444444444444";
 

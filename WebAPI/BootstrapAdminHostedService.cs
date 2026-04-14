@@ -1,0 +1,81 @@
+using BLL.Configuration;
+using DAL.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+
+namespace WebAPI;
+
+public sealed class BootstrapAdminHostedService(
+    IServiceProvider serviceProvider,
+    IOptions<BootstrapAdminOptions> options,
+    ILogger<BootstrapAdminHostedService> logger) : IHostedService
+{
+    private const string AdminRoleName = "admin";
+
+    public async System.Threading.Tasks.Task StartAsync(CancellationToken cancellationToken)
+    {
+        var bootstrap = options.Value;
+        if (!bootstrap.Enabled)
+        {
+            logger.LogInformation("Bootstrap admin initialization is disabled.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(bootstrap.Email) || string.IsNullOrWhiteSpace(bootstrap.Password))
+        {
+            throw new InvalidOperationException("BootstrapAdmin is enabled but Email/Password are not configured.");
+        }
+
+        using var scope = serviceProvider.CreateScope();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+
+        if (!await roleManager.RoleExistsAsync(AdminRoleName))
+        {
+            var roleCreateResult = await roleManager.CreateAsync(new IdentityRole<int>(AdminRoleName));
+            if (!roleCreateResult.Succeeded)
+            {
+                throw new InvalidOperationException($"Failed to create '{AdminRoleName}' role: {string.Join("; ", roleCreateResult.Errors.Select(e => e.Description))}");
+            }
+        }
+
+        var user = await userManager.FindByEmailAsync(bootstrap.Email);
+        if (user is null)
+        {
+            var userName = string.IsNullOrWhiteSpace(bootstrap.UserName)
+                ? bootstrap.Email.Split('@')[0]
+                : bootstrap.UserName;
+
+            user = new User
+            {
+                UserName = userName,
+                Email = bootstrap.Email,
+                FirstName = bootstrap.FirstName,
+                LastName = bootstrap.LastName,
+                EmailConfirmed = bootstrap.EmailConfirmed,
+                RegisteredAt = DateTime.UtcNow
+            };
+
+            var createResult = await userManager.CreateAsync(user, bootstrap.Password);
+            if (!createResult.Succeeded)
+            {
+                throw new InvalidOperationException($"Failed to create bootstrap admin user: {string.Join("; ", createResult.Errors.Select(e => e.Description))}");
+            }
+
+            logger.LogInformation("Bootstrap admin user created.");
+        }
+
+        if (!await userManager.IsInRoleAsync(user, AdminRoleName))
+        {
+            var addRoleResult = await userManager.AddToRoleAsync(user, AdminRoleName);
+            if (!addRoleResult.Succeeded)
+            {
+                throw new InvalidOperationException($"Failed to assign '{AdminRoleName}' role to bootstrap admin user: {string.Join("; ", addRoleResult.Errors.Select(e => e.Description))}");
+            }
+        }
+
+        logger.LogInformation("Bootstrap admin initialization completed.");
+    }
+
+    public System.Threading.Tasks.Task StopAsync(CancellationToken cancellationToken) => System.Threading.Tasks.Task.CompletedTask;
+}

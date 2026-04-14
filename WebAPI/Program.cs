@@ -30,6 +30,7 @@ builder.Host.UseSerilog((ctx, services, lc) =>
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection(RabbitMqOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<PaginationOptions>(builder.Configuration.GetSection(PaginationOptions.SectionName));
+builder.Services.Configure<BootstrapAdminOptions>(builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
 
 // Add AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -76,6 +77,7 @@ builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IQueueService, RabbitMqService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddHostedService<BootstrapAdminHostedService>();
 
 // Add API Versioning
 builder.Services.AddApiVersioning(options =>
@@ -105,8 +107,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "TaskManager API",
         Version = "v1",
-        Description = "Don't forget to update your 'ConnectionStrings'" +
-                      "\n\n Default admin credentials: **admin@example.com / Password1!**"
+        Description = "Don't forget to update your 'ConnectionStrings'."
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
