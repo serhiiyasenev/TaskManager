@@ -130,12 +130,12 @@ Install SQL Server and RabbitMQ (or run them via Docker)
 
 Configure connection strings in appsettings.json for WebAPI and Notifier
 
-`WebAPI/appsettings.Development.json` has `BootstrapAdmin` enabled in `Development`, so on WebAPI start an admin user is bootstrapped only when you provide credentials:
+`WebAPI/appsettings.Development.json` has `BootstrapAdmin` enabled in `Development`. It also contains a non-empty placeholder password, so an admin user is bootstrapped on WebAPI start unless you override that value:
 
 - Email: `admin@example.com`
-- Password: set `BootstrapAdmin:Password` via User Secrets or environment variable (for example `BootstrapAdmin__Password`)
+- Password: override `BootstrapAdmin:Password` via User Secrets or an environment variable (for example `BootstrapAdmin__Password`) before starting the app
 
-If `BootstrapAdmin:Password` is not configured, startup fails with a configuration error.
+If you do not override `BootstrapAdmin:Password`, the placeholder value from `WebAPI/appsettings.Development.json` will be used as the actual bootstrap password.
 
 Run the following commands in the projects root:
 
