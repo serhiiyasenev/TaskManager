@@ -62,8 +62,14 @@ public sealed class BootstrapAdminHostedService(
         var user = await userManager.FindByEmailAsync(bootstrap.Email);
         if (user is not null)
         {
+            if (await userManager.IsInRoleAsync(user, AdminRoleName))
+            {
+                logger.LogInformation("Bootstrap admin user already exists and is in '{AdminRoleName}' role. Skipping bootstrap.", AdminRoleName);
+                return;
+            }
+
             throw new InvalidOperationException(
-                $"BootstrapAdmin is enabled for '{bootstrap.Email}', but a user with that email already exists. " +
+                $"BootstrapAdmin is enabled for '{bootstrap.Email}', but a user with that email already exists and is not in '{AdminRoleName}' role. " +
                 "Refusing to modify roles for an existing account during bootstrap. " +
                 "Remove or rename the existing user, choose a different BootstrapAdmin email, or disable BootstrapAdmin after initial setup.");
         }

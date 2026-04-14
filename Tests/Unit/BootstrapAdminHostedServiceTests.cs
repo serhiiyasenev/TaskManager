@@ -81,6 +81,36 @@ public class BootstrapAdminHostedServiceTests
     }
 
     [Fact]
+    public async Task StartAsync_ExistingUserNotInAdminRole_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var options = new BootstrapAdminOptions
+        {
+            Enabled = true,
+            Email = "admin@example.com",
+            Password = "Password1!"
+        };
+
+        var existingUser = new User("admin", "System", "Admin", "admin@example.com");
+        var roleManager = CreateRoleManager();
+        var userManager = CreateUserManager();
+
+        roleManager.Setup(x => x.RoleExistsAsync("admin")).ReturnsAsync(true);
+        userManager.Setup(x => x.FindByEmailAsync(options.Email)).ReturnsAsync(existingUser);
+        userManager.Setup(x => x.IsInRoleAsync(existingUser, "admin")).ReturnsAsync(false);
+
+        var sut = CreateSut(options, roleManager, userManager);
+
+        // Act
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => sut.StartAsync(CancellationToken.None));
+
+        // Assert
+        Assert.Contains("already exists and is not in 'admin' role", ex.Message);
+        userManager.Verify(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+        userManager.Verify(x => x.AddToRoleAsync(It.IsAny<User>(), "admin"), Times.Never);
+    }
+
+    [Fact]
     public async Task StartAsync_RoleCreationFails_ThrowsInvalidOperationException()
     {
         // Arrange
