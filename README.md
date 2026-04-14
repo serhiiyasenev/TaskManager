@@ -44,6 +44,16 @@ The system supports **real-time notifications**, **asynchronous task processing*
 
 ---
 
+## 📊 Основні види Code Coverage
+- **Line coverage** — який % рядків коду був виконаний тестами.
+- **Statement coverage** — який % інструкцій/операторів був виконаний.
+- **Branch coverage** — який % гілок умов (`if/else`, `switch`, `case`) був пройдений.
+- **Condition coverage** — чи були перевірені окремі булеві умови всередині складних виразів.
+- **Function / Method coverage** — який % методів або функцій був викликаний тестами.
+- **Path coverage** — який % можливих шляхів виконання коду був пройдений.
+
+---
+
 ## 📦 Sequence Diagram
 ```mermaid
 sequenceDiagram
