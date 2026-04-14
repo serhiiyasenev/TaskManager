@@ -13,9 +13,21 @@ namespace DAL.Migrations
         {
             migrationBuilder.Sql(
                 """
+                IF OBJECT_ID(N'[dbo].[__LegacyAdminTaskReassignments]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE [dbo].[__LegacyAdminTaskReassignments](
+                        [TaskId] INT NOT NULL PRIMARY KEY
+                    );
+                END;
+
+                INSERT INTO [dbo].[__LegacyAdminTaskReassignments]([TaskId])
+                SELECT [Id]
+                FROM [Tasks]
+                WHERE [PerformerId] = 11;
+
                 UPDATE [Tasks]
                 SET [PerformerId] = 10
-                WHERE [PerformerId] = 11;
+                WHERE [Id] IN (SELECT [TaskId] FROM [dbo].[__LegacyAdminTaskReassignments]);
                 """);
 
             migrationBuilder.DeleteData(
@@ -44,9 +56,16 @@ namespace DAL.Migrations
 
             migrationBuilder.Sql(
                 """
-                UPDATE [Tasks]
-                SET [PerformerId] = 11
-                WHERE [Id] = 16 AND [PerformerId] = 10;
+                IF OBJECT_ID(N'[dbo].[__LegacyAdminTaskReassignments]', N'U') IS NOT NULL
+                BEGIN
+                    UPDATE [t]
+                    SET [t].[PerformerId] = 11
+                    FROM [Tasks] AS [t]
+                    INNER JOIN [dbo].[__LegacyAdminTaskReassignments] AS [r] ON [r].[TaskId] = [t].[Id]
+                    WHERE [t].[PerformerId] = 10;
+
+                    DROP TABLE [dbo].[__LegacyAdminTaskReassignments];
+                END;
                 """);
         }
     }
