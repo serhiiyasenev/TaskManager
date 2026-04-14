@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
-﻿using AutoMapper;
+using AutoMapper;
 using BLL.Mapping;
 using BLL.Services;
 using DAL.Entities;
