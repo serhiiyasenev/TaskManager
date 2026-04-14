@@ -116,7 +116,7 @@ public sealed class BootstrapAdminHostedService(
                 if (!rollbackResult.Succeeded)
                 {
                     throw new InvalidOperationException(
-                        $"Failed to rollback created bootstrap admin user: {string.Join("; ", rollbackResult.Errors.Select(e => e.Description))}",
+                        $"Critical bootstrap failure: failed to rollback created bootstrap admin user: {string.Join("; ", rollbackResult.Errors.Select(e => e.Description))}",
                         roleAssignmentException);
                 }
 
