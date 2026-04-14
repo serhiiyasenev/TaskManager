@@ -21,9 +21,14 @@ namespace DAL.Migrations
                 END;
 
                 INSERT INTO [dbo].[__LegacyAdminTaskReassignments]([TaskId])
-                SELECT [Id]
-                FROM [Tasks]
-                WHERE [PerformerId] = 11;
+                SELECT [t].[Id]
+                FROM [Tasks] AS [t]
+                WHERE [t].[PerformerId] = 11
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM [dbo].[__LegacyAdminTaskReassignments] AS [r]
+                      WHERE [r].[TaskId] = [t].[Id]
+                  );
 
                 UPDATE [Tasks]
                 SET [PerformerId] = 10
