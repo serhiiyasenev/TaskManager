@@ -2,6 +2,8 @@ using BLL.Configuration;
 using DAL.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using System.Net.Mail;
+using SystemTask = System.Threading.Tasks.Task;
 
 namespace WebAPI;
 
@@ -12,7 +14,7 @@ public sealed class BootstrapAdminHostedService(
 {
     private const string AdminRoleName = "admin";
 
-    public async System.Threading.Tasks.Task StartAsync(CancellationToken cancellationToken)
+    public async SystemTask StartAsync(CancellationToken cancellationToken)
     {
         var bootstrap = options.Value;
         if (!bootstrap.Enabled)
@@ -24,6 +26,15 @@ public sealed class BootstrapAdminHostedService(
         if (string.IsNullOrWhiteSpace(bootstrap.Email) || string.IsNullOrWhiteSpace(bootstrap.Password))
         {
             throw new InvalidOperationException("BootstrapAdmin is enabled but Email/Password are not configured.");
+        }
+
+        try
+        {
+            _ = new MailAddress(bootstrap.Email);
+        }
+        catch (FormatException ex)
+        {
+            throw new InvalidOperationException("BootstrapAdmin Email is not a valid email address.", ex);
         }
 
         using var scope = serviceProvider.CreateScope();
@@ -77,5 +88,5 @@ public sealed class BootstrapAdminHostedService(
         logger.LogInformation("Bootstrap admin initialization completed.");
     }
 
-    public System.Threading.Tasks.Task StopAsync(CancellationToken cancellationToken) => System.Threading.Tasks.Task.CompletedTask;
+    public SystemTask StopAsync(CancellationToken cancellationToken) => SystemTask.CompletedTask;
 }
