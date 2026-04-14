@@ -44,13 +44,13 @@ The system supports **real-time notifications**, **asynchronous task processing*
 
 ---
 
-## 📊 Основні види Code Coverage
-- **Line coverage** — який % рядків коду був виконаний тестами.
-- **Statement coverage** — який % інструкцій/операторів був виконаний.
-- **Branch coverage** — який % гілок умов (`if/else`, `switch`, `case`) був пройдений.
-- **Condition coverage** — чи були перевірені окремі булеві умови всередині складних виразів.
-- **Function / Method coverage** — який % методів або функцій був викликаний тестами.
-- **Path coverage** — який % можливих шляхів виконання коду був пройдений.
+## 📊 Main Types of Code Coverage
+- **Line coverage** — what % of lines of code were executed by tests.
+- **Statement coverage** — what % of instructions/operators were executed.
+- **Branch coverage** — what % of condition branches (`if/else`, `switch`, `case`) were passed.
+- **Condition coverage** — whether individual Boolean conditions were checked inside complex expressions.
+- **Function / Method coverage** — what % of methods or functions were called by tests.
+- **Path coverage** — what % of possible code execution paths were passed.
 
 ---
 
