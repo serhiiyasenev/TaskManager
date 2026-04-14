@@ -20,6 +20,13 @@ namespace DAL.Migrations
                     );
                 END;
 
+                IF OBJECT_ID(N'[dbo].[__LegacyAdminProjectReassignments]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE [dbo].[__LegacyAdminProjectReassignments](
+                        [ProjectId] INT NOT NULL PRIMARY KEY
+                    );
+                END;
+
                 INSERT INTO [dbo].[__LegacyAdminTaskReassignments]([TaskId])
                 SELECT [t].[Id]
                 FROM [Tasks] AS [t]
@@ -30,9 +37,23 @@ namespace DAL.Migrations
                       WHERE [r].[TaskId] = [t].[Id]
                   );
 
+                INSERT INTO [dbo].[__LegacyAdminProjectReassignments]([ProjectId])
+                SELECT [p].[Id]
+                FROM [Projects] AS [p]
+                WHERE [p].[AuthorId] = 11
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM [dbo].[__LegacyAdminProjectReassignments] AS [r]
+                      WHERE [r].[ProjectId] = [p].[Id]
+                  );
+
                 UPDATE [Tasks]
                 SET [PerformerId] = 10
                 WHERE [Id] IN (SELECT [TaskId] FROM [dbo].[__LegacyAdminTaskReassignments]);
+
+                UPDATE [Projects]
+                SET [AuthorId] = 10
+                WHERE [Id] IN (SELECT [ProjectId] FROM [dbo].[__LegacyAdminProjectReassignments]);
                 """);
 
             migrationBuilder.DeleteData(
@@ -68,8 +89,25 @@ namespace DAL.Migrations
                     FROM [Tasks] AS [t]
                     INNER JOIN [dbo].[__LegacyAdminTaskReassignments] AS [r] ON [r].[TaskId] = [t].[Id]
                     WHERE [t].[PerformerId] = 10;
+                END;
 
+                IF OBJECT_ID(N'[dbo].[__LegacyAdminProjectReassignments]', N'U') IS NOT NULL
+                BEGIN
+                    UPDATE [p]
+                    SET [p].[AuthorId] = 11
+                    FROM [Projects] AS [p]
+                    INNER JOIN [dbo].[__LegacyAdminProjectReassignments] AS [r] ON [r].[ProjectId] = [p].[Id]
+                    WHERE [p].[AuthorId] = 10;
+                END;
+
+                IF OBJECT_ID(N'[dbo].[__LegacyAdminTaskReassignments]', N'U') IS NOT NULL
+                BEGIN
                     DROP TABLE [dbo].[__LegacyAdminTaskReassignments];
+                END;
+
+                IF OBJECT_ID(N'[dbo].[__LegacyAdminProjectReassignments]', N'U') IS NOT NULL
+                BEGIN
+                    DROP TABLE [dbo].[__LegacyAdminProjectReassignments];
                 END;
                 """);
         }

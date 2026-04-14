@@ -271,6 +271,7 @@ namespace DAL.Migrations
                 columns: new[] { "Id", "AccessFailedCount", "BirthDay", "ConcurrencyStamp", "Email", "EmailConfirmed", "FirstName", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "RegisteredAt", "SecurityStamp", "TeamId", "TwoFactorEnabled", "UserName" },
                 values: new object[,]
                 {
+                    { 11, 0, new DateTime(1985, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "22222222-2222-2222-2222-222222222222", "admin@example.com", true, "System", "Admin", false, null, "ADMIN@EXAMPLE.COM", "ADMIN", "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==", null, false, new DateTime(2025, 7, 22, 0, 0, 0, 0, DateTimeKind.Utc), "11111111-1111-1111-1111-111111111111", null, false, "admin" },
                     { 12, 0, new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "44444444-4444-4444-4444-444444444444", "service.bot@example.com", true, "Service", "Bot", false, null, "SERVICE.BOT@EXAMPLE.COM", "SERVICE.BOT", "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==", null, false, new DateTime(2025, 7, 22, 0, 0, 0, 0, DateTimeKind.Utc), "33333333-3333-3333-3333-333333333333", null, false, "service.bot" }
                 });
 
@@ -301,6 +302,11 @@ namespace DAL.Migrations
                     { 5, new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc), "Team 5" },
                     { 6, new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc), "Team 6" }
                 });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUserRoles",
+                columns: new[] { "RoleId", "UserId" },
+                values: new object[] { 1, 11 });
 
             migrationBuilder.InsertData(
                 table: "AspNetUsers",
@@ -352,7 +358,7 @@ namespace DAL.Migrations
                     { 13, new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc), "ActivitySource", null, "OTel tracing", 9, 5, 0 },
                     { 14, new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Prometheus", null, "Metrics exporter", 10, 5, 0 },
                     { 15, new DateTime(2025, 8, 3, 0, 0, 0, 0, DateTimeKind.Utc), "Serilog + sinks", null, "Logs pipeline", 10, 5, 0 },
-                    { 16, new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc), "Users/Teams grid", null, "Scaffold admin UI", 10, 6, 1 },
+                    { 16, new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc), "Users/Teams grid", null, "Scaffold admin UI", 11, 6, 1 },
                     { 17, new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Guarded routes", null, "RBAC in UI", 12, 6, 0 },
                     { 18, new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc), "Filters & export", null, "Audit logs view", 12, 6, 0 },
                     { 19, new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc), "Test & report", null, "Audit Tests", 12, 6, 1 }

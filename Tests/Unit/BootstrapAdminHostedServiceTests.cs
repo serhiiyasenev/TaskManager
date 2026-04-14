@@ -51,6 +51,25 @@ public class BootstrapAdminHostedServiceTests
     }
 
     [Fact]
+    public async Task StartAsync_EnabledWithPlaceholderPassword_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var options = new BootstrapAdminOptions
+        {
+            Enabled = true,
+            Email = "admin@example.com",
+            Password = "__SET_IN_USER_SECRETS_OR_ENV__"
+        };
+        var sut = CreateSut(options);
+
+        // Act
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => sut.StartAsync(CancellationToken.None));
+
+        // Assert
+        Assert.Contains("placeholder value", ex.Message);
+    }
+
+    [Fact]
     public async Task StartAsync_ExistingUserInAdminRole_DoesNotCreateRoleOrUser()
     {
         // Arrange
@@ -167,6 +186,42 @@ public class BootstrapAdminHostedServiceTests
         // Assert
         Assert.Contains("Failed to create bootstrap admin user", ex.Message);
         Assert.Contains("User create error", ex.Message);
+    }
+
+    [Fact]
+    public async Task StartAsync_AddToRoleFails_RollsBackCreatedUserAndThrows()
+    {
+        // Arrange
+        var options = new BootstrapAdminOptions
+        {
+            Enabled = true,
+            Email = "admin@example.com",
+            Password = "Password1!"
+        };
+
+        var roleManager = CreateRoleManager();
+        var userManager = CreateUserManager();
+
+        roleManager.Setup(x => x.RoleExistsAsync("admin")).ReturnsAsync(true);
+        userManager.Setup(x => x.FindByEmailAsync(options.Email)).ReturnsAsync((User?)null);
+        userManager.Setup(x => x.CreateAsync(It.IsAny<User>(), options.Password))
+            .ReturnsAsync(IdentityResult.Success);
+        userManager.Setup(x => x.IsInRoleAsync(It.IsAny<User>(), "admin"))
+            .ReturnsAsync(false);
+        userManager.Setup(x => x.AddToRoleAsync(It.IsAny<User>(), "admin"))
+            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Role assign error" }));
+        userManager.Setup(x => x.DeleteAsync(It.IsAny<User>()))
+            .ReturnsAsync(IdentityResult.Success);
+
+        var sut = CreateSut(options, roleManager, userManager);
+
+        // Act
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => sut.StartAsync(CancellationToken.None));
+
+        // Assert
+        Assert.Contains("Failed to assign 'admin' role", ex.Message);
+        Assert.Contains("Role assign error", ex.Message);
+        userManager.Verify(x => x.DeleteAsync(It.IsAny<User>()), Times.Once);
     }
 
     private static BootstrapAdminHostedService CreateSut(
