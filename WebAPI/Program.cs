@@ -198,4 +198,6 @@ app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthC
 
 app.Run();
 
-public partial class Program;
+public partial class Program
+{
+}
