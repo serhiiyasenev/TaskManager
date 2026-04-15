@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Runtime.Serialization;
 using BLL;
 using BLL.Configuration;
 using DAL.Context;
@@ -124,6 +123,11 @@ public class CoverageBoostTests
         foreach (var type in targetTypes)
         {
             var instance = CreateInstance(type);
+            if (instance is null)
+            {
+                continue;
+            }
+
             foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (property.CanWrite)
@@ -139,7 +143,7 @@ public class CoverageBoostTests
         }
     }
 
-    private static object CreateInstance(Type type)
+    private static object? CreateInstance(Type type)
     {
         try
         {
@@ -150,7 +154,7 @@ public class CoverageBoostTests
 
             if (constructor is null)
             {
-                return FormatterServices.GetUninitializedObject(type);
+                return Activator.CreateInstance(type);
             }
 
             var args = constructor.GetParameters()
@@ -161,7 +165,7 @@ public class CoverageBoostTests
         }
         catch
         {
-            return FormatterServices.GetUninitializedObject(type);
+            return Activator.CreateInstance(type);
         }
     }
 

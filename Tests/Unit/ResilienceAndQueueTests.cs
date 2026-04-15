@@ -3,6 +3,7 @@ using BLL.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Polly;
 using Xunit;
 
 namespace Tests.Unit;
@@ -50,7 +51,7 @@ public class ResilienceAndQueueTests
             QueueName = "q"
         });
         var logger = Mock.Of<ILogger<RabbitMqService>>();
-        var service = new RabbitMqService(options, logger);
+        var service = new RabbitMqService(options, logger, Policy.NoOpAsync());
 
         var result = await service.PostValue("payload");
 
