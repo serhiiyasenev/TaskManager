@@ -9,6 +9,7 @@ using Moq;
 using Xunit;
 using System.Linq.Expressions;
 using MockQueryable;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Tests.Unit;
 
@@ -22,7 +23,7 @@ public class UsersServiceTests
 
     public UsersServiceTests()
     {
-        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), NullLoggerFactory.Instance);
         _mapper = config.CreateMapper();
     }
 

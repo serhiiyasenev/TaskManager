@@ -1,4 +1,5 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
+using AutoMapper;
 using BLL;
 using BLL.Configuration;
 using BLL.Interfaces;
@@ -12,6 +13,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using HealthChecks.UI.Client;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.OpenApi;
 using Serilog;
 using System.Text.Json.Serialization;
@@ -30,9 +32,17 @@ builder.Host.UseSerilog((ctx, services, lc) =>
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection(RabbitMqOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<PaginationOptions>(builder.Configuration.GetSection(PaginationOptions.SectionName));
+builder.Services.Configure<BootstrapAdminOptions>(builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddSingleton<IMapper>(_ =>
+{
+    var mapperConfiguration = new MapperConfiguration(
+        config => config.AddProfile<MappingProfile>(),
+        NullLoggerFactory.Instance);
+
+    return mapperConfiguration.CreateMapper();
+});
 
 // Add FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
@@ -76,6 +86,7 @@ builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IQueueService, RabbitMqService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddHostedService<BootstrapAdminHostedService>();
 
 // Add API Versioning
 builder.Services.AddApiVersioning(options =>
@@ -105,8 +116,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "TaskManager API",
         Version = "v1",
-        Description = "Don't forget to update your 'ConnectionStrings'" +
-                      "\n\n Default admin credentials: **admin@example.com / Password1!**"
+        Description = "Don't forget to update your 'ConnectionStrings'."
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -187,3 +197,7 @@ app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthC
 });
 
 app.Run();
+
+public partial class Program
+{
+}

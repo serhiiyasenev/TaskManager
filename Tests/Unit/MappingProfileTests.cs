@@ -7,6 +7,7 @@ using BLL.Models.Users;
 using DAL.Entities;
 using DAL.Enum;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Tests.Unit;
 
@@ -16,7 +17,7 @@ public class MappingProfileTests
 
     public MappingProfileTests()
     {
-        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), NullLoggerFactory.Instance);
         _mapper = config.CreateMapper();
     }
 

@@ -7,6 +7,7 @@ using DAL.Repositories.Implementation;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Tests.Integration;
 
@@ -14,7 +15,7 @@ namespace Tests.Integration;
 public class UsersServiceIntegrationTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>, IAsyncLifetime
 {
     private readonly Mock<ILogger<UsersService>> _logger = new();
-    private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
+    private readonly IMapper _mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), NullLoggerFactory.Instance).CreateMapper();
 
     public System.Threading.Tasks.Task InitializeAsync()
     {

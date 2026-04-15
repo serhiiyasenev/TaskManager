@@ -10,6 +10,7 @@ using System.Linq.Expressions;
 using MockQueryable;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Tests.Unit;
 
@@ -25,7 +26,7 @@ public class TasksServiceTests
 
     public TasksServiceTests()
     {
-        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), NullLoggerFactory.Instance);
         _mapper = config.CreateMapper();
     }
 

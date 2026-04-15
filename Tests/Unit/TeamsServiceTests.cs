@@ -8,6 +8,7 @@ using Moq;
 using Xunit;
 using BLL.Models.Teams;
 using MockQueryable;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Tests.Unit;
 
@@ -20,7 +21,7 @@ public class TeamsServiceTests
 
     public TeamsServiceTests()
     {
-        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), NullLoggerFactory.Instance);
         _mapper = config.CreateMapper();
     }
 

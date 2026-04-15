@@ -44,6 +44,16 @@ The system supports **real-time notifications**, **asynchronous task processing*
 
 ---
 
+## 📊 Main types of Code Coverage
+- **Line coverage** — what % of lines of code were executed by tests.
+- **Statement coverage** — what % of instructions/operators were executed.
+- **Branch coverage** — what % of condition branches (`if/else`, `switch`, `case`) were passed.
+- **Condition coverage** — whether individual Boolean conditions were checked inside complex expressions.
+- **Functions and Methods coverage** — what % of methods or functions were called by tests.
+- **Path coverage** — what % of possible code execution paths were passed.
+
+---
+
 ## 📦 Sequence Diagram
 ```mermaid
 sequenceDiagram
@@ -119,6 +129,13 @@ graph TD
 Install SQL Server and RabbitMQ (or run them via Docker)
 
 Configure connection strings in appsettings.json for WebAPI and Notifier
+
+`WebAPI/appsettings.Development.json` has `BootstrapAdmin` enabled in `Development`, but the password is intentionally empty.
+
+- Email: `admin@example.com`
+- Password: set `BootstrapAdmin:Password` via User Secrets or an environment variable (for example `BootstrapAdmin__Password`) before starting the app
+
+If `BootstrapAdmin:Password` is missing (or left as a placeholder value), WebAPI startup will fail with a configuration error.
 
 Run the following commands in the projects root:
 
