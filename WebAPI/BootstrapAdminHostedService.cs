@@ -91,6 +91,7 @@ public sealed class BootstrapAdminHostedService(
             Email = bootstrap.Email,
             FirstName = bootstrap.FirstName,
             LastName = bootstrap.LastName,
+            BirthDay = DateTime.UtcNow.Date,
             EmailConfirmed = bootstrap.EmailConfirmed,
             RegisteredAt = DateTime.UtcNow
         };
