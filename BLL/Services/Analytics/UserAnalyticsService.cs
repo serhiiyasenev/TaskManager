@@ -22,7 +22,23 @@ public class UserAnalyticsService(
             .ToListAsync();
 
         var taskRows = await tasks.Query()
-            .Select(t => new { t.Id, t.Name, t.Description, t.State, t.CreatedAt, t.FinishedAt, t.PerformerId })
+            .Select(t => new
+            {
+                t.Id,
+                t.Name,
+                t.Description,
+                t.State,
+                t.CreatedAt,
+                t.FinishedAt,
+                t.PerformerId,
+                t.DueDate,
+                t.ReminderEnabled,
+                t.ReminderOffsetMinutes,
+                t.EscalationEnabled,
+                t.EscalationDelayMinutes,
+                t.ReminderSentAt,
+                t.EscalationSentAt
+            })
             .ToListAsync();
 
         return userRows.Select(u =>
@@ -35,7 +51,15 @@ public class UserAnalyticsService(
                     t.State == TaskState.ToDo ? "To Do" :
                     t.State == TaskState.InProgress ? "In Progress" :
                     t.State == TaskState.Done ? "Done" : "Canceled",
-                    t.CreatedAt, t.FinishedAt))
+                    t.CreatedAt,
+                    t.FinishedAt,
+                    t.DueDate,
+                    t.ReminderEnabled,
+                    t.ReminderOffsetMinutes,
+                    t.EscalationEnabled,
+                    t.EscalationDelayMinutes,
+                    t.ReminderSentAt,
+                    t.EscalationSentAt))
                 .ToList();
 
             return new UserWithTasksDto(u.Id, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay, userTasks);
@@ -115,7 +139,14 @@ public class UserAnalyticsService(
                 t.State == TaskState.InProgress ? "In Progress" :
                 t.State == TaskState.Done ? "Done" : "Canceled",
                 t.CreatedAt,
-                t.FinishedAt
+                t.FinishedAt,
+                t.DueDate,
+                t.ReminderEnabled,
+                t.ReminderOffsetMinutes,
+                t.EscalationEnabled,
+                t.EscalationDelayMinutes,
+                t.ReminderSentAt,
+                t.EscalationSentAt
             ))
             .FirstOrDefaultAsync();
 

@@ -17,12 +17,37 @@ public class Task : BaseEntity
     public TaskState State { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
+    public DateTime? DueDate { get; set; }
+    public bool ReminderEnabled { get; set; }
+    public int? ReminderOffsetMinutes { get; set; }
+    public DateTime? ReminderSentAt { get; set; }
+    public bool EscalationEnabled { get; set; }
+    public int? EscalationDelayMinutes { get; set; }
+    public DateTime? EscalationSentAt { get; set; }
 
     public Project Project { get; set; }
     public User Performer { get; set; }
 
 
-    public Task(int id, int projectId, int performerId, string name, string description, TaskState state, DateTime createdAt, DateTime? finishedAt, Project project, User user, User performer)
+    public Task(
+        int id,
+        int projectId,
+        int performerId,
+        string name,
+        string description,
+        TaskState state,
+        DateTime createdAt,
+        DateTime? finishedAt,
+        Project project,
+        User user,
+        User performer,
+        DateTime? dueDate,
+        bool reminderEnabled,
+        int? reminderOffsetMinutes,
+        DateTime? reminderSentAt,
+        bool escalationEnabled,
+        int? escalationDelayMinutes,
+        DateTime? escalationSentAt)
     {
         Id = id;
         ProjectId = projectId;
@@ -32,6 +57,13 @@ public class Task : BaseEntity
         State = state;
         CreatedAt = createdAt;
         FinishedAt = finishedAt;
+        DueDate = dueDate;
+        ReminderEnabled = reminderEnabled;
+        ReminderOffsetMinutes = reminderOffsetMinutes;
+        ReminderSentAt = reminderSentAt;
+        EscalationEnabled = escalationEnabled;
+        EscalationDelayMinutes = escalationDelayMinutes;
+        EscalationSentAt = escalationSentAt;
         Project = project;
         Performer = user;
     }

@@ -240,7 +240,14 @@ public class ValidatorTests
             Description: "Test Description",
             State: "ToDo",
             CreatedAt: DateTime.UtcNow,
-            FinishedAt: null
+            FinishedAt: null,
+            DueDate: DateTime.UtcNow.AddHours(1),
+            ReminderEnabled: true,
+            ReminderOffsetMinutes: 30,
+            EscalationEnabled: true,
+            EscalationDelayMinutes: 60,
+            ReminderSentAt: null,
+            EscalationSentAt: null
         );
 
         // Act
@@ -262,7 +269,14 @@ public class ValidatorTests
             Description: "Test Description",
             State: "ToDo",
             CreatedAt: DateTime.UtcNow,
-            FinishedAt: null
+            FinishedAt: null,
+            DueDate: null,
+            ReminderEnabled: false,
+            ReminderOffsetMinutes: null,
+            EscalationEnabled: false,
+            EscalationDelayMinutes: null,
+            ReminderSentAt: null,
+            EscalationSentAt: null
         );
 
         // Act
@@ -284,7 +298,14 @@ public class ValidatorTests
             Description: "Test Description",
             State: "ToDo",
             CreatedAt: DateTime.UtcNow,
-            FinishedAt: null
+            FinishedAt: null,
+            DueDate: null,
+            ReminderEnabled: false,
+            ReminderOffsetMinutes: null,
+            EscalationEnabled: false,
+            EscalationDelayMinutes: null,
+            ReminderSentAt: null,
+            EscalationSentAt: null
         );
 
         // Act
@@ -306,7 +327,14 @@ public class ValidatorTests
             Description: new string('A', 1001), // 1001 characters
             State: "ToDo",
             CreatedAt: DateTime.UtcNow,
-            FinishedAt: null
+            FinishedAt: null,
+            DueDate: null,
+            ReminderEnabled: false,
+            ReminderOffsetMinutes: null,
+            EscalationEnabled: false,
+            EscalationDelayMinutes: null,
+            ReminderSentAt: null,
+            EscalationSentAt: null
         );
 
         // Act

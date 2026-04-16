@@ -31,8 +31,9 @@ public class RabbitMqService : IQueueService
         _resiliencePolicy = resiliencePolicy;
     }
 
-    public async Task<bool> PostValue(string message, CancellationToken ct = default)
+    public async Task<bool> PostValue(string message, string? queueName = null, CancellationToken ct = default)
     {
+        var targetQueue = string.IsNullOrWhiteSpace(queueName) ? _options.QueueName : queueName;
         try
         {
             await _resiliencePolicy.ExecuteAsync(async policyCt =>
@@ -43,7 +44,7 @@ public class RabbitMqService : IQueueService
                 await using var channel = await connection.CreateChannelAsync(cancellationToken: policyCt);
 
                 await channel.QueueDeclareAsync(
-                    _options.QueueName,
+                    targetQueue,
                     durable: _options.Durable,
                     exclusive: false,
                     autoDelete: false,
@@ -62,7 +63,7 @@ public class RabbitMqService : IQueueService
 
                 await channel.BasicPublishAsync(
                     exchange: "",
-                    routingKey: _options.QueueName,
+                    routingKey: targetQueue,
                     mandatory: false,
                     basicProperties: props,
                     body: body,
@@ -70,7 +71,7 @@ public class RabbitMqService : IQueueService
 
                 _logger.LogInformation(
                     "Message published to queue {QueueName} with ID {MessageId}",
-                    _options.QueueName,
+                    targetQueue,
                     messageId);
             }, ct);
 
@@ -78,7 +79,7 @@ public class RabbitMqService : IQueueService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to publish message to RabbitMQ queue {QueueName} after all retries", _options.QueueName);
+            _logger.LogError(ex, "Failed to publish message to RabbitMQ queue {QueueName} after all retries", targetQueue);
             return false;
         }
     }

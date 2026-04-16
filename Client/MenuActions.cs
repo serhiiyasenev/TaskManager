@@ -1,6 +1,7 @@
 ﻿using Client.Helpers;
 using Client.Models;
 using Client.Services;
+using System.Net.Http.Json;
 
 namespace Client
 {
@@ -27,7 +28,9 @@ namespace Client
             [7] = GetSortedFilteredPageOfProjects,
             [8] = GetTaskStatusByProject,
             [9] = StartTimerServiceToExecuteRandomTasksWithDelay,
-            [10] = StopTimerService
+            [10] = StopTimerService,
+            [11] = ListTasksWithReminders,
+            [12] = UpdateTaskReminderSettings
         };
 
         public static async Task GetTasksCountInProjectsByUserId()
@@ -239,6 +242,88 @@ namespace Client
             }
 
             PrintColored(sep, ConsoleColor.DarkGray);
+        }
+
+        public static async Task ListTasksWithReminders()
+        {
+            var tasks = await HttpClient!.GetFromJsonAsync<List<TaskDetailDto>>("Tasks");
+            if (tasks is null || tasks.Count == 0)
+            {
+                PrintColored("\nNo tasks found.", ConsoleColor.Yellow);
+                return;
+            }
+
+            tasks.ForEach(t => PrintColored($"\n{t}", ConsoleColor.Green));
+        }
+
+        public static async Task UpdateTaskReminderSettings()
+        {
+            PrintColored("\nEnter Task Id:", ConsoleColor.Green);
+            if (!int.TryParse(Console.ReadLine(), out var taskId))
+            {
+                PrintColored("Invalid Task Id.", ConsoleColor.Red);
+                return;
+            }
+
+            PrintColored("Enter due date (UTC, e.g., 2026-05-01T12:00:00Z) or leave empty to keep current:", ConsoleColor.Green);
+            var dueDateInput = Console.ReadLine();
+            DateTime? dueDate = null;
+            if (!string.IsNullOrWhiteSpace(dueDateInput))
+            {
+                if (DateTime.TryParse(dueDateInput, out var parsedDue))
+                {
+                    dueDate = parsedDue.ToUniversalTime();
+                }
+                else
+                {
+                    PrintColored("Invalid date format.", ConsoleColor.Red);
+                    return;
+                }
+            }
+
+            var reminderEnabled = PromptBoolean("Enable reminder? (y/n): ");
+            var reminderOffset = PromptOptionalInt("Reminder offset minutes (blank for default): ");
+            var escalationEnabled = PromptBoolean("Enable escalation? (y/n): ");
+            var escalationDelay = PromptOptionalInt("Escalation delay minutes after due date (blank for default): ");
+
+            var payload = new
+            {
+                DueDate = dueDate,
+                ReminderEnabled = reminderEnabled,
+                ReminderOffsetMinutes = reminderOffset,
+                EscalationEnabled = escalationEnabled,
+                EscalationDelayMinutes = escalationDelay
+            };
+
+            var response = await HttpClient!.PutAsJsonAsync($"Tasks/{taskId}/reminder", payload);
+            if (response.IsSuccessStatusCode)
+            {
+                PrintColored("Reminder settings updated.", ConsoleColor.Green);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                PrintColored($"Failed to update reminder: {response.StatusCode} {error}", ConsoleColor.Red);
+            }
+        }
+
+        private static bool PromptBoolean(string prompt)
+        {
+            PrintColored(prompt, ConsoleColor.Green);
+            var input = Console.ReadLine()?.Trim().ToLowerInvariant();
+            return input is "y" or "yes" or "true" or "1";
+        }
+
+        private static int? PromptOptionalInt(string prompt)
+        {
+            PrintColored(prompt, ConsoleColor.Green);
+            var input = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return null;
+            }
+
+            return int.TryParse(input, out var value) ? value : null;
         }
 
         public void Greetings()

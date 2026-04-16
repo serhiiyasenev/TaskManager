@@ -8,4 +8,11 @@ public record TaskBasicDto(
     string Description,
     string State,
     DateTime CreatedAt,
-    DateTime? FinishedAt);
+    DateTime? FinishedAt,
+    DateTime? DueDate,
+    bool ReminderEnabled,
+    int? ReminderOffsetMinutes,
+    bool EscalationEnabled,
+    int? EscalationDelayMinutes,
+    DateTime? ReminderSentAt,
+    DateTime? EscalationSentAt);

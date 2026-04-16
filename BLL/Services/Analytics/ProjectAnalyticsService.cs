@@ -36,14 +36,22 @@ public class ProjectAnalyticsService(
                           new ProjectDto(p.Id, p.Name, p.Description, p.CreatedAt, p.Deadline),
 
                           (from t in tasks.Query()
-                           where t.ProjectId == p.Id
-                           orderby t.Description.Length descending
-                           select new TaskDto(
+                          where t.ProjectId == p.Id
+                          orderby t.Description.Length descending
+                          select new TaskDto(
                                t.Id, t.Name, t.Description,
                                t.State == TaskState.ToDo ? "To Do" :
                                t.State == TaskState.InProgress ? "In Progress" :
                                t.State == TaskState.Done ? "Done" : "Canceled",
-                               t.CreatedAt, t.FinishedAt)).FirstOrDefault(),
+                               t.CreatedAt,
+                               t.FinishedAt,
+                               t.DueDate,
+                               t.ReminderEnabled,
+                               t.ReminderOffsetMinutes,
+                               t.EscalationEnabled,
+                               t.EscalationDelayMinutes,
+                               t.ReminderSentAt,
+                               t.EscalationSentAt)).FirstOrDefault(),
 
                           (from t in tasks.Query()
                            where t.ProjectId == p.Id
@@ -53,7 +61,15 @@ public class ProjectAnalyticsService(
                                t.State == TaskState.ToDo ? "To Do" :
                                t.State == TaskState.InProgress ? "In Progress" :
                                t.State == TaskState.Done ? "Done" : "Canceled",
-                               t.CreatedAt, t.FinishedAt)).FirstOrDefault(),
+                               t.CreatedAt,
+                               t.FinishedAt,
+                               t.DueDate,
+                               t.ReminderEnabled,
+                               t.ReminderOffsetMinutes,
+                               t.EscalationEnabled,
+                               t.EscalationDelayMinutes,
+                               t.ReminderSentAt,
+                               t.EscalationSentAt)).FirstOrDefault(),
 
                           (p.Description.Length > 20
                               || tasks.Query().Count(t => t.ProjectId == p.Id) < 3)
@@ -129,11 +145,18 @@ public class ProjectAnalyticsService(
                                   t.ProjectId,
                                   t.Name,
                                   t.Description,
-                                  t.State,
-                                  t.CreatedAt,
-                                  t.FinishedAt,
-                                  Performer = u == null ? null :
-                                      new UserDto(u.Id, u.TeamId, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay)
+                              t.State,
+                              t.CreatedAt,
+                              t.FinishedAt,
+                              t.DueDate,
+                              t.ReminderEnabled,
+                              t.ReminderOffsetMinutes,
+                              t.EscalationEnabled,
+                              t.EscalationDelayMinutes,
+                              t.ReminderSentAt,
+                              t.EscalationSentAt,
+                              Performer = u == null ? null :
+                                  new UserDto(u.Id, u.TeamId, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay)
                               }).ToListAsync();
 
         var tasksByProject = taskRows
@@ -144,7 +167,16 @@ public class ProjectAnalyticsService(
                     r.State == TaskState.ToDo ? "To Do" :
                     r.State == TaskState.InProgress ? "In Progress" :
                     r.State == TaskState.Done ? "Done" : "Canceled",
-                    r.CreatedAt, r.FinishedAt, r.Performer)).ToList());
+                    r.CreatedAt,
+                    r.FinishedAt,
+                    r.DueDate,
+                    r.ReminderEnabled,
+                    r.ReminderOffsetMinutes,
+                    r.ReminderSentAt,
+                    r.EscalationEnabled,
+                    r.EscalationDelayMinutes,
+                    r.EscalationSentAt,
+                    r.Performer)).ToList());
 
         var items = pageRows.Select(x =>
             new FullProjectDto(
