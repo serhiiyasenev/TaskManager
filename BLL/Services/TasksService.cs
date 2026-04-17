@@ -211,6 +211,12 @@ public class TasksService(
                 return Error.NotFound(nameof(DAL.Entities.Task), id);
             }
 
+            var previousDueDate = entity.DueDate;
+            var previousReminderEnabled = entity.ReminderEnabled;
+            var previousReminderOffset = entity.ReminderOffsetMinutes;
+            var previousEscalationEnabled = entity.EscalationEnabled;
+            var previousEscalationDelay = entity.EscalationDelayMinutes;
+
             var dueDate = reminderDto.DueDate ?? entity.DueDate;
             entity.DueDate = dueDate;
             entity.ReminderEnabled = reminderDto.ReminderEnabled && dueDate.HasValue;
@@ -223,7 +229,9 @@ public class TasksService(
                 entity.ReminderSentAt = null;
                 entity.ReminderOffsetMinutes = null;
             }
-            else
+            else if (!previousReminderEnabled
+                     || previousDueDate != entity.DueDate
+                     || previousReminderOffset != entity.ReminderOffsetMinutes)
             {
                 entity.ReminderSentAt = null;
             }
@@ -233,7 +241,9 @@ public class TasksService(
                 entity.EscalationSentAt = null;
                 entity.EscalationDelayMinutes = null;
             }
-            else
+            else if (!previousEscalationEnabled
+                     || previousDueDate != entity.DueDate
+                     || previousEscalationDelay != entity.EscalationDelayMinutes)
             {
                 entity.EscalationSentAt = null;
             }

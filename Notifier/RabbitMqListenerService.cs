@@ -129,7 +129,7 @@ namespace Notifier
         {
             try
             {
-                var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+                var message = Encoding.UTF8.GetString(ea.Body.Span);
                 _logger.LogInformation("Received message from queue {QueueName}: {Message}", queueName, message);
 
                 var envelope = DeserializeEnvelope(message);
