@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BLL\BLL.csproj" />
     <ProjectReference Include="..\WebAPI\WebAPI.csproj" />
+    <ProjectReference Include="..\Notifier\Notifier.csproj" Aliases="NotifierLib" />
   </ItemGroup>
 
 </Project>

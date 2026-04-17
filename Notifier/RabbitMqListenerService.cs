@@ -114,6 +114,17 @@ namespace Notifier
             });
         }
 
+        public Task HandleMessageAsyncForTests(string queueName, string message, CancellationToken token) =>
+            HandleMessageAsync(queueName, new BasicDeliverEventArgs(
+                consumerTag: string.Empty,
+                deliveryTag: 1,
+                redelivered: false,
+                exchange: string.Empty,
+                routingKey: queueName,
+                properties: new BasicProperties(),
+                body: new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(message)),
+                cancellationToken: token), token);
+
         private async Task HandleMessageAsync(string queueName, BasicDeliverEventArgs ea, CancellationToken stoppingToken)
         {
             try
@@ -164,7 +175,7 @@ namespace Notifier
             }
         }
 
-        private (string User, string Message) BuildNotification(TaskNotificationEnvelope envelope)
+        internal static (string User, string Message) BuildNotification(TaskNotificationEnvelope envelope)
         {
             return envelope.Type switch
             {

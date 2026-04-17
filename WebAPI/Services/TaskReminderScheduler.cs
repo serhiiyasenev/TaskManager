@@ -57,7 +57,9 @@ public class TaskReminderScheduler(
         logger.LogInformation("Task reminder scheduler stopped.");
     }
 
-    private async Task ProcessRemindersAsync(CancellationToken ct)
+    public Task RunOnceAsync(CancellationToken ct = default) => ProcessRemindersAsync(ct);
+
+    protected internal virtual async Task ProcessRemindersAsync(CancellationToken ct)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var taskRepo = scope.ServiceProvider.GetRequiredService<IRepository<TaskEntity>>();
