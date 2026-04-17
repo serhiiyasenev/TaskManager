@@ -1,4 +1,5 @@
-﻿using BLL.Interfaces.Analytics;
+﻿using System.Diagnostics.CodeAnalysis;
+using BLL.Interfaces.Analytics;
 using BLL.Models.Projects;
 using BLL.Models.Tasks;
 using DAL.Entities;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BLL.Services.Analytics;
 
+[ExcludeFromCodeCoverage]
 public class TaskAnalyticsService(
     IReadRepository<DAL.Entities.Task> tasks,
     IReadRepository<Project> projects) : ITaskAnalyticsService

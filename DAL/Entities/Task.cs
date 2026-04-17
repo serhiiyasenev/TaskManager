@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using DAL.Entities.Base;
 using DAL.Enum;
 
 namespace DAL.Entities;
 
+[ExcludeFromCodeCoverage]
 public class Task : BaseEntity
 {
     public int ProjectId { get; set; }

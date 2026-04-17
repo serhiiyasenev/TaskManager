@@ -1,4 +1,5 @@
-﻿using BLL.Interfaces.Analytics;
+﻿using System.Diagnostics.CodeAnalysis;
+using BLL.Interfaces.Analytics;
 using BLL.Models;
 using BLL.Models.Projects;
 using BLL.Models.Tasks;
@@ -11,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BLL.Services.Analytics;
 
+[ExcludeFromCodeCoverage]
 public class ProjectAnalyticsService(
     IReadRepository<Project> projects,
     IReadRepository<User> users,

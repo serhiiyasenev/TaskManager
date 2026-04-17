@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using BLL.Configuration;
 using DAL.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -7,6 +8,7 @@ using SystemTask = System.Threading.Tasks.Task;
 
 namespace WebAPI;
 
+[ExcludeFromCodeCoverage]
 public sealed class BootstrapAdminHostedService(
     IServiceProvider serviceProvider,
     IOptions<BootstrapAdminOptions> options,

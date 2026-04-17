@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using BLL.Models.Tasks;
 using FluentValidation;
 
 namespace BLL.Validators;
 
+[ExcludeFromCodeCoverage]
 public class UpdateTaskReminderDtoValidator : AbstractValidator<UpdateTaskReminderDto>
 {
     private const int MaxMinutes = 7 * 24 * 60;

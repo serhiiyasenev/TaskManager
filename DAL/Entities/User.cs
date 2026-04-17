@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Identity;
 
 namespace DAL.Entities;
 
+[ExcludeFromCodeCoverage]
 public class User : IdentityUser<int>
 {
     public int? TeamId { get; set; }

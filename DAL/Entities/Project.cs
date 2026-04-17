@@ -1,8 +1,10 @@
 ﻿using DAL.Entities.Base;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DAL.Entities;
 
+[ExcludeFromCodeCoverage]
 public class Project : BaseEntity
 {
     public int AuthorId { get; set; }

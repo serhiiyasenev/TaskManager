@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using BLL.Configuration;
 using BLL.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,7 @@ using RabbitMQ.Client;
 
 namespace BLL.Services;
 
+[ExcludeFromCodeCoverage]
 public class RabbitMqService : IQueueService, IAsyncDisposable
 {
     private readonly RabbitMqOptions _options;

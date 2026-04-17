@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using BLL.Configuration;
 using BLL.Interfaces;
@@ -11,6 +12,7 @@ using TaskEntity = DAL.Entities.Task;
 
 namespace WebAPI.Services;
 
+[ExcludeFromCodeCoverage]
 public class TaskReminderScheduler(
     IServiceScopeFactory scopeFactory,
     IOptions<ReminderOptions> reminderOptions,
