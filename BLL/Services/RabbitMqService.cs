@@ -216,7 +216,6 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
             if (lockAcquired)
             {
                 _channelLock.Release();
-                _channelLock.Dispose();
             }
         }
     }
