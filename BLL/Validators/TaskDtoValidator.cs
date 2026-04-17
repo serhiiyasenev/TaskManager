@@ -18,13 +18,11 @@ public class TaskDtoValidator : AbstractValidator<TaskDto>
             .NotEmpty().WithMessage("Task state is required");
 
         RuleFor(x => x.ReminderOffsetMinutes)
-            .GreaterThan(0).When(x => x.ReminderEnabled && x.ReminderOffsetMinutes.HasValue)
-            .LessThanOrEqualTo(7 * 24 * 60).When(x => x.ReminderOffsetMinutes.HasValue)
+            .InclusiveBetween(1, 7 * 24 * 60).When(x => x.ReminderEnabled && x.ReminderOffsetMinutes.HasValue)
             .WithMessage("Reminder offset must be between 1 minute and 7 days.");
 
         RuleFor(x => x.EscalationDelayMinutes)
-            .GreaterThan(0).When(x => x.EscalationEnabled && x.EscalationDelayMinutes.HasValue)
-            .LessThanOrEqualTo(7 * 24 * 60).When(x => x.EscalationDelayMinutes.HasValue)
+            .InclusiveBetween(1, 7 * 24 * 60).When(x => x.EscalationEnabled && x.EscalationDelayMinutes.HasValue)
             .WithMessage("Escalation delay must be between 1 minute and 7 days.");
     }
 }
