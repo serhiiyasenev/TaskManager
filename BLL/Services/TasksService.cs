@@ -164,6 +164,11 @@ public class TasksService(
             entity.Name = task.Name;
             entity.Description = task.Description;
             entity.State = task.State;
+            entity.DueDate = task.DueDate;
+            entity.ReminderEnabled = task.ReminderEnabled;
+            entity.ReminderOffsetMinutes = task.ReminderOffsetMinutes;
+            entity.EscalationEnabled = task.EscalationEnabled;
+            entity.EscalationDelayMinutes = task.EscalationDelayMinutes;
             if (!entity.ReminderEnabled
                 || previousDueDate != entity.DueDate
                 || previousReminderOffset != entity.ReminderOffsetMinutes
