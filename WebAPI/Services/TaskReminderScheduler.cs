@@ -79,8 +79,12 @@ public class TaskReminderScheduler(
             .Where(t => t.DueDate != null
                         && t.State != TaskState.Done
                         && t.State != TaskState.Canceled
-                        && ((t.ReminderEnabled && t.ReminderSentAt == null)
-                            || (t.EscalationEnabled && t.EscalationSentAt == null)))
+                        && ((t.ReminderEnabled
+                             && t.ReminderSentAt == null
+                             && t.DueDate <= nowUtc.AddMinutes(t.ReminderOffsetMinutes ?? _options.DefaultReminderOffsetMinutes))
+                            || (t.EscalationEnabled
+                                && t.EscalationSentAt == null
+                                && t.DueDate <= nowUtc.AddMinutes(-(t.EscalationDelayMinutes ?? _options.DefaultEscalationDelayMinutes)))))
             .ToListAsync(ct);
 
         var remindersSent = 0;
