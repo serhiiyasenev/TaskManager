@@ -69,7 +69,6 @@ public class TaskReminderScheduler(
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<TaskContext>();
-        var taskRepo = scope.ServiceProvider.GetRequiredService<IRepository<TaskEntity>>();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var queue = scope.ServiceProvider.GetRequiredService<IQueueService>();
 
