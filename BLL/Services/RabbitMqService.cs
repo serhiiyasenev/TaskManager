@@ -100,6 +100,7 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
 
         await DisposeChannelAsync();
         await DisposeConnectionAsync();
+        _declaredQueues.Clear();
 
         _connection = await GetFactory().CreateConnectionAsync(ct);
         _channel = await _connection.CreateChannelAsync(cancellationToken: ct);

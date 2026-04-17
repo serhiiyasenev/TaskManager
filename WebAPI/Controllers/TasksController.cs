@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using BLL.Common;
 using BLL.Interfaces;
@@ -10,7 +9,6 @@ using Task = DAL.Entities.Task;
 
 namespace WebAPI.Controllers;
 
-[ExcludeFromCodeCoverage]
 [ApiController]
 [Route("api/[controller]")]
 public class TasksController(ITasksService tasksService, IQueueService queueService) : ControllerBase
