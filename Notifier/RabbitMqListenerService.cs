@@ -13,6 +13,7 @@ namespace Notifier
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly ILogger<RabbitMqListenerService> _logger;
         private readonly IConfiguration _configuration;
+        private readonly IConnectionFactory? _connectionFactory;
         private readonly IAsyncPolicy _retryPolicy;
         private readonly HashSet<string> _queueNames;
         private readonly JsonSerializerOptions _serializerOptions = new()
@@ -23,11 +24,13 @@ namespace Notifier
         public RabbitMqListenerService(
             IHubContext<ChatHub> hubContext,
             ILogger<RabbitMqListenerService> logger,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IConnectionFactory? connectionFactory = null)
         {
             _hubContext = hubContext;
             _logger = logger;
             _configuration = configuration;
+            _connectionFactory = connectionFactory;
             
             // Create retry policy for connection
             _retryPolicy = Policy
@@ -64,7 +67,7 @@ namespace Notifier
                     var rabbitMqPassword = _configuration["RabbitMQ:Password"] ?? "guest";
 
                     var connectionString = $"amqp://{rabbitMqUser}:{rabbitMqPassword}@{rabbitMqHost}:{rabbitMqPort}";
-                    var factory = new ConnectionFactory { Uri = new Uri(connectionString) };
+                    var factory = _connectionFactory ?? new ConnectionFactory { Uri = new Uri(connectionString) };
 
                     _logger.LogInformation("Connecting to RabbitMQ at {ConnectionString}", connectionString.Replace(rabbitMqPassword, "***"));
 
@@ -105,6 +108,10 @@ namespace Notifier
                     }
 
                     _logger.LogInformation("RabbitMQ listener service stopping gracefully");
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    _logger.LogInformation("RabbitMQ listener service stopping due to cancellation");
                 }
                 catch (Exception ex)
                 {
