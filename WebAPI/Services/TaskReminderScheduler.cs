@@ -74,14 +74,9 @@ public class TaskReminderScheduler(
         var queue = scope.ServiceProvider.GetRequiredService<IQueueService>();
 
         var nowUtc = DateTime.UtcNow;
-        var maxReminderLookaheadMinutes = Math.Max(0, _options.DefaultReminderOffsetMinutes);
-        if (maxReminderLookaheadMinutes < MaxSupportedOffsetMinutes)
-        {
-            maxReminderLookaheadMinutes = MaxSupportedOffsetMinutes;
-        }
-
+        var reminderLookaheadMinutes = MaxSupportedOffsetMinutes;
         var escalationCutoffAdjustmentMinutes = _options.DefaultEscalationDelayMinutes <= 0 ? 0 : 1;
-        var reminderDueDateCutoffUtc = nowUtc.AddMinutes(maxReminderLookaheadMinutes);
+        var reminderDueDateCutoffUtc = nowUtc.AddMinutes(reminderLookaheadMinutes);
         var escalationDueDateCutoffUtc = nowUtc.AddMinutes(-escalationCutoffAdjustmentMinutes);
         var tasks = await dbContext.Tasks
             .AsTracking()
