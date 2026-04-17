@@ -74,10 +74,8 @@ public class TaskReminderScheduler(
         var queue = scope.ServiceProvider.GetRequiredService<IQueueService>();
 
         var nowUtc = DateTime.UtcNow;
-        var reminderLookaheadMinutes = MaxSupportedOffsetMinutes;
-        var escalationCutoffAdjustmentMinutes = _options.DefaultEscalationDelayMinutes <= 0 ? 0 : 1;
-        var reminderDueDateCutoffUtc = nowUtc.AddMinutes(reminderLookaheadMinutes);
-        var escalationDueDateCutoffUtc = nowUtc.AddMinutes(-escalationCutoffAdjustmentMinutes);
+        var defaultReminderOffsetMinutes = Math.Clamp(_options.DefaultReminderOffsetMinutes, 1, MaxSupportedOffsetMinutes);
+        var defaultEscalationDelayMinutes = Math.Clamp(_options.DefaultEscalationDelayMinutes, 1, MaxSupportedOffsetMinutes);
         var tasks = await dbContext.Tasks
             .AsTracking()
             .Include(t => t.Project)
@@ -86,10 +84,10 @@ public class TaskReminderScheduler(
                         && t.State != TaskState.Canceled
                         && ((t.ReminderEnabled
                              && t.ReminderSentAt == null
-                             && t.DueDate <= reminderDueDateCutoffUtc)
+                             && t.DueDate.Value.AddMinutes(-(t.ReminderOffsetMinutes ?? defaultReminderOffsetMinutes)) <= nowUtc)
                             || (t.EscalationEnabled
                                 && t.EscalationSentAt == null
-                                && t.DueDate <= escalationDueDateCutoffUtc)))
+                                && t.DueDate.Value.AddMinutes(t.EscalationDelayMinutes ?? defaultEscalationDelayMinutes) <= nowUtc)))
             .ToListAsync(ct);
 
         var remindersSent = 0;
