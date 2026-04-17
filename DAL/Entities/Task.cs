@@ -41,7 +41,6 @@ public class Task : BaseEntity
         DateTime createdAt,
         DateTime? finishedAt,
         Project project,
-        User user,
         User performer,
         DateTime? dueDate,
         bool reminderEnabled,
