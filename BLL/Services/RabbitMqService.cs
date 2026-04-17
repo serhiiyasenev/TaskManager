@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Text;
 using BLL.Configuration;
 using BLL.Interfaces;
@@ -12,6 +13,7 @@ namespace BLL.Services;
 [ExcludeFromCodeCoverage]
 public class RabbitMqService : IQueueService, IAsyncDisposable
 {
+    private static readonly TimeSpan DisposeLockTimeout = TimeSpan.FromSeconds(10);
     private readonly RabbitMqOptions _options;
     private readonly ILogger<RabbitMqService> _logger;
     private readonly IAsyncPolicy _resiliencePolicy;
@@ -21,6 +23,7 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
     private ConnectionFactory? _factory;
     private IConnection? _connection;
     private IChannel? _channel;
+    private int _disposeSignaled;
 
     public RabbitMqService(
         IOptions<RabbitMqOptions> options,
@@ -42,6 +45,12 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
 
     public async Task<bool> PostValue(string message, string? queueName = null, CancellationToken ct = default)
     {
+        if (Volatile.Read(ref _disposeSignaled) != 0)
+        {
+            _logger.LogWarning("RabbitMqService is shutting down; publish request is rejected.");
+            return false;
+        }
+
         var targetQueue = string.IsNullOrWhiteSpace(queueName) ? _options.QueueName : queueName;
         try
         {
@@ -50,6 +59,12 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
                 await _channelLock.WaitAsync(policyCt);
                 try
                 {
+                    if (Volatile.Read(ref _disposeSignaled) != 0)
+                    {
+                        _logger.LogWarning("RabbitMqService is shutting down; publish request is rejected.");
+                        return;
+                    }
+
                     await EnsureChannelAsync(policyCt);
                     await EnsureQueueDeclaredAsync(targetQueue, policyCt);
 
@@ -177,16 +192,32 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await _channelLock.WaitAsync();
+        if (Interlocked.Exchange(ref _disposeSignaled, 1) != 0)
+        {
+            return;
+        }
+
+        var lockAcquired = false;
         try
         {
+            using var timeoutCts = new CancellationTokenSource(DisposeLockTimeout);
+            await _channelLock.WaitAsync(timeoutCts.Token);
+            lockAcquired = true;
+
             await DisposeChannelAsync();
             await DisposeConnectionAsync();
-            _channelLock.Dispose();
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Timed out waiting for RabbitMQ publish lock during shutdown.");
         }
         finally
         {
-            // no release after dispose
+            if (lockAcquired)
+            {
+                _channelLock.Release();
+                _channelLock.Dispose();
+            }
         }
     }
 }
