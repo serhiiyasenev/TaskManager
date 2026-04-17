@@ -24,6 +24,6 @@ public class UpdateTaskReminderDtoValidator : AbstractValidator<UpdateTaskRemind
         RuleFor(x => x.DueDate)
             .GreaterThan(_ => DateTime.UtcNow.AddMinutes(-1))
             .When(x => x.DueDate.HasValue)
-            .WithMessage("Due date must be in the future.");
+            .WithMessage("Due date cannot be more than 1 minute in the past.");
     }
 }
