@@ -20,7 +20,6 @@ public class TaskReminderScheduler(
 {
     private readonly ReminderOptions _options = reminderOptions.Value;
     private readonly string _reminderQueueName = rabbitMqOptions.Value.ReminderQueueName
-        ?? reminderOptions.Value.ReminderQueueName
         ?? rabbitMqOptions.Value.QueueName;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

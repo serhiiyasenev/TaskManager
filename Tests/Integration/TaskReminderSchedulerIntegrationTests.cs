@@ -76,7 +76,7 @@ public class TaskReminderSchedulerIntegrationTests(DatabaseFixture fixture) : IC
         context.Tasks.Add(task);
         await context.SaveChangesAsync();
 
-        var scheduler = CreateScheduler(context, queue, new ReminderOptions { ReminderQueueName = "TaskReminders" });
+        var scheduler = CreateScheduler(context, queue, new ReminderOptions());
 
         await scheduler.RunOnceAsync();
 
@@ -112,7 +112,7 @@ public class TaskReminderSchedulerIntegrationTests(DatabaseFixture fixture) : IC
         context.Tasks.Add(task);
         await context.SaveChangesAsync();
 
-        var scheduler = CreateScheduler(context, queue, new ReminderOptions { ReminderQueueName = "TaskReminders" });
+        var scheduler = CreateScheduler(context, queue, new ReminderOptions());
 
         await scheduler.RunOnceAsync();
 

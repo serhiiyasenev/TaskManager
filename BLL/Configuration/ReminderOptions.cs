@@ -24,8 +24,4 @@ public class ReminderOptions
     /// </summary>
     public int DefaultEscalationDelayMinutes { get; set; } = 60;
 
-    /// <summary>
-    /// Optional queue name override for reminder messages. Falls back to RabbitMQ.QueueName when null/empty.
-    /// </summary>
-    public string? ReminderQueueName { get; set; }
 }
