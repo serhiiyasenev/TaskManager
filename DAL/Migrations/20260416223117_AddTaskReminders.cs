@@ -55,6 +55,11 @@ namespace DAL.Migrations
                 type: "datetime2",
                 nullable: true);
 
+            migrationBuilder.InsertData(
+                table: "AspNetUserRoles",
+                columns: new[] { "UserId", "RoleId" },
+                values: new object[] { 1, 1 });
+
             migrationBuilder.UpdateData(
                 table: "Tasks",
                 keyColumn: "Id",
@@ -192,6 +197,11 @@ namespace DAL.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DeleteData(
+                table: "AspNetUserRoles",
+                keyColumns: new[] { "UserId", "RoleId" },
+                keyValues: new object[] { 1, 1 });
+
             migrationBuilder.DropColumn(
                 name: "DueDate",
                 table: "Tasks");
