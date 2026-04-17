@@ -123,7 +123,7 @@ namespace Notifier
             });
         }
 
-        public Task HandleMessageAsyncForTests(string queueName, string message, CancellationToken token) =>
+        internal Task HandleMessageAsyncForTests(string queueName, string message, CancellationToken token) =>
             HandleMessageAsync(queueName, new BasicDeliverEventArgs(
                 consumerTag: string.Empty,
                 deliveryTag: 1,
