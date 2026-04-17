@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   review:
+    if: ${{ secrets.CONSENSIA_API_KEY != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,3 +26,11 @@ jobs:
           target: pr
           mode: BALANCED
           rounds: 2
+
+  missing-secret:
+    if: ${{ secrets.CONSENSIA_API_KEY == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip Consensia review (CONSENSIA_API_KEY not set)
+        run: |
+          echo "CONSENSIA_API_KEY is not configured; skipping Consensia AI Reviewer."
