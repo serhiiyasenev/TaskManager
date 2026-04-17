@@ -316,14 +316,22 @@ namespace Client
 
         private static int? PromptOptionalInt(string prompt)
         {
-            PrintColored(prompt, ConsoleColor.Green);
-            var input = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(input))
+            while (true)
             {
-                return null;
-            }
+                PrintColored(prompt, ConsoleColor.Green);
+                var input = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    return null;
+                }
 
-            return int.TryParse(input, out var value) ? value : null;
+                if (int.TryParse(input, out var value))
+                {
+                    return value;
+                }
+
+                PrintColored("Invalid number. Please enter a valid integer or leave blank for default.", ConsoleColor.Red);
+            }
         }
 
         public void Greetings()
