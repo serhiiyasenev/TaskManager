@@ -55,3 +55,22 @@ of all AI-assisted or automated commits.
 **Source:** [View Commit](https://github.com/serhiiyasenev/TaskManager/commit/f27a4b88e15d4f84c22a31b0d8a98d3e1b10bca7)
 
 **Auto-generated trace entry after merge to main.**
+```
+
+---
+
+## 🧭 3. `consensia-reviewer.yml`
+
+### 🎯 Purpose
+Runs the Consensia AI Reviewer on pull requests to add inline feedback using a multi-agent consensus analysis.
+
+### ✅ What it does
+| Step | Action |
+|------|--------|
+| 1️⃣ | Triggers on PR open/sync/reopen events (non-draft, same-repo branches) |
+| 2️⃣ | Checks out the repository with full history |
+| 3️⃣ | Executes `Ashixi/consensia-action` with `target: pr`, `mode: BALANCED`, `rounds: 2` |
+
+### 🔐 Requirements
+- Repository secret `CONSENSIA_API_KEY` with a Consensia token.
+- Default `GITHUB_TOKEN` is used for posting review comments.

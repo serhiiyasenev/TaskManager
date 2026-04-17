@@ -1,0 +1,32 @@
+name: Consensia AI Reviewer
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: consensia-reviewer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository && secrets.CONSENSIA_API_KEY != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Consensia AI Reviewer
+        uses: Ashixi/consensia-action@b79a2183885354a0883df5dcc9285b8bead997f9
+        with:
+          api-key: ${{ secrets.CONSENSIA_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          target: pr
+          mode: BALANCED
+          rounds: 2

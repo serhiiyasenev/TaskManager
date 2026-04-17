@@ -3,6 +3,7 @@
 ![Tests](https://github.com/serhiiyasenev/TaskManager/actions/workflows/run-tests.yml/badge.svg)
 ![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/serhiiyasenev/43220e786710833306a7a0e291f25449/raw/coverage.json)
 ![AI Validation](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-validation.yml/badge.svg)
+![Consensia AI Reviewer](https://github.com/serhiiyasenev/TaskManager/actions/workflows/consensia-reviewer.yml/badge.svg)
 
 **TaskManager** is a multi-component project management and task tracking system built with **.NET 10**, **SignalR**, **RabbitMQ**, **Serilog**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
 The system supports **real-time notifications**, **asynchronous task processing**, **analytics**, and **modular expansion**.
@@ -19,6 +20,7 @@ The system supports **real-time notifications**, **asynchronous task processing*
   - Instant real-time messages between the server and clients
 - **RabbitMQ Messaging**
   - Asynchronous communication between services
+  - Due-date reminders and overdue escalations published to RabbitMQ and fanned out via Notifier/SignalR
 - **Layered Architecture**
   - **BLL** (Business Logic Layer)
   - **DAL** (Data Access Layer)
@@ -124,6 +126,11 @@ graph TD
     G ---|queries/visualizes| LS
 ```
 
+## 🤖 AI & QA Automation
+- `ai-validation.yml` keeps ACE-FCA artifacts (plan, traces, decisions) in sync on PRs.
+- `ai-auto-trace.yml` writes an audit trace to `AI/traces/` after merges to `main`.
+- `consensia-reviewer.yml` runs Consensia AI Reviewer on pull requests (requires `CONSENSIA_API_KEY` secret) and posts inline review feedback.
+
 ⚙️ Local Setup Instructions
 
 Install SQL Server and RabbitMQ (or run them via Docker)
@@ -157,10 +164,12 @@ Also, you can use Swagger, Postman or any other client to execute Web API reques
 5. Get User Info
 6. Get Projects Info
 7. Get Sorted Filtered Page Of Projects
-8. Get Tasks Status By Project User Id
-9. Start Timer Service To Execute Random Tasks With a Delay
+8. Get Tasks Status By Project Id
+9. Start Timer Service To Execute Random Tasks With Delay
 10. Stop Timer Service
-11. Exit the program
+11. List Tasks With Reminder State
+12. Update Task Reminder Settings
+13. Exit the program
 
 <img src="Img_1.jpg" style="max-width: 100%; height: auto;"/>
 
