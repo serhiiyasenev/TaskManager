@@ -164,13 +164,6 @@ public class TasksService(
             entity.Name = task.Name;
             entity.Description = task.Description;
             entity.State = task.State;
-            entity.DueDate = task.DueDate;
-            entity.ReminderEnabled = task.ReminderEnabled && entity.DueDate.HasValue;
-            entity.EscalationEnabled = task.EscalationEnabled && entity.DueDate.HasValue;
-
-            entity.ReminderOffsetMinutes = ResolveReminderOffset(entity.ReminderEnabled, task.ReminderOffsetMinutes);
-            entity.EscalationDelayMinutes = ResolveEscalationDelay(entity.EscalationEnabled, task.EscalationDelayMinutes);
-
             if (!entity.ReminderEnabled
                 || previousDueDate != entity.DueDate
                 || previousReminderOffset != entity.ReminderOffsetMinutes
