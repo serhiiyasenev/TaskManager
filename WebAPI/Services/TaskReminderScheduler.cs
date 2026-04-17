@@ -20,6 +20,7 @@ public class TaskReminderScheduler(
     ILogger<TaskReminderScheduler> logger)
     : BackgroundService
 {
+    private const int MaxSupportedOffsetMinutes = 7 * 24 * 60;
     private readonly ReminderOptions _options = reminderOptions.Value;
     private readonly string _reminderQueueName = rabbitMqOptions.Value.ReminderQueueName
         ?? rabbitMqOptions.Value.QueueName;
@@ -73,6 +74,10 @@ public class TaskReminderScheduler(
         var queue = scope.ServiceProvider.GetRequiredService<IQueueService>();
 
         var nowUtc = DateTime.UtcNow;
+        var reminderWindowMinutes = Math.Max(MaxSupportedOffsetMinutes, Math.Max(0, _options.DefaultReminderOffsetMinutes));
+        var minEscalationDelayMinutes = _options.DefaultEscalationDelayMinutes <= 0 ? 0 : 1;
+        var reminderDueDateCutoffUtc = nowUtc.AddMinutes(reminderWindowMinutes);
+        var escalationDueDateCutoffUtc = nowUtc.AddMinutes(-minEscalationDelayMinutes);
         var tasks = await dbContext.Tasks
             .AsTracking()
             .Include(t => t.Project)
@@ -81,10 +86,10 @@ public class TaskReminderScheduler(
                         && t.State != TaskState.Canceled
                         && ((t.ReminderEnabled
                              && t.ReminderSentAt == null
-                             && t.DueDate <= nowUtc.AddMinutes(t.ReminderOffsetMinutes ?? _options.DefaultReminderOffsetMinutes))
+                             && t.DueDate <= reminderDueDateCutoffUtc)
                             || (t.EscalationEnabled
                                 && t.EscalationSentAt == null
-                                && t.DueDate <= nowUtc.AddMinutes(-(t.EscalationDelayMinutes ?? _options.DefaultEscalationDelayMinutes)))))
+                                && t.DueDate <= escalationDueDateCutoffUtc)))
             .ToListAsync(ct);
 
         var remindersSent = 0;
