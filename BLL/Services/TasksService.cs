@@ -153,6 +153,12 @@ public class TasksService(
                 return Error.NotFound("Project", task.ProjectId);
             }
 
+            var previousDueDate = entity.DueDate;
+            var previousReminderEnabled = entity.ReminderEnabled;
+            var previousReminderOffset = entity.ReminderOffsetMinutes;
+            var previousEscalationEnabled = entity.EscalationEnabled;
+            var previousEscalationDelay = entity.EscalationDelayMinutes;
+
             entity.ProjectId = task.ProjectId;
             entity.PerformerId = task.PerformerId;
             entity.Name = task.Name;
@@ -165,7 +171,10 @@ public class TasksService(
             entity.ReminderOffsetMinutes = ResolveReminderOffset(entity.ReminderEnabled, task.ReminderOffsetMinutes);
             entity.EscalationDelayMinutes = ResolveEscalationDelay(entity.EscalationEnabled, task.EscalationDelayMinutes);
 
-            if (!entity.ReminderEnabled || entity.DueDate != task.DueDate || entity.ReminderOffsetMinutes != task.ReminderOffsetMinutes)
+            if (!entity.ReminderEnabled
+                || previousDueDate != entity.DueDate
+                || previousReminderOffset != entity.ReminderOffsetMinutes
+                || previousReminderEnabled != entity.ReminderEnabled)
             {
                 entity.ReminderSentAt = null;
                 if (!entity.ReminderEnabled)
@@ -174,7 +183,10 @@ public class TasksService(
                 }
             }
 
-            if (!entity.EscalationEnabled || entity.DueDate != task.DueDate || entity.EscalationDelayMinutes != task.EscalationDelayMinutes)
+            if (!entity.EscalationEnabled
+                || previousDueDate != entity.DueDate
+                || previousEscalationDelay != entity.EscalationDelayMinutes
+                || previousEscalationEnabled != entity.EscalationEnabled)
             {
                 entity.EscalationSentAt = null;
                 if (!entity.EscalationEnabled)

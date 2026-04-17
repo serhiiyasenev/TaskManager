@@ -340,6 +340,13 @@ namespace DAL.Context
                 }
             );
 
+            modelBuilder.Entity<IdentityUserRole<int>>().HasData(
+                new IdentityUserRole<int>
+                {
+                    UserId = 1,
+                    RoleId = 1
+                });
+
             modelBuilder.Entity<Project>().HasData(
                 new Project { Id = 1, AuthorId = 1, TeamId = 1, Name = "Task Manager API", Description = "Core Web API", CreatedAt = t0, Deadline = t0.AddDays(20) },
                 new Project { Id = 2, AuthorId = 2, TeamId = 2, Name = "Realtime Hub", Description = "SignalR hubs & clients", CreatedAt = t0.AddDays(1), Deadline = t0.AddDays(25) },

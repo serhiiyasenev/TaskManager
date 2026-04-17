@@ -2,6 +2,7 @@ using System.Text.Json;
 using BLL.Configuration;
 using BLL.Interfaces;
 using BLL.Models.Messaging;
+using DAL.Context;
 using DAL.Enum;
 using DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +14,14 @@ namespace WebAPI.Services;
 public class TaskReminderScheduler(
     IServiceScopeFactory scopeFactory,
     IOptions<ReminderOptions> reminderOptions,
+    IOptions<RabbitMqOptions> rabbitMqOptions,
     ILogger<TaskReminderScheduler> logger)
     : BackgroundService
 {
     private readonly ReminderOptions _options = reminderOptions.Value;
+    private readonly string _reminderQueueName = rabbitMqOptions.Value.ReminderQueueName
+        ?? reminderOptions.Value.ReminderQueueName
+        ?? rabbitMqOptions.Value.QueueName;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -62,14 +67,20 @@ public class TaskReminderScheduler(
     protected internal virtual async Task ProcessRemindersAsync(CancellationToken ct)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TaskContext>();
         var taskRepo = scope.ServiceProvider.GetRequiredService<IRepository<TaskEntity>>();
         var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var queue = scope.ServiceProvider.GetRequiredService<IQueueService>();
 
         var nowUtc = DateTime.UtcNow;
-        var tasks = await taskRepo.Query()
+        var tasks = await dbContext.Tasks
+            .AsTracking()
             .Include(t => t.Project)
-            .Where(t => t.DueDate != null && t.State != TaskState.Done && t.State != TaskState.Canceled)
+            .Where(t => t.DueDate != null
+                        && t.State != TaskState.Done
+                        && t.State != TaskState.Canceled
+                        && ((t.ReminderEnabled && t.ReminderSentAt == null)
+                            || (t.EscalationEnabled && t.EscalationSentAt == null)))
             .ToListAsync(ct);
 
         var remindersSent = 0;
@@ -134,7 +145,7 @@ public class TaskReminderScheduler(
         };
 
         var payload = JsonSerializer.Serialize(envelope);
-        var queueName = _options.ReminderQueueName;
+        var queueName = _reminderQueueName;
 
         var published = await queue.PostValue(payload, queueName, ct);
         if (!published)

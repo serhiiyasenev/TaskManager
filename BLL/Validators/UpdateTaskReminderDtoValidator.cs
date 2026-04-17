@@ -20,7 +20,7 @@ public class UpdateTaskReminderDtoValidator : AbstractValidator<UpdateTaskRemind
             .WithMessage("Escalation delay must be between 1 minute and 7 days.");
 
         RuleFor(x => x.DueDate)
-            .GreaterThan(DateTime.UtcNow.AddMinutes(-1))
+            .GreaterThan(_ => DateTime.UtcNow.AddMinutes(-1))
             .When(x => x.DueDate.HasValue)
             .WithMessage("Due date must be in the future.");
     }

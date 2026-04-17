@@ -65,7 +65,7 @@ public class Task : BaseEntity
         EscalationDelayMinutes = escalationDelayMinutes;
         EscalationSentAt = escalationSentAt;
         Project = project;
-        Performer = user;
+        Performer = performer;
     }
 
     public Task()

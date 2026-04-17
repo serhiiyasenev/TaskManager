@@ -40,11 +40,18 @@ public class TaskReminderSchedulerIntegrationTests(DatabaseFixture fixture) : IC
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IQueueService>(queue);
         services.AddLogging();
-        services.Configure<RabbitMqOptions>(_ => { });
+        services.Configure<RabbitMqOptions>(opt =>
+        {
+            opt.ReminderQueueName = "TaskReminders";
+        });
         services.Configure<ReminderOptions>(_ => { });
         var provider = services.BuildServiceProvider();
         var scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
-        return new TaskReminderScheduler(scopeFactory, Options.Create(options ?? new ReminderOptions()), NullLogger<TaskReminderScheduler>.Instance);
+        return new TaskReminderScheduler(
+            scopeFactory,
+            Options.Create(options ?? new ReminderOptions()),
+            Options.Create(new RabbitMqOptions { ReminderQueueName = "TaskReminders" }),
+            NullLogger<TaskReminderScheduler>.Instance);
     }
 
     [Fact]
