@@ -13,7 +13,7 @@ Implement a robust retry and Dead-Letter Exchange (DLX) mechanism in the Notifie
 
 | # | Step | Acceptance Criteria  |
 |---|------|----------------------|
-| ✅ 1 | Research RabbitMQ retry & DLX patterns | `research.md` updated with selected approach |
+| 1 | Research RabbitMQ retry & DLX patterns | `research.md` updated with selected approach |
 | 2 | Extend Notifier configuration for DLX/retry queues | `appsettings.json` contains retry settings |
 | 3 | Implement retry logic with limited attempts | Simulated failure triggers retries then DLX |
 | 4 | Add DLX consumer / logger | Failed messages recorded with metadata |
