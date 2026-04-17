@@ -128,6 +128,7 @@ public class WebApiControllersTests
         Assert.IsType<OkObjectResult>((await controller.GetById(1, CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.Add(new TaskEntity(), CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.Update(1, new TaskEntity(), CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.UpdateReminder(1, new UpdateTaskReminderDto(DateTime.UtcNow.AddHours(1), true, 30, true, 60), CancellationToken.None)).Result);
         Assert.IsType<OkResult>(await controller.DeleteById(1, CancellationToken.None));
 
         var ok = Assert.IsType<OkObjectResult>((await controller.AddExecutedTask(new ExecutedTaskEntity(), CancellationToken.None)).Result);
