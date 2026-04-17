@@ -85,7 +85,7 @@ builder.Services.AddScoped<IProjectsService, ProjectsService>();
 builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<ITeamsService, TeamsService>();
 builder.Services.AddScoped<IUsersService, UsersService>();
-builder.Services.AddScoped<IQueueService, RabbitMqService>();
+builder.Services.AddSingleton<IQueueService, RabbitMqService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHostedService<BootstrapAdminHostedService>();
