@@ -1,4 +1,3 @@
-﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.SignalR;
 using Polly;
 using RabbitMQ.Client;
@@ -9,7 +8,6 @@ using BLL.Models.Messaging;
 
 namespace Notifier
 {
-    [ExcludeFromCodeCoverage]
     public class RabbitMqListenerService : BackgroundService
     {
         private readonly IHubContext<ChatHub> _hubContext;

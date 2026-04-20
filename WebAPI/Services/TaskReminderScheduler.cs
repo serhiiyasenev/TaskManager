@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using BLL.Configuration;
 using BLL.Interfaces;
@@ -12,7 +11,6 @@ using TaskEntity = DAL.Entities.Task;
 
 namespace WebAPI.Services;
 
-[ExcludeFromCodeCoverage]
 public class TaskReminderScheduler(
     IServiceScopeFactory scopeFactory,
     IOptions<ReminderOptions> reminderOptions,
@@ -96,8 +94,8 @@ public class TaskReminderScheduler(
         foreach (var task in tasks)
         {
             var due = task.DueDate!.Value;
-            var reminderOffset = task.ReminderOffsetMinutes ?? _options.DefaultReminderOffsetMinutes;
-            var escalationDelay = task.EscalationDelayMinutes ?? _options.DefaultEscalationDelayMinutes;
+            var reminderOffset = Math.Clamp(task.ReminderOffsetMinutes ?? defaultReminderOffsetMinutes, 1, MaxSupportedOffsetMinutes);
+            var escalationDelay = Math.Clamp(task.EscalationDelayMinutes ?? defaultEscalationDelayMinutes, 1, MaxSupportedOffsetMinutes);
 
             if (task.ReminderEnabled && task.ReminderSentAt is null && nowUtc >= due.AddMinutes(-reminderOffset))
             {
