@@ -3,7 +3,6 @@
 ![Tests](https://github.com/serhiiyasenev/TaskManager/actions/workflows/run-tests.yml/badge.svg)
 ![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/serhiiyasenev/43220e786710833306a7a0e291f25449/raw/coverage.json)
 ![AI Validation](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-validation.yml/badge.svg)
-![Consensia AI Reviewer](https://github.com/serhiiyasenev/TaskManager/actions/workflows/consensia-reviewer.yml/badge.svg)
 
 **TaskManager** is a multi-component project management and task tracking system built with **.NET 10**, **SignalR**, **RabbitMQ**, **Serilog**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
 The system supports **real-time notifications**, **asynchronous task processing**, **analytics**, and **modular expansion**.
@@ -129,7 +128,6 @@ graph TD
 ## 🤖 AI & QA Automation
 - `ai-validation.yml` keeps ACE-FCA artifacts (plan, traces, decisions) in sync on PRs.
 - `ai-auto-trace.yml` writes an audit trace to `AI/traces/` after merges to `main`.
-- `consensia-reviewer.yml` runs Consensia AI Reviewer on pull requests (requires `CONSENSIA_API_KEY` secret) and posts inline review feedback.
 
 ⚙️ Local Setup Instructions
 
