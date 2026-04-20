@@ -2,5 +2,5 @@
 
 public interface IQueueService
 {
-    Task<bool> PostValue(string message, CancellationToken ct = default);
+    Task<bool> PostValue(string message, string? queueName = null, CancellationToken ct = default);
 }

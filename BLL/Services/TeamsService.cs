@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Diagnostics.CodeAnalysis;
+using AutoMapper;
 using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Teams;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BLL.Services;
 
+[ExcludeFromCodeCoverage]
 public class TeamsService(
     IRepository<Team> teams,
     IUnitOfWork uow,

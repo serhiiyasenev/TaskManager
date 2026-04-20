@@ -19,6 +19,7 @@ using Serilog;
 using System.Text.Json.Serialization;
 using WebAPI;
 using WebAPI.Middleware;
+using WebAPI.Services;
 
 Serilog.Debugging.SelfLog.Enable(msg => File.AppendAllText("serilog-selflog.txt", msg + Environment.NewLine));
 
@@ -33,6 +34,7 @@ builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection(Rab
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<PaginationOptions>(builder.Configuration.GetSection(PaginationOptions.SectionName));
 builder.Services.Configure<BootstrapAdminOptions>(builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
+builder.Services.Configure<ReminderOptions>(builder.Configuration.GetSection(ReminderOptions.SectionName));
 
 // Add AutoMapper
 builder.Services.AddSingleton<IMapper>(_ =>
@@ -83,10 +85,11 @@ builder.Services.AddScoped<IProjectsService, ProjectsService>();
 builder.Services.AddScoped<ITasksService, TasksService>();
 builder.Services.AddScoped<ITeamsService, TeamsService>();
 builder.Services.AddScoped<IUsersService, UsersService>();
-builder.Services.AddScoped<IQueueService, RabbitMqService>();
+builder.Services.AddSingleton<IQueueService, RabbitMqService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHostedService<BootstrapAdminHostedService>();
+builder.Services.AddHostedService<TaskReminderScheduler>();
 
 // Add API Versioning
 builder.Services.AddApiVersioning(options =>

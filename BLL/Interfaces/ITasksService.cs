@@ -12,5 +12,6 @@ public interface ITasksService
     System.Threading.Tasks.Task<Result<Task>> AddTaskAsync(Task task, CancellationToken ct = default);
     System.Threading.Tasks.Task<Result<ExecutedTask>> AddExecutedTaskAsync(ExecutedTask task, CancellationToken ct = default);
     System.Threading.Tasks.Task<Result<Task>> UpdateTaskByIdAsync(int id, Task task, CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result<Task>> UpdateTaskReminderAsync(int id, UpdateTaskReminderDto reminderDto, CancellationToken ct = default);
     System.Threading.Tasks.Task<Result> DeleteTaskByIdAsync(int id, CancellationToken ct = default);
 }

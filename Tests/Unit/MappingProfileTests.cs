@@ -159,7 +159,12 @@ public class MappingProfileTests
             Description = "Description",
             State = TaskState.InProgress,
             CreatedAt = DateTime.UtcNow,
-            FinishedAt = null
+            FinishedAt = null,
+            DueDate = DateTime.UtcNow.AddHours(1),
+            ReminderEnabled = true,
+            ReminderOffsetMinutes = 30,
+            EscalationEnabled = true,
+            EscalationDelayMinutes = 45
         };
 
         // Act
@@ -172,6 +177,11 @@ public class MappingProfileTests
         Assert.Equal("InProgress", dto.State); // Enum to string
         Assert.Equal(task.CreatedAt, dto.CreatedAt);
         Assert.Equal(task.FinishedAt, dto.FinishedAt);
+        Assert.Equal(task.DueDate, dto.DueDate);
+        Assert.Equal(task.ReminderEnabled, dto.ReminderEnabled);
+        Assert.Equal(task.ReminderOffsetMinutes, dto.ReminderOffsetMinutes);
+        Assert.Equal(task.EscalationEnabled, dto.EscalationEnabled);
+        Assert.Equal(task.EscalationDelayMinutes, dto.EscalationDelayMinutes);
     }
 
     [Fact]
@@ -184,7 +194,12 @@ public class MappingProfileTests
             Name = "Test Task",
             Description = "Description",
             State = TaskState.ToDo,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            DueDate = DateTime.UtcNow.AddHours(2),
+            ReminderEnabled = true,
+            ReminderOffsetMinutes = 15,
+            EscalationEnabled = false,
+            EscalationDelayMinutes = null
         };
 
         // Act
@@ -193,6 +208,11 @@ public class MappingProfileTests
         // Assert
         Assert.Equal(task.Id, dto.Id);
         Assert.Equal(task.Name, dto.Name);
+        Assert.Equal("ToDo", dto.State);
+        Assert.Equal(task.DueDate, dto.DueDate);
+        Assert.Equal(task.ReminderEnabled, dto.ReminderEnabled);
+        Assert.Equal(task.ReminderOffsetMinutes, dto.ReminderOffsetMinutes);
+        Assert.Equal(task.EscalationEnabled, dto.EscalationEnabled);
     }
 
     [Fact]

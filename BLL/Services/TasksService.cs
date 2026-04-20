@@ -2,11 +2,13 @@
 using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Tasks;
+using BLL.Configuration;
 using DAL.Entities;
 using DAL.Enum;
 using DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace BLL.Services;
 
@@ -17,9 +19,12 @@ public class TasksService(
     IRepository<ExecutedTask> executedTasks,
     IUnitOfWork uow,
     IMapper mapper,
-    ILogger<TasksService> logger)
+    ILogger<TasksService> logger,
+    IOptions<ReminderOptions>? reminderOptions = null)
     : ITasksService
 {
+    private readonly ReminderOptions _reminderOptions = reminderOptions?.Value ?? new ReminderOptions();
+
     public async Task<Result<List<TaskDetailDto>>> GetTasksAsync(CancellationToken ct = default)
     {
         try
@@ -86,6 +91,7 @@ public class TasksService(
 
             task.Id = 0;
             task.CreatedAt = DateTime.UtcNow;
+            ApplyReminderDefaults(task);
             if (task.State is TaskState.ToDo or TaskState.InProgress) 
                 task.FinishedAt = null;
 
@@ -147,11 +153,45 @@ public class TasksService(
                 return Error.NotFound("Project", task.ProjectId);
             }
 
+            var previousDueDate = entity.DueDate;
+            var previousReminderEnabled = entity.ReminderEnabled;
+            var previousReminderOffset = entity.ReminderOffsetMinutes;
+            var previousEscalationEnabled = entity.EscalationEnabled;
+            var previousEscalationDelay = entity.EscalationDelayMinutes;
+
             entity.ProjectId = task.ProjectId;
             entity.PerformerId = task.PerformerId;
             entity.Name = task.Name;
             entity.Description = task.Description;
             entity.State = task.State;
+            entity.DueDate = task.DueDate;
+            entity.ReminderEnabled = task.ReminderEnabled;
+            entity.ReminderOffsetMinutes = task.ReminderOffsetMinutes;
+            entity.EscalationEnabled = task.EscalationEnabled;
+            entity.EscalationDelayMinutes = task.EscalationDelayMinutes;
+            if (!entity.ReminderEnabled
+                || previousDueDate != entity.DueDate
+                || previousReminderOffset != entity.ReminderOffsetMinutes
+                || previousReminderEnabled != entity.ReminderEnabled)
+            {
+                entity.ReminderSentAt = null;
+                if (!entity.ReminderEnabled)
+                {
+                    entity.ReminderOffsetMinutes = null;
+                }
+            }
+
+            if (!entity.EscalationEnabled
+                || previousDueDate != entity.DueDate
+                || previousEscalationDelay != entity.EscalationDelayMinutes
+                || previousEscalationEnabled != entity.EscalationEnabled)
+            {
+                entity.EscalationSentAt = null;
+                if (!entity.EscalationEnabled)
+                {
+                    entity.EscalationDelayMinutes = null;
+                }
+            }
 
             entity.FinishedAt = entity.State is TaskState.Done or TaskState.Canceled
                 ? DateTime.UtcNow
@@ -166,6 +206,67 @@ public class TasksService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error updating task {TaskId}", id);
+            return Error.UnexpectedError;
+        }
+    }
+
+    public async Task<Result<DAL.Entities.Task>> UpdateTaskReminderAsync(int id, UpdateTaskReminderDto reminderDto, CancellationToken ct = default)
+    {
+        try
+        {
+            var entity = await tasks.GetByIdAsync(id, ct);
+            if (entity is null)
+            {
+                logger.LogWarning("Task {TaskId} not found for reminder update", id);
+                return Error.NotFound(nameof(DAL.Entities.Task), id);
+            }
+
+            var previousDueDate = entity.DueDate;
+            var previousReminderEnabled = entity.ReminderEnabled;
+            var previousReminderOffset = entity.ReminderOffsetMinutes;
+            var previousEscalationEnabled = entity.EscalationEnabled;
+            var previousEscalationDelay = entity.EscalationDelayMinutes;
+
+            var dueDate = reminderDto.DueDate ?? entity.DueDate;
+            entity.DueDate = dueDate;
+            entity.ReminderEnabled = reminderDto.ReminderEnabled && dueDate.HasValue;
+            entity.ReminderOffsetMinutes = ResolveReminderOffset(entity.ReminderEnabled, reminderDto.ReminderOffsetMinutes);
+            entity.EscalationEnabled = reminderDto.EscalationEnabled && dueDate.HasValue;
+            entity.EscalationDelayMinutes = ResolveEscalationDelay(entity.EscalationEnabled, reminderDto.EscalationDelayMinutes);
+
+            if (!entity.ReminderEnabled)
+            {
+                entity.ReminderSentAt = null;
+                entity.ReminderOffsetMinutes = null;
+            }
+            else if (!previousReminderEnabled
+                     || previousDueDate != entity.DueDate
+                     || previousReminderOffset != entity.ReminderOffsetMinutes)
+            {
+                entity.ReminderSentAt = null;
+            }
+
+            if (!entity.EscalationEnabled)
+            {
+                entity.EscalationSentAt = null;
+                entity.EscalationDelayMinutes = null;
+            }
+            else if (!previousEscalationEnabled
+                     || previousDueDate != entity.DueDate
+                     || previousEscalationDelay != entity.EscalationDelayMinutes)
+            {
+                entity.EscalationSentAt = null;
+            }
+
+            tasks.Update(entity);
+            await uow.SaveChangesAsync(ct);
+
+            logger.LogInformation("Task reminders updated: {TaskId}", id);
+            return Result<DAL.Entities.Task>.Success(entity);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error updating reminders for task {TaskId}", id);
             return Error.UnexpectedError;
         }
     }
@@ -192,5 +293,35 @@ public class TasksService(
             logger.LogError(ex, "Error deleting task {TaskId}", id);
             return Error.Custom("Error.CanNotDelete", $"Cannot delete Task with ID {id}. It may have dependencies.");
         }
+    }
+
+    private void ApplyReminderDefaults(DAL.Entities.Task task)
+    {
+        task.ReminderEnabled = task.ReminderEnabled && task.DueDate.HasValue;
+        task.EscalationEnabled = task.EscalationEnabled && task.DueDate.HasValue;
+        task.ReminderOffsetMinutes = ResolveReminderOffset(task.ReminderEnabled, task.ReminderOffsetMinutes);
+        task.EscalationDelayMinutes = ResolveEscalationDelay(task.EscalationEnabled, task.EscalationDelayMinutes);
+        if (!task.ReminderEnabled)
+        {
+            task.ReminderSentAt = null;
+        }
+        if (!task.EscalationEnabled)
+        {
+            task.EscalationSentAt = null;
+        }
+    }
+
+    private int? ResolveReminderOffset(bool enabled, int? providedOffset)
+    {
+        return enabled
+            ? providedOffset ?? _reminderOptions.DefaultReminderOffsetMinutes
+            : null;
+    }
+
+    private int? ResolveEscalationDelay(bool enabled, int? providedDelay)
+    {
+        return enabled
+            ? providedDelay ?? _reminderOptions.DefaultEscalationDelayMinutes
+            : null;
     }
 }

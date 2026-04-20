@@ -11,6 +11,9 @@ using MockQueryable;
 using Xunit;
 using Task = System.Threading.Tasks.Task;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using BLL.Configuration;
+using BLL.Models.Tasks;
 
 namespace Tests.Unit;
 
@@ -30,14 +33,15 @@ public class TasksServiceTests
         _mapper = config.CreateMapper();
     }
 
-    private TasksService CreateSut() => new(
+    private TasksService CreateSut(ReminderOptions? reminderOptions = null) => new(
         _tasks.Object,
         _users.Object,
         _projects.Object,
         _executedTasks.Object,
         _uow.Object,
         _mapper,
-        _logger.Object);
+        _logger.Object,
+        Options.Create(reminderOptions ?? new ReminderOptions()));
 
     [Fact]
     public async Task GetTasksAsync_ReturnsAllTasks()
@@ -431,5 +435,64 @@ public class TasksServiceTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value!.FinishedAt);
         Assert.True(result.Value!.FinishedAt >= before && result.Value!.FinishedAt <= after);
+    }
+
+    [Fact]
+    public async Task UpdateTaskReminderAsync_UsesDefaults_WhenOffsetNotProvided()
+    {
+        var options = new ReminderOptions
+        {
+            DefaultReminderOffsetMinutes = 45,
+            DefaultEscalationDelayMinutes = 30
+        };
+
+        var existing = new DAL.Entities.Task
+        {
+            Id = 99,
+            DueDate = DateTime.UtcNow.AddHours(2),
+            ReminderEnabled = false,
+            EscalationEnabled = false
+        };
+
+        _tasks.Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var sut = CreateSut(options);
+
+        var result = await sut.UpdateTaskReminderAsync(99, new UpdateTaskReminderDto(null, true, null, true, null));
+
+        Assert.True(result.IsSuccess);
+        Assert.True(existing.ReminderEnabled);
+        Assert.Equal(options.DefaultReminderOffsetMinutes, existing.ReminderOffsetMinutes);
+        Assert.True(existing.EscalationEnabled);
+        Assert.Equal(options.DefaultEscalationDelayMinutes, existing.EscalationDelayMinutes);
+    }
+
+    [Fact]
+    public async Task UpdateTaskReminderAsync_DisablesWhenNoDueDate()
+    {
+        var existing = new DAL.Entities.Task
+        {
+            Id = 77,
+            DueDate = null,
+            ReminderEnabled = false,
+            EscalationEnabled = false
+        };
+
+        _tasks.Setup(r => r.GetByIdAsync(77, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var sut = CreateSut();
+
+        var result = await sut.UpdateTaskReminderAsync(77, new UpdateTaskReminderDto(null, true, 15, true, 30));
+
+        Assert.True(result.IsSuccess);
+        Assert.False(existing.ReminderEnabled);
+        Assert.Null(existing.ReminderOffsetMinutes);
+        Assert.False(existing.EscalationEnabled);
     }
 }

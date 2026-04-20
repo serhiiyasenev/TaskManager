@@ -32,7 +32,8 @@ public class MappingProfile : Profile
         CreateMap<DAL.Entities.Task, TaskDto>()
             .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State.ToString()));
         
-        CreateMap<DAL.Entities.Task, TaskWithPerformerDto>();
+        CreateMap<DAL.Entities.Task, TaskWithPerformerDto>()
+            .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State.ToString()));
         CreateMap<DAL.Entities.Task, TaskBasicDto>()
             .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State.ToString()));
         CreateMap<DAL.Entities.Task, TaskDetailDto>()

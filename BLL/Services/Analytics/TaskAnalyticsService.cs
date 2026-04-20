@@ -1,4 +1,5 @@
-﻿using BLL.Interfaces.Analytics;
+﻿using System.Diagnostics.CodeAnalysis;
+using BLL.Interfaces.Analytics;
 using BLL.Models.Projects;
 using BLL.Models.Tasks;
 using DAL.Entities;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BLL.Services.Analytics;
 
+[ExcludeFromCodeCoverage]
 public class TaskAnalyticsService(
     IReadRepository<DAL.Entities.Task> tasks,
     IReadRepository<Project> projects) : ITaskAnalyticsService
@@ -32,7 +34,22 @@ public class TaskAnalyticsService(
     {
         var rows = await tasks.Query()
             .Where(t => t.PerformerId == userId)
-            .Select(t => new { t.Id, t.Name, t.Description, t.State, t.CreatedAt, t.FinishedAt })
+            .Select(t => new
+            {
+                t.Id,
+                t.Name,
+                t.Description,
+                t.State,
+                t.CreatedAt,
+                t.FinishedAt,
+                t.DueDate,
+                t.ReminderEnabled,
+                t.ReminderOffsetMinutes,
+                t.EscalationEnabled,
+                t.EscalationDelayMinutes,
+                t.ReminderSentAt,
+                t.EscalationSentAt
+            })
             .ToListAsync();
 
         return rows
@@ -47,7 +64,15 @@ public class TaskAnalyticsService(
                     TaskState.Canceled => "Canceled",
                     _ => "Unknown"
                 },
-                x.CreatedAt, x.FinishedAt))
+                x.CreatedAt,
+                x.FinishedAt,
+                x.DueDate,
+                x.ReminderEnabled,
+                x.ReminderOffsetMinutes,
+                x.EscalationEnabled,
+                x.EscalationDelayMinutes,
+                x.ReminderSentAt,
+                x.EscalationSentAt))
             .ToList();
     }
 

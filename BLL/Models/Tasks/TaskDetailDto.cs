@@ -11,4 +11,11 @@ public record TaskDetailDto(
     string State,
     DateTime CreatedAt,
     DateTime? FinishedAt,
+    DateTime? DueDate,
+    bool ReminderEnabled,
+    int? ReminderOffsetMinutes,
+    DateTime? ReminderSentAt,
+    bool EscalationEnabled,
+    int? EscalationDelayMinutes,
+    DateTime? EscalationSentAt,
     UserBasicDto Performer);

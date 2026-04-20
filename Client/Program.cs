@@ -43,23 +43,32 @@ public class Program
             Console.WriteLine("8. Get Task Status By Project Id");
             Console.WriteLine("9. Start Timer Service To Execute Random Tasks With Delay");
             Console.WriteLine("10. Stop Timer Service");
-            Console.WriteLine("11. Exit the program\n");
+            Console.WriteLine("11. List Tasks With Reminder State");
+            Console.WriteLine("12. Update Task Reminder Settings");
+            Console.WriteLine("13. Exit the program\n");
             Console.Write("Enter your choice:\n");
 
-            if (int.TryParse(Console.ReadLine(), out var choiceInt) && choiceInt is >= 0 and <= 10)
+            if (int.TryParse(Console.ReadLine(), out var choiceInt) && choiceInt is >= 0 and <= 13)
             {
-                if (choiceInt == 10)
+                if (choiceInt == 13)
                 {
                     // Stop the host before exiting the program
                     await host.StopAsync();
                     Environment.Exit(0);
                 }
 
-                await menu.Actions[choiceInt]();
+                if (menu.Actions.TryGetValue(choiceInt, out var action))
+                {
+                    await action();
+                }
+                else
+                {
+                    MenuActions.PrintColored("Invalid choice. Please select an existing option.", ConsoleColor.Yellow);
+                }
             }
             else
             {
-                MenuActions.PrintColored("Invalid choice. Please enter a number between 0 and 10.", ConsoleColor.Yellow);
+                MenuActions.PrintColored("Invalid choice. Please enter a number between 0 and 13.", ConsoleColor.Yellow);
             }
         }
     }

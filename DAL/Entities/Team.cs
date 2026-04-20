@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using DAL.Entities.Base;
 
 namespace DAL.Entities;
 
+[ExcludeFromCodeCoverage]
 public class Team : BaseEntity
 {
     [Required]

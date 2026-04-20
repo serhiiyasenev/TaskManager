@@ -2,6 +2,7 @@ using System.Text.Json;
 using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Tasks;
+using BLL.Models.Messaging;
 using DAL.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Task = DAL.Entities.Task;
@@ -52,8 +53,17 @@ public class TasksController(ITasksService tasksService, IQueueService queueServ
         if (result.IsFailure)
             return StatusCode(500, result.Error);
 
-        var json = JsonSerializer.Serialize(executedTask);
-        var postedMessageToQueue = await queueService.PostValue(json, ct);
+        var envelope = new TaskNotificationEnvelope
+        {
+            Type = NotificationEventType.ExecutedTaskCompleted,
+            ExecutedTask = new ExecutedTaskNotification(
+                result.Value!.TaskId,
+                result.Value!.TaskName,
+                result.Value!.CreatedAt),
+            CorrelationId = Guid.NewGuid().ToString("N")
+        };
+
+        var postedMessageToQueue = await queueService.PostValue(JsonSerializer.Serialize(envelope), null, ct);
         var executedTaskResult = new ExecutedTaskResult
         {
             Task = result.Value!,
@@ -70,6 +80,17 @@ public class TasksController(ITasksService tasksService, IQueueService queueServ
     public async Task<ActionResult<Task>> Update([FromRoute] int id, [FromBody] Task task, CancellationToken ct)
     {
         var result = await tasksService.UpdateTaskByIdAsync(id, task, ct);
+        return result.ToActionResult();
+    }
+
+    [HttpPut("{id}/reminder")]
+    [ProducesResponseType(typeof(Task), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<Task>> UpdateReminder([FromRoute] int id, [FromBody] UpdateTaskReminderDto reminderDto, CancellationToken ct)
+    {
+        var result = await tasksService.UpdateTaskReminderAsync(id, reminderDto, ct);
         return result.ToActionResult();
     }
 

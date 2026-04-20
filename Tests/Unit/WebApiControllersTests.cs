@@ -111,13 +111,15 @@ public class WebApiControllersTests
             .ReturnsAsync(Result<TaskEntity>.Success(new TaskEntity()));
         tasksService.Setup(x => x.UpdateTaskByIdAsync(1, It.IsAny<TaskEntity>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<TaskEntity>.Success(new TaskEntity()));
+        tasksService.Setup(x => x.UpdateTaskReminderAsync(1, It.IsAny<UpdateTaskReminderDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<TaskEntity>.Success(new TaskEntity()));
         tasksService.Setup(x => x.DeleteTaskByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var executed = new ExecutedTaskEntity { Id = 7, TaskId = 4, TaskName = "x", CreatedAt = DateTime.UtcNow };
         tasksService.Setup(x => x.AddExecutedTaskAsync(It.IsAny<ExecutedTaskEntity>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ExecutedTaskEntity>.Success(executed));
-        queueService.Setup(x => x.PostValue(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        queueService.Setup(x => x.PostValue(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var controller = new TasksController(tasksService.Object, queueService.Object);
@@ -126,6 +128,7 @@ public class WebApiControllersTests
         Assert.IsType<OkObjectResult>((await controller.GetById(1, CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.Add(new TaskEntity(), CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.Update(1, new TaskEntity(), CancellationToken.None)).Result);
+        Assert.IsType<OkObjectResult>((await controller.UpdateReminder(1, new UpdateTaskReminderDto(DateTime.UtcNow.AddHours(1), true, 30, true, 60), CancellationToken.None)).Result);
         Assert.IsType<OkResult>(await controller.DeleteById(1, CancellationToken.None));
 
         var ok = Assert.IsType<OkObjectResult>((await controller.AddExecutedTask(new ExecutedTaskEntity(), CancellationToken.None)).Result);

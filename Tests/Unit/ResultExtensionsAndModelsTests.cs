@@ -57,8 +57,8 @@ public class ResultExtensionsAndModelsTests
     [Fact]
     public void TaskDto_ToString_HandlesNullAndNonNullFinishedAt()
     {
-        var withFinished = new TaskDto(1, "Task", "Desc", "Done", DateTime.UnixEpoch, DateTime.UnixEpoch.AddDays(1));
-        var withoutFinished = new TaskDto(2, "Task2", "Desc2", "New", DateTime.UnixEpoch, null);
+        var withFinished = new TaskDto(1, "Task", "Desc", "Done", DateTime.UnixEpoch, DateTime.UnixEpoch.AddDays(1), DateTime.UnixEpoch.AddDays(2), true, 60, true, 120, null, null);
+        var withoutFinished = new TaskDto(2, "Task2", "Desc2", "New", DateTime.UnixEpoch, null, null, false, null, false, null, null, null);
 
         var withText = withFinished.ToString();
         var withoutText = withoutFinished.ToString();
@@ -73,7 +73,7 @@ public class ResultExtensionsAndModelsTests
     {
         var member = new UserDto(1, null, "John", "Doe", "john@example.com", DateTime.UnixEpoch, DateTime.UnixEpoch);
         var team = new TeamWithMembersDto(10, "Team", [member]);
-        var task = new TaskDto(1, "Task", "Desc", "New", DateTime.UnixEpoch, null);
+        var task = new TaskDto(1, "Task", "Desc", "New", DateTime.UnixEpoch, null, null, false, null, false, null, null, null);
         var userWithTasks = new UserWithTasksDto(2, "Jane", "Doe", "jane@example.com", DateTime.UnixEpoch, DateTime.UnixEpoch, [task]);
 
         var teamText = team.ToString();

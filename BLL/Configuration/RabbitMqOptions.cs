@@ -9,6 +9,7 @@ public class RabbitMqOptions
     public string UserName { get; set; } = "guest";
     public string Password { get; set; } = "guest";
     public string QueueName { get; set; } = "TestQueue";
+    public string? ReminderQueueName { get; set; }
     public bool Durable { get; set; } = true;
     public int RetryAttempts { get; set; } = 3;
     public int RetryDelayMilliseconds { get; set; } = 1000;
