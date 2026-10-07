@@ -5,3 +5,5 @@ Implemented plan steps 16–18: transactional outbox with additive migration, oc
 Added relational recovery/concurrency tests, publisher and consumer acknowledgment tests, reminder-setting invalidation coverage, and a SQL Server snapshot consistency check. Delivery/deployment/rollback guarantees are documented in docs/reminder-delivery.md.
 
 Validation: source review and git diff --check completed. No .NET SDK is available in this workspace; build/test execution is pending PR CI. Step 19 stays active until results are reviewed. No database was migrated and no branch was merged.
+
+CI follow-up: restore was blocked by GHSA-v5pm-xwqc-g5wc in the existing Microsoft.OpenApi 2.3.0 reference and GHSA-2m69-gcr7-jv3q in the SQLite native test dependency. Update OpenApi to patched 2.7.5 and pin the compatible SQLitePCLRaw bundle 2.1.13. Keep the vulnerability gate enabled.
