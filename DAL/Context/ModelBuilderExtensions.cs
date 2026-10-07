@@ -78,6 +78,34 @@ namespace DAL.Context
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
+            // A scan must fail if another scan or an API update changes the
+            // occurrence while it is creating or completing an outbox entry.
+            modelBuilder.Entity<Task>().Property(t => t.DueDate).IsConcurrencyToken();
+            modelBuilder.Entity<Task>().Property(t => t.State).IsConcurrencyToken();
+            modelBuilder.Entity<Task>().Property(t => t.PerformerId).IsConcurrencyToken();
+            modelBuilder.Entity<Task>().Property(t => t.ReminderEnabled).IsConcurrencyToken();
+            modelBuilder.Entity<Task>().Property(t => t.ReminderOffsetMinutes).IsConcurrencyToken();
+            modelBuilder.Entity<Task>().Property(t => t.ReminderSentAt).IsConcurrencyToken();
+            modelBuilder.Entity<Task>().Property(t => t.ReminderNotificationId).IsConcurrencyToken();
+            modelBuilder.Entity<Task>().Property(t => t.EscalationEnabled).IsConcurrencyToken();
+            modelBuilder.Entity<Task>().Property(t => t.EscalationDelayMinutes).IsConcurrencyToken();
+            modelBuilder.Entity<Task>().Property(t => t.EscalationSentAt).IsConcurrencyToken();
+            modelBuilder.Entity<Task>().Property(t => t.EscalationNotificationId).IsConcurrencyToken();
+
+            modelBuilder.Entity<NotificationOutboxMessage>(outbox =>
+            {
+                outbox.ToTable("NotificationOutbox");
+                outbox.HasKey(m => m.Id);
+                outbox.Property(m => m.Id).ValueGeneratedNever();
+                outbox.Property(m => m.QueueName).HasMaxLength(256).IsRequired();
+                outbox.Property(m => m.Payload).IsRequired();
+                outbox.Property(m => m.LockId).IsConcurrencyToken();
+                outbox.Property(m => m.Status).IsConcurrencyToken();
+                outbox.HasIndex(m => new { m.Status, m.LockedUntilUtc, m.CreatedAtUtc });
+                outbox.HasOne<Task>().WithMany().HasForeignKey(m => m.TaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             modelBuilder.Entity<ExecutedTask>().HasKey(e => e.Id);
         }
 

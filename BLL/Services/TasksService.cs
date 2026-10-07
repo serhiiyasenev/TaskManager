@@ -154,6 +154,7 @@ public class TasksService(
             }
 
             var previousDueDate = entity.DueDate;
+            var previousPerformerId = entity.PerformerId;
             var previousReminderEnabled = entity.ReminderEnabled;
             var previousReminderOffset = entity.ReminderOffsetMinutes;
             var previousEscalationEnabled = entity.EscalationEnabled;
@@ -170,11 +171,13 @@ public class TasksService(
             entity.EscalationEnabled = task.EscalationEnabled;
             entity.EscalationDelayMinutes = task.EscalationDelayMinutes;
             if (!entity.ReminderEnabled
+                || previousPerformerId != entity.PerformerId
                 || previousDueDate != entity.DueDate
                 || previousReminderOffset != entity.ReminderOffsetMinutes
                 || previousReminderEnabled != entity.ReminderEnabled)
             {
                 entity.ReminderSentAt = null;
+                entity.ReminderNotificationId = null;
                 if (!entity.ReminderEnabled)
                 {
                     entity.ReminderOffsetMinutes = null;
@@ -182,15 +185,23 @@ public class TasksService(
             }
 
             if (!entity.EscalationEnabled
+                || previousPerformerId != entity.PerformerId
                 || previousDueDate != entity.DueDate
                 || previousEscalationDelay != entity.EscalationDelayMinutes
                 || previousEscalationEnabled != entity.EscalationEnabled)
             {
                 entity.EscalationSentAt = null;
+                entity.EscalationNotificationId = null;
                 if (!entity.EscalationEnabled)
                 {
                     entity.EscalationDelayMinutes = null;
                 }
+            }
+
+            if (entity.State is TaskState.Done or TaskState.Canceled)
+            {
+                entity.ReminderNotificationId = null;
+                entity.EscalationNotificationId = null;
             }
 
             entity.FinishedAt = entity.State is TaskState.Done or TaskState.Canceled
@@ -237,6 +248,7 @@ public class TasksService(
             if (!entity.ReminderEnabled)
             {
                 entity.ReminderSentAt = null;
+                entity.ReminderNotificationId = null;
                 entity.ReminderOffsetMinutes = null;
             }
             else if (!previousReminderEnabled
@@ -244,11 +256,13 @@ public class TasksService(
                      || previousReminderOffset != entity.ReminderOffsetMinutes)
             {
                 entity.ReminderSentAt = null;
+                entity.ReminderNotificationId = null;
             }
 
             if (!entity.EscalationEnabled)
             {
                 entity.EscalationSentAt = null;
+                entity.EscalationNotificationId = null;
                 entity.EscalationDelayMinutes = null;
             }
             else if (!previousEscalationEnabled
@@ -256,6 +270,7 @@ public class TasksService(
                      || previousEscalationDelay != entity.EscalationDelayMinutes)
             {
                 entity.EscalationSentAt = null;
+                entity.EscalationNotificationId = null;
             }
 
             tasks.Update(entity);
@@ -325,3 +340,4 @@ public class TasksService(
             : null;
     }
 }
+

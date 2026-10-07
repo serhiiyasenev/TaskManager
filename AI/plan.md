@@ -30,3 +30,14 @@
 | 13 | ✅ Update Notifier and clients for reminders | Notifier emits typed notifications; console lists/updates reminder state |
 | 14 | ✅ Add Consensia AI Reviewer workflow | Workflow runs on PRs using Consensia action with guarded secrets and required permissions |
 | 15 | ✅ Validate docs and tests | README reflects reminder features and automation; regression tests stay green |
+
+## Reminder reliability repair — requested 2026-10-07
+
+Scope authorized by the repository owner: fix reminder failure/reprocessing behavior and prepare a PR. Preserve REST endpoints and notification payload compatibility.
+
+| # | Step | Acceptance Criteria |
+|---|------|---------------------|
+| 16 | ✅ Persist reminders in a transactional outbox | Task notification IDs and pending envelopes commit together; competing scans cannot enqueue the same occurrence |
+| 17 | ✅ Dispatch with expiring claims and broker confirms | Failed or interrupted sends remain retryable; retries preserve the message ID; sent timestamps follow broker confirmation |
+| 18 | ✅ Acknowledge consumption after processing | SignalR failures leave the message available for redelivery |
+| 19 | Validate recovery and document guarantees | Relational rollback/concurrency, restart, failure and acknowledgment tests; at-least-once boundary documented |

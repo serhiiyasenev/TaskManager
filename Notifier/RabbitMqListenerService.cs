@@ -86,17 +86,32 @@ namespace Notifier
                         _logger.LogInformation("Listening on queue {QueueName}", queueName);
                     }
 
+                    await channel.BasicQosAsync(0, 1, false, stoppingToken);
                     foreach (var queueName in _queueNames)
                     {
                         var consumer = new AsyncEventingBasicConsumer(channel);
                         consumer.ReceivedAsync += async (_, ea) =>
                         {
-                            await HandleMessageAsync(queueName, ea, stoppingToken);
+                            try
+                            {
+                                await HandleMessageAsync(queueName, ea, stoppingToken);
+                                await channel.BasicAckAsync(ea.DeliveryTag, false, stoppingToken);
+                            }
+                            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                            {
+                                // Closing the channel requeues this unacknowledged delivery.
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning(ex, "Requeueing failed delivery {DeliveryTag}", ea.DeliveryTag);
+                                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                                await channel.BasicNackAsync(ea.DeliveryTag, false, true, stoppingToken);
+                            }
                         };
 
                         await channel.BasicConsumeAsync(
                             queue: queueName,
-                            autoAck: true,
+                            autoAck: false,
                             consumer: consumer,
                             cancellationToken: stoppingToken);
                     }
@@ -166,6 +181,7 @@ namespace Notifier
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing message from RabbitMQ queue {QueueName}", queueName);
+                throw;
             }
         }
 
