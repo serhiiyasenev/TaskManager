@@ -2,11 +2,11 @@
 
 [![Tests](https://github.com/serhiiyasenev/TaskManager/actions/workflows/run-tests.yml/badge.svg)](https://github.com/serhiiyasenev/TaskManager/actions/workflows/run-tests.yml)
 
-A .NET application for managing teams, projects and assigned tasks, with due-date reminders and live notifications. It demonstrates how a business API, a relational database and an asynchronous notification service work together.
+A .NET application for managing teams, projects, and assigned tasks, with due-date reminders and live notifications. It demonstrates how a business API, a relational database, and an asynchronous notification service work together.
 
-**Project status:** a portfolio application with an API, console client, notification host and automated tests. It is suitable for demonstrating backend behavior and architectural choices; production scale, availability and security are not established by this repository.
+**Project status:** A portfolio application with an API, console client, notification host, and automated tests. It is suitable for demonstrating backend behavior and architectural choices; production scale, availability, and security are not established by this repository.
 
-## What you can demonstrate
+## Demo
 
 | Scenario | What to show |
 |---|---|
@@ -17,7 +17,7 @@ A .NET application for managing teams, projects and assigned tasks, with due-dat
 | Receive live updates | Consume RabbitMQ events in Notifier and display them through SignalR in the console |
 | Exercise identity | Register/log in with ASP.NET Core Identity and JWT; demonstrate the specifically protected endpoints |
 
-Email for reminder events is simulated in logs. Notifications are broadcast to connected clients; there is no per-user notification inbox.
+Email reminders for events are simulated in logs. Notifications are broadcast to connected clients; there is no per-user notification inbox.
 
 ## Run locally
 
@@ -67,14 +67,14 @@ dotnet run --project Client
 | SignalR hub | `https://localhost:7268/chathub` |
 | RabbitMQ management | [http://localhost:15672](http://localhost:15672), local demo credentials `guest` / `guest` |
 
-The console currently uses these API/hub URLs directly. Use the launch profiles above; changing ports requires updating the console configuration in code. RabbitMQ host, port, credentials and queue names must agree between `WebAPI` and `Notifier`. Defaults are local `TestQueue` and `TaskReminders` queues.
+The console currently uses these API/hub URLs directly. Use the launch profiles above; changing ports requires updating the console configuration in code. RabbitMQ host, port, credentials, and queue names must agree between `WebAPI` and `Notifier`. Defaults are local `TestQueue` and `TaskReminders` queues.
 
 Admin bootstrap is disabled by default. To exercise admin-only operations, explicitly configure `BootstrapAdmin__Enabled`, `BootstrapAdmin__Email` and `BootstrapAdmin__Password` in your local environment and restart the API. There is no published default admin login. Registration/login alone does not make a user an administrator.
 
-## Five-minute deadline demo
+## Five-minute demo
 
-1. Open Swagger or select console option **11** to list tasks. Choose an active task (`ToDo` or `InProgress`) and note its ID. Migrations seed example teams, users, projects and tasks.
-2. Select console option **12**. Enter that task ID, a due date **two minutes ahead in UTC** (ISO 8601 with `Z`), enable the reminder with offset **1** minute, and enable escalation with delay **1** minute. The equivalent API is `PUT /api/Tasks/{id}/reminder`.
+1. Open Swagger or select console option **11** to list tasks. Choose an active task (`ToDo` or `InProgress`) and note its ID. Migrations seed example teams, users, projects, and tasks.
+2. Select console option **12**. Enter that task ID, a due date **two minutes ahead in UTC** (ISO 8601 with `Z`), enable the reminder with an offset of **1** minute, and enable escalation with a delay of **1** minute. The equivalent API is `PUT /api/Tasks/{id}/reminder`.
 3. Keep Notifier and the console running. With the one-minute polling interval above, observe the reminder near the deadline and an overdue notification after it. Polling is periodic, so delivery time is approximate.
 4. Select **11** again to inspect `ReminderSentAt`/`EscalationSentAt`. These mark confirmed publication to RabbitMQ, not receipt by an end user.
 5. Show an analytics query in Swagger and explain how it relates the task to its project and performer.
@@ -111,17 +111,16 @@ dotnet build TaskManager.sln --configuration Release
 dotnet test TaskManager.sln --settings .runsettings --configuration Release
 ```
 
-Tests use xUnit and Moq. Most existing persistence tests use EF Core InMemory; outbox concurrency/rollback tests use SQLite. Publisher and SignalR acknowledgment tests use mocked transport boundaries. CI also rejects dependencies with known vulnerability advisories. See [the workflow](.github/workflows/run-tests.yml) for the current build, test and coverage steps.
+Tests use xUnit and Moq. Most existing persistence tests use EF Core InMemory; outbox concurrency/rollback tests use SQLite. Publisher and SignalR acknowledgment tests use mocked transport boundaries. CI also rejects dependencies with known vulnerability advisories. See [the workflow](.github/workflows/run-tests.yml) for the current build, test, and coverage steps.
 
 [Developer commands](CLAUDE.md) and [repository process notes](AI/README.md) are separate from the application feature set.
 
 ## Known limitations
 
-- Full `docker compose up` is not the documented launch path: application service images still target .NET 9 and some compose URLs do not match the console. Use Compose for `mssql`/`rabbitmq` and the .NET 10 launch profiles above.
+- Full `docker compose up` is not the documented launch path: application service images still target .NET 9, and some compose URLs do not match the console. Use Compose for `mssql`/`rabbitmq` and the .NET 10 launch profiles above.
 - Authorization covers selected endpoints; tenant isolation and a complete endpoint access review are not implemented.
 - SignalR broadcasts to all connected clients; there is no durable per-user inbox or offline delivery. Reminder email is simulated.
 - At-least-once delivery can produce repeated notifications around crash boundaries. Durable consumer deduplication and bounded poison-message retries/DLX remain follow-up work.
 - Published/canceled outbox rows need a retention policy. Multi-instance deployments require synchronized clocks and further operational testing.
 - Serilog includes a local Loki sink (`localhost:3100`); Loki/Grafana are optional and are not provisioned by the documented infrastructure command.
 - `/health/ready` currently selects a tag with no registered checks; use `/health` when demonstrating database health.
-- No production throughput, delivery SLA or business impact metrics have been measured here.
