@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Text;
+using System.Text.Json;
 using BLL.Configuration;
 using BLL.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -20,7 +21,7 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
     private readonly string _connectionString;
     private readonly SemaphoreSlim _channelLock = new(1, 1);
     private readonly HashSet<string> _declaredQueues = new(StringComparer.OrdinalIgnoreCase);
-    private ConnectionFactory? _factory;
+    private IConnectionFactory? _factory;
     private IConnection? _connection;
     private IChannel? _channel;
     private int _disposeSignaled;
@@ -35,8 +36,10 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
     public RabbitMqService(
         IOptions<RabbitMqOptions> options,
         ILogger<RabbitMqService> logger,
-        IAsyncPolicy resiliencePolicy)
+        IAsyncPolicy resiliencePolicy,
+        IConnectionFactory? connectionFactory = null)
     {
+        _factory = connectionFactory;
         _options = options.Value;
         _logger = logger;
         _resiliencePolicy = resiliencePolicy;
@@ -52,6 +55,7 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
         }
 
         var targetQueue = string.IsNullOrWhiteSpace(queueName) ? _options.QueueName : queueName;
+        var messageId = GetMessageId(message);
         try
         {
             await _resiliencePolicy.ExecuteAsync(async policyCt =>
@@ -62,7 +66,7 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
                     if (Volatile.Read(ref _disposeSignaled) != 0)
                     {
                         _logger.LogWarning("RabbitMqService is shutting down; publish request is rejected.");
-                        return;
+                        throw new ObjectDisposedException(nameof(RabbitMqService));
                     }
 
                     await EnsureChannelAsync(policyCt);
@@ -70,21 +74,23 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
 
                     var body = Encoding.UTF8.GetBytes(message);
 
-                    var messageId = Guid.NewGuid().ToString();
                     var props = new BasicProperties
                     {
                         DeliveryMode = DeliveryModes.Persistent,
                         MessageId = messageId,
+                        CorrelationId = messageId,
                         Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
                     };
 
+                    using var confirmCts = CancellationTokenSource.CreateLinkedTokenSource(policyCt);
+                    confirmCts.CancelAfter(TimeSpan.FromSeconds(30));
                     await _channel!.BasicPublishAsync(
                         exchange: "",
                         routingKey: targetQueue,
-                        mandatory: false,
+                        mandatory: true,
                         basicProperties: props,
                         body: body,
-                        cancellationToken: policyCt);
+                        cancellationToken: confirmCts.Token);
 
                     _logger.LogInformation(
                         "Message published to queue {QueueName} with ID {MessageId}",
@@ -99,11 +105,26 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
 
             return true;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to publish message to RabbitMQ queue {QueueName} after all retries", targetQueue);
             return false;
         }
+    }
+
+    private static string GetMessageId(string message)
+    {
+        try
+        {
+            using var json = JsonDocument.Parse(message);
+            if (json.RootElement.ValueKind == JsonValueKind.Object
+                && json.RootElement.TryGetProperty("CorrelationId", out var id)
+                && id.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(id.GetString()))
+                return id.GetString()!;
+        }
+        catch (JsonException) { /* Legacy plain-text messages remain supported. */ }
+        return Guid.NewGuid().ToString("N");
     }
 
     private async Task EnsureChannelAsync(CancellationToken ct)
@@ -118,10 +139,11 @@ public class RabbitMqService : IQueueService, IAsyncDisposable
         _declaredQueues.Clear();
 
         _connection = await GetFactory().CreateConnectionAsync(ct);
-        _channel = await _connection.CreateChannelAsync(cancellationToken: ct);
+        _channel = await _connection.CreateChannelAsync(
+            new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true), ct);
     }
 
-    private ConnectionFactory GetFactory()
+    private IConnectionFactory GetFactory()
     {
         if (_factory is not null)
         {

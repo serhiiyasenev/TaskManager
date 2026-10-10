@@ -49,6 +49,8 @@ public class RabbitMqListenerExecuteTests
         cts.Cancel();
         await runTask.WaitAsync(TimeSpan.FromSeconds(1));
 
+        channelMock.Verify(c => c.BasicAckAsync(1, false, It.IsAny<CancellationToken>()), Times.Once);
+        channelMock.Verify(c => c.BasicNackAsync(It.IsAny<ulong>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         Assert.Contains(sentMessages, m => m.user == "Notifier" && m.message.Contains("was marked as Done"));
         channelMock.Verify(c => c.QueueDeclareAsync(
             "TestQueue",
@@ -68,6 +70,24 @@ public class RabbitMqListenerExecuteTests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_RequeuesOnSignalRFailure_WithoutAcknowledging()
+    {
+        var ready = new TaskCompletionSource<AsyncEventingBasicConsumer>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (listener, client, _, _, channel) = CreateListener(new List<(string, string)>(), ready);
+        client.Setup(p => p.SendCoreAsync("ReceiveMessage", It.IsAny<object?[]>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("SignalR unavailable"));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var run = listener.RunExecuteAsync(cts.Token);
+        var consumer = await ready.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await consumer.HandleBasicDeliverAsync("tag", 7, false, "", "TestQueue", new BasicProperties(),
+            Encoding.UTF8.GetBytes("Legacy message"), CancellationToken.None);
+        channel.Verify(c => c.BasicAckAsync(It.IsAny<ulong>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        channel.Verify(c => c.BasicNackAsync(7, false, true, It.IsAny<CancellationToken>()), Times.Once);
+        cts.Cancel();
+        await run.WaitAsync(TimeSpan.FromSeconds(2));
     }
 
     private static (TestableRabbitMqListenerService listener, Mock<IClientProxy> clientProxy, Mock<ILogger<RabbitMqListenerService>> loggerMock, Mock<IConnectionFactory> factoryMock, Mock<IChannel> channelMock) CreateListener(
@@ -102,7 +122,7 @@ public class RabbitMqListenerExecuteTests
 
         channel.Setup(c => c.BasicConsumeAsync(
                 It.IsAny<string>(),
-                true,
+                false,
                 It.IsAny<string>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),

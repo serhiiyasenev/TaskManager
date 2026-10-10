@@ -1,339 +1,127 @@
-# 📝 TaskManager
+# TaskManager
 
-![Tests](https://github.com/serhiiyasenev/TaskManager/actions/workflows/run-tests.yml/badge.svg)
-![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/serhiiyasenev/43220e786710833306a7a0e291f25449/raw/coverage.json)
-![AI Validation](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-validation.yml/badge.svg)
+[![Tests](https://github.com/serhiiyasenev/TaskManager/actions/workflows/run-tests.yml/badge.svg)](https://github.com/serhiiyasenev/TaskManager/actions/workflows/run-tests.yml)
 
-**TaskManager** is a multi-component project management and task tracking system built with **.NET 10**, **SignalR**, **RabbitMQ**, **Serilog**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
-The system supports **real-time notifications**, **asynchronous task processing**, **analytics**, and **modular expansion**.
+A .NET application for managing teams, projects and assigned tasks, with due-date reminders and live notifications. It demonstrates how a business API, a relational database and an asynchronous notification service work together.
 
----
+**Project status:** a portfolio application with an API, console client, notification host and automated tests. It is suitable for demonstrating backend behavior and architectural choices; production scale, availability and security are not established by this repository.
 
-## 🚀 Main Features
-- **Project and Task Management**
-  - Provide Analytics about projects: analyze tasks, examine team structure, investigate projects, measure user performance, compare teams and participants
-  - Create, update, and delete projects, tasks, users, and teams
-  - Link tasks to projects and users
-  - Auth
-- **SignalR Integration**
-  - Instant real-time messages between the server and clients
-- **RabbitMQ Messaging**
-  - Asynchronous communication between services
-  - Due-date reminders and overdue escalations published to RabbitMQ and fanned out via Notifier/SignalR
-- **Layered Architecture**
-  - **BLL** (Business Logic Layer)
-  - **DAL** (Data Access Layer)
-  - **WebAPI** (REST API)
-  - **Client** (Console client application)
-  - **Notifier** (Notification service)
-  - **AI** (Directory contains all AI Governance & Context Engineering artifacts)
-- **Scalability**
-  - Can be deployed locally, in Docker or in any cloud provider
-  - Supports SQL Server or you can switch to your DB provider
+## What you can demonstrate
 
----
+| Scenario | What to show |
+|---|---|
+| Manage work | Create/read/update teams, projects and tasks; assign an existing user to a task |
+| Inspect progress | Query project/task/team/user reports through the analytics API or console menu |
+| Follow deadlines | Configure a reminder and an overdue escalation for an active task |
+| Recover interrupted delivery | Keep reminder envelopes in SQL Server until confirmed publication; retry with the same message ID |
+| Receive live updates | Consume RabbitMQ events in Notifier and display them through SignalR in the console |
+| Exercise identity | Register/log in with ASP.NET Core Identity and JWT; demonstrate the specifically protected endpoints |
 
-## 🛠 Technology Stack
-- **.NET 10**
-- **C#**
-- **Entity Framework Core**
-- **SignalR**
-- **RabbitMQ**
-- **SQL Server**
-- **Serilog**
-- **Docker** (optional)
+Email for reminder events is simulated in logs. Notifications are broadcast to connected clients; there is no per-user notification inbox.
 
----
+## Run locally
 
-## 📊 Main types of Code Coverage
-- **Line coverage** — what % of lines of code were executed by tests.
-- **Statement coverage** — what % of instructions/operators were executed.
-- **Branch coverage** — what % of condition branches (`if/else`, `switch`, `case`) were passed.
-- **Condition coverage** — whether individual Boolean conditions were checked inside complex expressions.
-- **Functions and Methods coverage** — what % of methods or functions were called by tests.
-- **Path coverage** — what % of possible code execution paths were passed.
-
----
-
-## 📦 Sequence Diagram
-```mermaid
-sequenceDiagram
-    participant Client as Console Client/Postman/WebUI
-    participant WebAPI as WebAPI
-    participant Notifier as Notifier Service
-    participant Rabbit as RabbitMQ
-    participant SignalR as SignalR Hub
-
-    Client->>WebAPI: Request data or create task
-    WebAPI-->>Client: Response with task/project info
-    WebAPI->>Rabbit: Publish message about task update
-    Rabbit->>Notifier: Deliver task update message
-    Notifier->>SignalR: Send "ReceiveMessage" event
-    SignalR->>Client: Display notification in real time
-```
-
-## 📦 Project Structure
-```mermaid
-graph TD
-    A[TaskManager Solution]
-    subgraph LAYERS[Layers]
-      B[BLL - Business Logic]
-      C[DAL - Data Access Layer]
-      D[WebAPI - REST API]
-      E[Client - Console/SPA]
-      F[Notifier - Background Service]
-      H[SignalR Hub]
-      R[RabbitMQ]
-      DB[(SQL Server)]
-      LG[Serilog Logger]
-      LS[(Logs Store: Grafana Loki)]
-      G[Grafana Dashboards]
-    end
-
-    A --> D
-    A --> B
-    A --> C
-    A --> E
-    A --> F
-    A --> H
-
-    %% Dependencies
-    D --> B
-    B --> C
-    C -->|EF Core| DB
-
-    %% Messaging
-    D -->|Publish| R
-    F -->|Consume| R
-
-    %% Realtime
-    D -->|WebSockets| H
-    F -->|Notify| H
-    H -->|Push| E
-
-    %% Clients call API
-    E -->|HTTP| D
-
-    %% Logging pipeline
-    D -.->|logs| LG
-    B -.->|logs| LG
-    C -.->|logs| LG
-    F -.->|logs| LG
-    H -.->|logs| LG
-
-    LG -->|sinks| LS
-    G ---|queries/visualizes| LS
-```
-
-## 🤖 AI & QA Automation
-- `ai-validation.yml` keeps ACE-FCA artifacts (plan, traces, decisions) in sync on PRs.
-- `ai-auto-trace.yml` writes an audit trace to `AI/traces/` after merges to `main`.
-
-⚙️ Local Setup Instructions
-
-Install SQL Server and RabbitMQ (or run them via Docker)
-
-Configure connection strings in appsettings.json for WebAPI and Notifier
-
-`WebAPI/appsettings.Development.json` has `BootstrapAdmin` enabled in `Development`, but the password is intentionally empty.
-
-- Email: `admin@example.com`
-- Password: set `BootstrapAdmin:Password` via User Secrets or an environment variable (for example `BootstrapAdmin__Password`) before starting the app
-
-If `BootstrapAdmin:Password` is missing (or left as a placeholder value), WebAPI startup will fail with a configuration error.
-
-Run the following commands in the projects root:
+Prerequisites: .NET 10 SDK, Docker with Compose (or separately running SQL Server and RabbitMQ), and a trusted HTTPS development certificate. The configuration example uses Bash and OpenSSL. Run all commands from the repository root.
 
 ```bash
-dotnet run --project WebAPI
-dotnet run --project Notifier
+git clone https://github.com/serhiiyasenev/TaskManager.git
+cd TaskManager
+
+# Start infrastructure only. The full compose application definition is older.
+docker compose up -d mssql rabbitmq
+docker compose ps
+
+dotnet restore TaskManager.sln
+dotnet dev-certs https --trust
+
+# This password is the LOCAL DEMO value declared in docker-compose.yml.
+export ConnectionStrings__DbConnection='Server=localhost,1433;Database=TaskManagerDB;User Id=sa;Password=Your_strong_password_123!;TrustServerCertificate=True'
+export Jwt__Key="$(openssl rand -hex 32)"
+export Reminders__PollIntervalMinutes=1
+
+# Install once; use the local EF tool for this solution.
+dotnet tool install --tool-path ./.tools dotnet-ef --version 10.0.6
+./.tools/dotnet-ef database update --project DAL --startup-project WebAPI
+
+dotnet run --project WebAPI --launch-profile WebAPI
+```
+
+Wait for the database container to be ready before applying migrations. If you use an existing database, read the [outbox rollout instructions](docs/reminder-delivery.md) first. The application does not automatically apply migrations.
+
+In a second terminal:
+
+```bash
+dotnet run --project Notifier --launch-profile https
+```
+
+In a third terminal:
+
+```bash
 dotnet run --project Client
 ```
 
-Use the console client to interact with the system
+| Entry point | Local address |
+|---|---|
+| API documentation | [https://localhost:7151/swagger](https://localhost:7151/swagger) |
+| SQL Server health check | [https://localhost:7151/health](https://localhost:7151/health) |
+| SignalR hub | `https://localhost:7268/chathub` |
+| RabbitMQ management | [http://localhost:15672](http://localhost:15672), local demo credentials `guest` / `guest` |
 
-Also, you can use Swagger, Postman or any other client to execute Web API requests 
+The console currently uses these API/hub URLs directly. Use the launch profiles above; changing ports requires updating the console configuration in code. RabbitMQ host, port, credentials and queue names must agree between `WebAPI` and `Notifier`. Defaults are local `TestQueue` and `TaskReminders` queues.
 
-0. Get Tasks Count In Projects By User Id
-1. Get Capital Tasks By User Id
-2. Get Projects By Team Size
-3. Get Sorted Team By Members With Year
-4. Get Sorted Users With Sorted Tasks
-5. Get User Info
-6. Get Projects Info
-7. Get Sorted Filtered Page Of Projects
-8. Get Tasks Status By Project Id
-9. Start Timer Service To Execute Random Tasks With Delay
-10. Stop Timer Service
-11. List Tasks With Reminder State
-12. Update Task Reminder Settings
-13. Exit the program
+Admin bootstrap is disabled by default. To exercise admin-only operations, explicitly configure `BootstrapAdmin__Enabled`, `BootstrapAdmin__Email` and `BootstrapAdmin__Password` in your local environment and restart the API. There is no published default admin login. Registration/login alone does not make a user an administrator.
 
-<img src="Img_1.jpg" style="max-width: 100%; height: auto;"/>
+## Five-minute deadline demo
 
-<img src="Img_2.jpg" style="max-width: 100%; height: auto;"/>
+1. Open Swagger or select console option **11** to list tasks. Choose an active task (`ToDo` or `InProgress`) and note its ID. Migrations seed example teams, users, projects and tasks.
+2. Select console option **12**. Enter that task ID, a due date **two minutes ahead in UTC** (ISO 8601 with `Z`), enable the reminder with offset **1** minute, and enable escalation with delay **1** minute. The equivalent API is `PUT /api/Tasks/{id}/reminder`.
+3. Keep Notifier and the console running. With the one-minute polling interval above, observe the reminder near the deadline and an overdue notification after it. Polling is periodic, so delivery time is approximate.
+4. Select **11** again to inspect `ReminderSentAt`/`EscalationSentAt`. These mark confirmed publication to RabbitMQ, not receipt by an end user.
+5. Show an analytics query in Swagger and explain how it relates the task to its project and performer.
 
-<img src="Img_3.jpg" style="max-width: 100%; height: auto;"/>
+For a recovery demo, stop the local RabbitMQ service, configure a new due occurrence, and inspect the pending `NotificationOutbox` row and logs. Restart RabbitMQ and observe retry after backoff/lease expiry. Allow up to five minutes after an interrupted dispatch. Reset the due date when repeating the demo so a new occurrence is created. Use an isolated local environment for this exercise.
 
-<img src="Grafana_1.jpg" style="max-width: 100%; height: auto;"/>
-
-<img src="Grafana_2.jpg" style="max-width: 100%; height: auto;"/>
-
----
-## 🛢️ Database Diagram
+## Architecture and tradeoffs
 
 ```mermaid
-erDiagram
-    USER {
-        int id
-        int teamId
-        string userName
-        string normalizedUserName
-        string email
-        string normalizedEmail
-        string firstName
-        string lastName
-        datetime registeredAt
-        date birthDay
-    }
-
-    TEAM {
-        int id
-        string name
-        datetime createdAt
-    }
-
-    PROJECT {
-        int id
-        int authorId
-        int teamId
-        string name
-        string description
-        datetime createdAt
-        datetime deadline
-    }
-
-    TASK {
-        int id
-        int projectId
-        int performerId
-        string name
-        string description
-        int state
-        datetime createdAt
-        datetime finishedAt
-    }
-
-    EXECUTED_TASK {
-        int id
-        int taskId
-        string taskName
-        datetime createdAt
-    }
-
-    ROLE {
-        int id
-        string name
-        string normalizedName
-    }
-
-    USER_ROLE {
-        int userId
-        int roleId
-    }
-
-    %% ---------- Relationships ----------
-    TEAM    ||--o{ USER    : has
-    TEAM    ||--o{ PROJECT : owns
-    USER    ||--o{ PROJECT : authors
-    PROJECT ||--o{ TASK    : contains
-    USER    ||--o{ TASK    : performs
-    TASK    ||--o{ EXECUTED_TASK : logs
-
-    ROLE ||--o{ USER_ROLE : maps
-    USER ||--o{ USER_ROLE : maps
+flowchart TD
+    Client[Console client] --> API[WebAPI and business services]
+    API --> DB[(SQL Server and outbox)]
+    DB --> Dispatcher[Reminder dispatcher]
+    Dispatcher --> Rabbit[RabbitMQ]
+    Rabbit --> Notifier[Notifier and SignalR]
+    Notifier --> Client
 ```
 
----
+| Component | Responsibility | Design reason and tradeoff |
+|---|---|---|
+| `WebAPI` | REST endpoints, authentication setup, health endpoints and scheduler | A single API host keeps deployment understandable; scheduler lifecycle follows the API |
+| `BLL` | Domain services, validation, mapping, analytics and queue publishing | Business rules can be tested independently of HTTP; adds mapping and service abstractions |
+| `DAL` | EF Core, Identity data, repositories, migrations and reminder outbox | SQL Server owns durable state; migrations and concurrency rules must be maintained |
+| `Notifier` | RabbitMQ consumption and SignalR broadcasts | Delivery is decoupled from request handling; requires a running broker and another host |
+| `Client` | Console navigation and live message listener | Makes API scenarios easy to demonstrate; it is not a production web interface |
+| `Tests` | Unit, application and persistence regression tests | Fast feedback plus targeted relational checks; not a substitute for load/failover testing |
 
-## 📘 AI System Overview
+Reminders use a transactional outbox to close the gap between storing task state and sending a message. Claims and publisher confirms support recovery across failures. Delivery remains **at least once**: a crash after sending but before recording success can repeat the same message ID. Read [delivery guarantees, deployment and recovery](docs/reminder-delivery.md).
 
-TaskManager is fully integrated with an **AI Governance & Context Engineering System**
-based on the **ACE-FCA (Advanced Context Engineering — Frequent Compaction Approach)** standard.
+## Tests and maintenance
 
-This framework ensures that all AI-assisted and automated development remains  
-**structured, reproducible, transparent, and human-reviewable**.
-
----
-
-### 🧠 Core AI Artifacts (`/AI`)
-
-| File / Folder | Purpose |
-|----------------|----------|
-| [`AI/README.md`](./AI/README.md) | Overview of AI governance logic and workflow phases. |
-| [`AI/AGENTS.md`](./AI/AGENTS.md) | Rules for AI context management and compaction policy. |
-| [`AI/AI_GUIDE.md`](./AI/AI_GUIDE.md) | Integration manual for AI assistants, Copilot, and CI tools. |
-| [`AI/plan.md`](./AI/plan.md) | Active roadmap of AI-driven development steps. |
-| [`AI/research.md`](./AI/research.md) | Technical findings and contextual data for planning. |
-| [`AI/decisions.md`](./AI/decisions.md) | Architecture Decision Records (ADRs). |
-| [`AI/traces/`](./AI/traces/) | Historical logs of all AI actions and completed steps. |
-
----
-
-### ⚙️ GitHub Automation (`/.github`)
-
-| File / Workflow | Description |
-|------------------|-------------|
-| [`ABOUT.md`](./.github/ABOUT.md) | GitHub-level configuration files and workflow definitions. |
-| [`PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md) | Standardized PR template for AI-assisted and manual submissions. |
-| [`workflows/ai-validation.yml`](./.github/workflows/ai-validation.yml) | Validates all AI artifacts and ACE-FCA compliance for each PR. |
-| [`workflows/ai-auto-trace.yml`](./.github/workflows/ai-auto-trace.yml) | Automatically appends trace entries after each merge. |
-| [`workflows/README.md`](./.github/workflows/README.md) | Documentation for all GitHub workflows. |
-
----
-
-### 🧩 Governance Principles
-
-- 🧠 **AI never acts blindly** — it follows explicit context from `research.md`, `plan.md`, and `decisions.md`.  
-- 🧾 **All AI actions are logged** — every merge creates a trace file in `AI/traces/`.  
-- 🧩 **All contributions are reviewable** — human reviewers validate only `plan` and `decisions`, not raw code.  
-- 🧼 **Context hygiene enforced** — the AI resets and compacts memory according to `AGENTS.md`.  
-
----
-
-### 🚀 Validation & Transparency
-
-| Workflow | Status |
-|-----------|---------|
-| AI Validation | ![AI Validation](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-validation.yml/badge.svg) |
-| AI Auto-Trace | ![AI Auto-Trace](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-auto-trace.yml/badge.svg) |
-
----
-
-> 💡 **Tip:** Before making changes with AI assistance, always review  
-> [`AI/AI_GUIDE.md`](./AI/AI_GUIDE.md) to understand context loading, reset, and compaction rules.
-
----
-
-### 🧪 AI & QA
-
-```mermaid
-graph LR
-    A["🧠 AI Assistive Layer<br/>(Arcetix, OpenAI, Testim, Mabl, Anthropic)"]
-    B["⚙️ Automation Framework Layer<br/>(Playwright, Selenium, Cypress, Robot Framework)"]
-    C["🧮 Core Testing Layer<br/>(Execution Engine, 'Input → Action → Observation → Assertion → Report' Cycle)"]
-    D["🧰 Infrastructure & Orchestration<br/>(CI/CD, Jenkins, GitHub Actions, Azure Pipelines)"]
-    E["📦 System Under Test (SUT)<br/>(Web App, Desktop, API, DB, Cloud)"]
-    F["💻 Monitoring<br/>(Grafana, Loki, Serilog, Elasticsearch, Cloud Systems)"]
-
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-
-    A -.->|Generates & Optimizes Tests| B
-    B -.->|Executes Tests| C
-    C -.->|Reports Results| D
-    D -.->|Deploys & Monitors| E
-    E -.->|Feeds Metrics| F
+```bash
+dotnet build TaskManager.sln --configuration Release
+dotnet test TaskManager.sln --settings .runsettings --configuration Release
 ```
+
+Tests use xUnit and Moq. Most existing persistence tests use EF Core InMemory; outbox concurrency/rollback tests use SQLite. Publisher and SignalR acknowledgment tests use mocked transport boundaries. CI also rejects dependencies with known vulnerability advisories. See [the workflow](.github/workflows/run-tests.yml) for the current build, test and coverage steps.
+
+[Developer commands](CLAUDE.md) and [repository process notes](AI/README.md) are separate from the application feature set.
+
+## Known limitations
+
+- Full `docker compose up` is not the documented launch path: application service images still target .NET 9 and some compose URLs do not match the console. Use Compose for `mssql`/`rabbitmq` and the .NET 10 launch profiles above.
+- Authorization covers selected endpoints; tenant isolation and a complete endpoint access review are not implemented.
+- SignalR broadcasts to all connected clients; there is no durable per-user inbox or offline delivery. Reminder email is simulated.
+- At-least-once delivery can produce repeated notifications around crash boundaries. Durable consumer deduplication and bounded poison-message retries/DLX remain follow-up work.
+- Published/canceled outbox rows need a retention policy. Multi-instance deployments require synchronized clocks and further operational testing.
+- Serilog includes a local Loki sink (`localhost:3100`); Loki/Grafana are optional and are not provisioned by the documented infrastructure command.
+- `/health/ready` currently selects a tag with no registered checks; use `/health` when demonstrating database health.
+- No production throughput, delivery SLA or business impact metrics have been measured here.

@@ -27,6 +27,28 @@ public class TasksServiceIntegrationTests(DatabaseFixture fixture) : IClassFixtu
     }
 
     [Fact]
+    public async System.Threading.Tasks.Task ReminderSettingsUpdate_InvalidatesPendingOccurrences()
+    {
+        fixture.ResetDatabase();
+        var task = fixture.Context.Tasks.First();
+        task.DueDate = DateTime.UtcNow.AddHours(1);
+        task.ReminderEnabled = true;
+        task.EscalationEnabled = true;
+        task.ReminderNotificationId = Guid.NewGuid();
+        task.EscalationNotificationId = Guid.NewGuid();
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await CreateService().UpdateTaskReminderAsync(task.Id,
+            new BLL.Models.Tasks.UpdateTaskReminderDto(task.DueDate.Value.AddHours(1), true, 15, true, 30));
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(task.ReminderNotificationId);
+        Assert.Null(task.EscalationNotificationId);
+        Assert.Null(task.ReminderSentAt);
+        Assert.Null(task.EscalationSentAt);
+    }
+
+    [Fact]
     public async System.Threading.Tasks.Task GetTasksAsync_ReturnsAllTasks()
     {
         // Arrange

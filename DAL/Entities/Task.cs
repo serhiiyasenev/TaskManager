@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using System.Diagnostics.CodeAnalysis;
 using DAL.Entities.Base;
 using DAL.Enum;
@@ -23,9 +24,13 @@ public class Task : BaseEntity
     public bool ReminderEnabled { get; set; }
     public int? ReminderOffsetMinutes { get; set; }
     public DateTime? ReminderSentAt { get; set; }
+    [JsonIgnore]
+    public Guid? ReminderNotificationId { get; set; }
     public bool EscalationEnabled { get; set; }
     public int? EscalationDelayMinutes { get; set; }
     public DateTime? EscalationSentAt { get; set; }
+    [JsonIgnore]
+    public Guid? EscalationNotificationId { get; set; }
 
     public Project Project { get; set; }
     public User Performer { get; set; }
