@@ -1,5 +1,6 @@
 ﻿using BLL.Interfaces.Analytics;
 using BLL.Models.Teams;
+using BLL.Authorization;
 using BLL.Models.Users;
 using DAL.Entities;
 using DAL.Repositories.Interfaces;
@@ -9,10 +10,12 @@ namespace BLL.Services.Analytics;
 
 public class TeamAnalyticsService(
     IReadRepository<Team> teams,
-    IReadRepository<User> users) : ITeamAnalyticsService
+    IReadRepository<User> users,
+    IUserAccess? access = null) : ITeamAnalyticsService
 {
     public async Task<List<TeamWithMembersDto>> GetSortedTeamByMembersWithYearAsync(int year)
     {
+        await AccessQueries.RequireAdministratorAsync(access);
         var rows = await (from t in teams.Query()
             join u in users.Query() on t.Id equals u.TeamId
             where u.BirthDay.Year < year

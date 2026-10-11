@@ -5,11 +5,13 @@ using BLL.Models.Tasks;
 using BLL.Models.Messaging;
 using DAL.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Task = DAL.Entities.Task;
 
 namespace WebAPI.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class TasksController(ITasksService tasksService, IQueueService queueService) : ControllerBase
 {
@@ -33,14 +35,17 @@ public class TasksController(ITasksService tasksService, IQueueService queueServ
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(Task), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TaskWriteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<Task>> Add([FromBody] Task task, CancellationToken ct)
+    public System.Threading.Tasks.Task<ActionResult<Task>> Add([FromBody] TaskWriteRequest request, CancellationToken ct) => Add(request.ToEntity(), ct);
+
+    [NonAction]
+    public async Task<ActionResult<Task>> Add(Task task, CancellationToken ct)
     {
-        var result = await tasksService.AddTaskAsync(task, ct);
-        return result.ToActionResult();
+        var result = await tasksService.AddTaskAsync(TaskWriteRequest.Sanitize(task), ct);
+        return result.IsFailure ? result.ToActionResult() : Ok(TaskWriteResponse.FromEntity(result.Value!));
     }
 
     [HttpPost("AddExecutedTask")]
@@ -51,7 +56,7 @@ public class TasksController(ITasksService tasksService, IQueueService queueServ
         var result = await tasksService.AddExecutedTaskAsync(executedTask, ct);
         
         if (result.IsFailure)
-            return StatusCode(500, result.Error);
+            return Result<ExecutedTaskResult>.Failure(result.Error).ToActionResult();
 
         var envelope = new TaskNotificationEnvelope
         {
@@ -73,25 +78,28 @@ public class TasksController(ITasksService tasksService, IQueueService queueServ
     }
 
     [HttpPut("{id}")]
-    [ProducesResponseType(typeof(Task), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TaskWriteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<Task>> Update([FromRoute] int id, [FromBody] Task task, CancellationToken ct)
+    public System.Threading.Tasks.Task<ActionResult<Task>> Update([FromRoute] int id, [FromBody] TaskWriteRequest request, CancellationToken ct) => Update(id, request.ToEntity(), ct);
+
+    [NonAction]
+    public async Task<ActionResult<Task>> Update(int id, Task task, CancellationToken ct)
     {
-        var result = await tasksService.UpdateTaskByIdAsync(id, task, ct);
-        return result.ToActionResult();
+        var result = await tasksService.UpdateTaskByIdAsync(id, TaskWriteRequest.Sanitize(task), ct);
+        return result.IsFailure ? result.ToActionResult() : Ok(TaskWriteResponse.FromEntity(result.Value!));
     }
 
     [HttpPut("{id}/reminder")]
-    [ProducesResponseType(typeof(Task), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(TaskWriteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<Task>> UpdateReminder([FromRoute] int id, [FromBody] UpdateTaskReminderDto reminderDto, CancellationToken ct)
     {
         var result = await tasksService.UpdateTaskReminderAsync(id, reminderDto, ct);
-        return result.ToActionResult();
+        return result.IsFailure ? result.ToActionResult() : Ok(TaskWriteResponse.FromEntity(result.Value!));
     }
 
     [HttpDelete("{id}")]

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using AutoMapper;
+using BLL.Authorization;
 using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Teams;
@@ -10,18 +11,21 @@ using Microsoft.Extensions.Logging;
 
 namespace BLL.Services;
 
-[ExcludeFromCodeCoverage]
 public class TeamsService(
     IRepository<Team> teams,
     IUnitOfWork uow,
     IMapper mapper,
-    ILogger<TeamsService> logger) : ITeamsService
+    ILogger<TeamsService> logger,
+    IUserAccess? access = null,
+    ITeamManagementService? management = null) : ITeamsService
 {
     public async Task<Result<List<TeamDetailDto>>> GetTeamsAsync(CancellationToken ct = default)
     {
         try
         {
-            var teamList = await teams.Query()
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            var teamList = await teams.Query().VisibleTeams(scope)
                 .Include(t => t.Users)
                 .AsNoTracking()
                 .ToListAsync(ct);
@@ -41,7 +45,9 @@ public class TeamsService(
     {
         try
         {
-            var team = await teams.Query()
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            var team = await teams.Query().VisibleTeams(scope)
                 .Include(t => t.Users)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id, ct);
@@ -67,6 +73,10 @@ public class TeamsService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            if (access is not null)
+                return management is null ? Error.UnexpectedError : await management.CreateTeamAsync(teamDto.Name, ct);
             var team = new Team
             {
                 Id = 0,
@@ -89,11 +99,22 @@ public class TeamsService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
             var entity = await teams.GetByIdAsync(id, ct);
-            if (entity == null)
+            if (entity == null || (scope is { IsAdmin: false } && scope.TeamId != id))
             {
                 logger.LogWarning("Team with ID {TeamId} was not found for update", id);
                 return Error.NotFound("Team", id);
+            }
+
+            if (scope is { IsAdmin: false } && entity.OwnerId != scope.UserId) return Error.Forbidden;
+            if (access is not null)
+            {
+                var current = await access.GetScopeAsync(ct);
+                if (current is null) return Error.Unauthorized;
+                if (!current.IsAdmin && current.TeamId != id) return Error.NotFound("Team", id);
+                if (!current.IsAdmin && entity.OwnerId != current.UserId) return Error.Forbidden;
             }
 
             entity.Name = teamDto.Name;
@@ -113,6 +134,10 @@ public class TeamsService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            if (access is not null)
+                return management is null ? Error.UnexpectedError : await management.DeleteTeamAsync(id, ct);
             var entity = await teams.GetByIdAsync(id, ct);
             if (entity == null)
             {

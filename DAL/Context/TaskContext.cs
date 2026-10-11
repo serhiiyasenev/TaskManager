@@ -18,7 +18,6 @@ namespace DAL.Context
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Configure();
-            modelBuilder.Seed();
         }
     }
 }

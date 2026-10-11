@@ -224,6 +224,17 @@ public class NotificationOutboxTests
             await using (var db = h.CreateContext())
             {
                 await db.Database.EnsureCreatedAsync();
+                db.Teams.Add(new DAL.Entities.Team { Id = 1, Name = "Outbox test team", CreatedAt = h.Clock.GetUtcNow().UtcDateTime });
+                db.Users.Add(new DAL.Entities.User("outbox.member", "Outbox", "Member", "outbox@example.test")
+                {
+                    Id = 1, TeamId = 1, EmailConfirmed = true, SecurityStamp = Guid.NewGuid().ToString()
+                });
+                db.Projects.Add(new DAL.Entities.Project
+                {
+                    Id = 1, AuthorId = 1, TeamId = 1, Name = "Outbox test project", Description = "Isolated fixture",
+                    CreatedAt = h.Clock.GetUtcNow().UtcDateTime
+                });
+                await db.SaveChangesAsync();
                 var task = new TaskEntity
                 {
                     Name = "Outbox regression", Description = "Test task", ProjectId = 1, PerformerId = 1,

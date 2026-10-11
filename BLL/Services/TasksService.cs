@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BLL.Authorization;
 using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Tasks;
@@ -20,7 +21,8 @@ public class TasksService(
     IUnitOfWork uow,
     IMapper mapper,
     ILogger<TasksService> logger,
-    IOptions<ReminderOptions>? reminderOptions = null)
+    IOptions<ReminderOptions>? reminderOptions = null,
+    IUserAccess? access = null)
     : ITasksService
 {
     private readonly ReminderOptions _reminderOptions = reminderOptions?.Value ?? new ReminderOptions();
@@ -29,7 +31,9 @@ public class TasksService(
     {
         try
         {
-            var taskList = await tasks.Query()
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            var taskList = await tasks.Query().VisibleTasks(scope)
                 .Include(t => t.Performer)
                 .AsNoTracking()
                 .ToListAsync(ct);
@@ -49,8 +53,10 @@ public class TasksService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
             logger.LogInformation("Retrieving task {TaskId}", id);
-            var task = await tasks.Query()
+            var task = await tasks.Query().VisibleTasks(scope)
                 .Include(t => t.Performer)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id, ct);
@@ -75,6 +81,9 @@ public class TasksService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            if (scope is not null) task = TaskWriteRequest.Sanitize(task);
             // Validate performer exists
             if (!await users.AnyAsync(u => u.Id == task.PerformerId, ct))
             {
@@ -89,11 +98,14 @@ public class TasksService(
                 return Error.NotFound("Project", task.ProjectId);
             }
 
+            var assignmentError = await ValidateAssignmentAsync(task, scope, ct);
+            if (assignmentError != Error.None) return assignmentError;
             task.Id = 0;
             task.CreatedAt = DateTime.UtcNow;
             ApplyReminderDefaults(task);
             if (task.State is TaskState.ToDo or TaskState.InProgress) 
                 task.FinishedAt = null;
+            else if (scope is not null) task.FinishedAt = DateTime.UtcNow;
 
             await tasks.AddAsync(task, ct);
             await uow.SaveChangesAsync(ct);
@@ -112,6 +124,15 @@ public class TasksService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            if (scope is not null)
+            {
+                var task = await tasks.GetByIdAsync(executedTask.TaskId, ct);
+                if (task is null || !await CanAccessTaskAsync(task, scope, ct)) return Error.NotFound("Task", executedTask.TaskId);
+                if (task.State != TaskState.Done) return Error.Validation("TaskId", "Only a completed task can be recorded as executed.");
+                executedTask = new ExecutedTask { TaskId = task.Id, TaskName = task.Name };
+            }
             executedTask.Id = 0;
             executedTask.CreatedAt = DateTime.UtcNow;
             
@@ -132,8 +153,10 @@ public class TasksService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
             var entity = await tasks.GetByIdAsync(id, ct);
-            if (entity is null)
+            if (entity is null || !await CanAccessTaskAsync(entity, scope, ct))
             {
                 logger.LogWarning("Task {TaskId} not found for update", id);
                 return Error.NotFound(nameof(DAL.Entities.Task), id);
@@ -153,6 +176,8 @@ public class TasksService(
                 return Error.NotFound("Project", task.ProjectId);
             }
 
+            var assignmentError = await ValidateAssignmentAsync(task, scope, ct);
+            if (assignmentError != Error.None) return assignmentError;
             var previousDueDate = entity.DueDate;
             var previousPerformerId = entity.PerformerId;
             var previousReminderEnabled = entity.ReminderEnabled;
@@ -225,8 +250,10 @@ public class TasksService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
             var entity = await tasks.GetByIdAsync(id, ct);
-            if (entity is null)
+            if (entity is null || !await CanAccessTaskAsync(entity, scope, ct))
             {
                 logger.LogWarning("Task {TaskId} not found for reminder update", id);
                 return Error.NotFound(nameof(DAL.Entities.Task), id);
@@ -290,8 +317,10 @@ public class TasksService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
             var entity = await tasks.GetByIdAsync(id, ct);
-            if (entity is null)
+            if (entity is null || !await CanAccessTaskAsync(entity, scope, ct))
             {
                 logger.LogWarning("Task {TaskId} not found for deletion", id);
                 return Error.NotFound(nameof(DAL.Entities.Task), id);
@@ -308,6 +337,19 @@ public class TasksService(
             logger.LogError(ex, "Error deleting task {TaskId}", id);
             return Error.Custom("Error.CanNotDelete", $"Cannot delete Task with ID {id}. It may have dependencies.");
         }
+    }
+
+    private async Task<bool> CanAccessTaskAsync(DAL.Entities.Task task, UserAccessScope? scope, CancellationToken ct) =>
+        scope is null || scope.IsAdmin || (scope.TeamId.HasValue
+            && await projects.AnyAsync(project => project.Id == task.ProjectId && project.TeamId == scope.TeamId.Value, ct));
+
+    private async Task<Error> ValidateAssignmentAsync(DAL.Entities.Task task, UserAccessScope? scope, CancellationToken ct)
+    {
+        if (scope is null) return Error.None;
+        var project = await projects.Query().VisibleProjects(scope).FirstOrDefaultAsync(project => project.Id == task.ProjectId, ct);
+        if (project is null) return Error.NotFound("Project", task.ProjectId);
+        return await users.AnyAsync(user => user.Id == task.PerformerId && user.TeamId == project.TeamId, ct)
+            ? Error.None : Error.Validation("PerformerId", "The performer must be a current member of the project's team.");
     }
 
     private void ApplyReminderDefaults(DAL.Entities.Task task)

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using BLL.Interfaces.Analytics;
+using BLL.Authorization;
 using BLL.Models.Projects;
 using BLL.Models.Tasks;
 using DAL.Entities;
@@ -12,10 +13,12 @@ namespace BLL.Services.Analytics;
 [ExcludeFromCodeCoverage]
 public class TaskAnalyticsService(
     IReadRepository<DAL.Entities.Task> tasks,
-    IReadRepository<Project> projects) : ITaskAnalyticsService
+    IReadRepository<Project> projects,
+    IUserAccess? access = null) : ITaskAnalyticsService
 {
     public async Task<Dictionary<string, int>> GetTasksCountInProjectsByUserIdAsync(int userId)
     {
+        await AccessQueries.RequireAdministratorAsync(access);
         var rows = await (
                 from p in projects.Query()
                 join t in tasks.Query().Where(t => t.PerformerId == userId)
@@ -32,6 +35,7 @@ public class TaskAnalyticsService(
 
     public async Task<List<TaskDto>> GetCapitalTasksByUserIdAsync(int userId)
     {
+        await AccessQueries.RequireAdministratorAsync(access);
         var rows = await tasks.Query()
             .Where(t => t.PerformerId == userId)
             .Select(t => new
@@ -78,6 +82,7 @@ public class TaskAnalyticsService(
 
     public async Task<List<ProjectTaskStatusDto>> GetTaskStatusByProjectAsync(int projectId)
     {
+        await AccessQueries.RequireAdministratorAsync(access);
         var query =
             from p in projects.Query()
             where p.Id == projectId

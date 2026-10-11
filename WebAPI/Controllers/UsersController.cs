@@ -3,15 +3,19 @@ using BLL.Interfaces;
 using BLL.Models.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace WebAPI.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class UsersController(IUsersService usersService, IAuthService authService) : ControllerBase
 {
     [HttpPost("Register")]
+    [AllowAnonymous]
+    [EnableRateLimiting("account-authentication")]
     [SwaggerOperation(Summary = "Register user", Description = "Registers a new user account.")]
     [SwaggerResponse(200, "User successfully registered", typeof(string))]
     [SwaggerResponse(400, "Validation or registration error")]
@@ -22,6 +26,8 @@ public class UsersController(IUsersService usersService, IAuthService authServic
     }
 
     [HttpPost("Login")]
+    [AllowAnonymous]
+    [EnableRateLimiting("account-authentication")]
     [SwaggerOperation(Summary = "User login", Description = "Authenticates the user and returns access token.")]
     [SwaggerResponse(200, "Login successful", typeof(UserLoginInfoDto))]
     [SwaggerResponse(401, "Invalid credentials")]
