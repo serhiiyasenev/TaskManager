@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -35,11 +35,11 @@ function makeDraft() {
     createdAtUtc: new Date().toISOString(), expiresAtUtc: new Date(Date.now() + 3_600_000).toISOString(), locale: 'uk', timeZoneId: 'Europe/Kyiv', referenceDate: '2026-10-12', items: [
       { draftItemId: itemOne, title: 'Перевірити API оплати', description: 'Перевірка зі стенограмою.', proposedAssigneeId: 42 as number | null,
         originalAssigneeText: 'Олена', proposedDueAtUtc: '2026-10-16T20:59:00Z' as string | null, originalDueText: 'до п’ятниці',
-        sourceQuote: quote, sourceStart: 0, sourceLength: quote.length, isSuggestion: false, interpretations: ['Кінець дня у Europe/Kyiv'], clarificationReasons: [] as string[], materializedTaskId: null as number | null },
+        sourceQuote: quote, sourceStart: 0, sourceLength: quote.length, isSuggestion: false, interpretations: ['date_only_end_of_day', 'deadline_text_resolution'], clarificationReasons: [] as string[], materializedTaskId: null as number | null },
       { draftItemId: itemTwo, title: 'Обговорити дизайн', description: '', proposedAssigneeId: null as number | null,
         originalAssigneeText: null as string | null, proposedDueAtUtc: null as string | null, originalDueText: null as string | null,
         sourceQuote: suggestionQuote, sourceStart: notes.indexOf(suggestionQuote), sourceLength: suggestionQuote.length, isSuggestion: true,
-        interpretations: ['Пропозиція без явного зобов’язання'], clarificationReasons: ['Потрібне підтвердження зобов’язання'], materializedTaskId: null as number | null },
+        interpretations: ['description_interpretation'], clarificationReasons: ['commitment_unresolved', 'due_date_missing'], materializedTaskId: null as number | null },
     ] };
 }
 const receipt = { draftId, draftVersion: versionTwo, items: [{ draftItemId: itemOne, taskId: 501,
@@ -70,9 +70,9 @@ function commitCalls() { return boundary.request.mock.calls.filter(call => call[
 async function extract(text = notes) {
   const actor = userEvent.setup(); page();
   await actor.selectOptions(await screen.findByLabelText('Проєкт', { exact: true }), '71');
-  await actor.type(screen.getByLabelText('Нотатки', { exact: true }), text);
+  await actor.click(screen.getByLabelText('Нотатки', { exact: true })); await actor.paste(text);
   const zone = screen.getByLabelText('Часовий пояс', { exact: true }); await actor.clear(zone); await actor.type(zone, 'Europe/Kyiv');
-  await actor.click(screen.getByRole('button', { name: 'Запропонувати завдання', exact: true }));
+  await actor.click(screen.getByRole('button', { name: 'Запропонувати завдання' }));
   await screen.findByLabelText('Вибрати пропозицію 1'); return actor;
 }
 
@@ -89,7 +89,7 @@ describe('AI notes, evidence review and explicit commit', () => {
   it('posts exact private notes with an explicit project, note date, timezone and locale, creating no tasks', async () => {
     const actor = userEvent.setup(); page();
     await actor.selectOptions(await screen.findByLabelText('Проєкт', { exact: true }), '71');
-    await actor.type(screen.getByLabelText('Нотатки', { exact: true }), notes);
+    await actor.click(screen.getByLabelText('Нотатки', { exact: true })); await actor.paste(notes);
     await actor.type(screen.getByLabelText('Дата нотаток (необов’язково)'), '2026-10-12');
     const zone = screen.getByLabelText('Часовий пояс', { exact: true }); await actor.clear(zone); await actor.type(zone, 'Europe/Kyiv');
     await actor.click(screen.getByRole('button', { name: 'Запропонувати завдання' }));
@@ -102,18 +102,24 @@ describe('AI notes, evidence review and explicit commit', () => {
   });
 
   it('leaves actionable rows and suggestions unchecked and shows original evidence and interpretations', async () => {
+    draft.items[1].clarificationReasons.push('future_internal_marker');
     await extract();
     expect(screen.getByLabelText('Вибрати пропозицію 1')).not.toBeChecked();
     expect(screen.getByLabelText('Вибрати пропозицію 2')).not.toBeChecked();
+    expect(screen.getByRole('region', { name: 'Таблиця пропозицій' })).toContainElement(screen.getByRole('table'));
     expect(screen.getByText(quote, { exact: true })).toBeInTheDocument();
-    expect(screen.getByText('Пропозиція без явного зобов’язання', { exact: true })).toBeInTheDocument();
-    expect(screen.getByText('Потрібне підтвердження зобов’язання', { exact: true })).toBeInTheDocument();
+    expect(screen.getByText('Дату без часу прочитано як 23:59 у часовому поясі Europe/Kyiv. Перевірте, чи цей строк вам підходить.', { exact: true })).toBeInTheDocument();
+    expect(screen.getByText('У джерелі немає чіткого зобов’язання. Зберігайте цей рядок лише після явного підтвердження.', { exact: true })).toBeInTheDocument();
+    expect(screen.getByText('Строк не вказано. Його можна залишити порожнім або задати вручну.', { exact: true })).toBeInTheDocument();
+    expect(screen.getByText('Перевірте цю пропозицію за джерелом і уточніть потрібні поля.', { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText(/future_internal_marker|date_only_end_of_day|commitment_unresolved/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Зберегти вибрані завдання' })).toBeDisabled();
   });
 
   it('does not infer an unresolved duplicate name or deadline and requires an explicit current assignee', async () => {
-    draft.items[0] = { ...draft.items[0], proposedAssigneeId: null, proposedDueAtUtc: null, clarificationReasons: ['Кілька учасників мають це ім’я'] };
+    draft.items[0] = { ...draft.items[0], proposedAssigneeId: null, proposedDueAtUtc: null, interpretations: [], clarificationReasons: ['assignee_ambiguous', 'due_date_unresolved'] };
     const actor = await extract();
+    expect(screen.getByText('Це ім’я мають кілька учасників. Оберіть потрібну людину зі списку.', { exact: true })).toBeInTheDocument();
     expect(screen.getByLabelText('Виконавець пропозиції 1')).toHaveValue('');
     expect(screen.getByLabelText('Строк пропозиції 1')).toHaveValue('');
     await actor.click(screen.getByLabelText('Вибрати пропозицію 1'));
@@ -126,14 +132,14 @@ describe('AI notes, evidence review and explicit commit', () => {
     const maliciousQuote = '<img src=x onerror=alert(1)> Олена перевірить API.';
     draft.items[0] = { ...draft.items[0], sourceQuote: maliciousQuote, sourceLength: maliciousQuote.length };
     await extract(maliciousQuote);
-    expect(screen.getByText(maliciousQuote, { exact: true })).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText(maliciousQuote, { exact: true })).toBeInTheDocument();
     expect(document.querySelector('img')).toBeNull();
   });
 
   it('commits only selected edited rows with current version and an idempotency header', async () => {
     const actor = await extract(); await actor.click(screen.getByLabelText('Вибрати пропозицію 1'));
-    const title = screen.getByLabelText('Назва пропозиції 1'); await actor.clear(title); await actor.type(title, 'Моя уточнена перевірка');
-    const description = screen.getByLabelText('Опис пропозиції 1'); await actor.clear(description); await actor.type(description, 'Підтверджено після перевірки джерела.');
+    const title = screen.getByLabelText('Назва пропозиції 1'); await actor.clear(title); await actor.paste('Моя уточнена перевірка');
+    const description = screen.getByLabelText('Опис пропозиції 1'); await actor.clear(description); await actor.paste('Підтверджено після перевірки джерела.');
     await actor.selectOptions(screen.getByLabelText('Виконавець пропозиції 1'), '43');
     await actor.clear(screen.getByLabelText('Строк пропозиції 1'));
     await actor.click(screen.getByRole('button', { name: 'Зберегти вибрані завдання' }));
@@ -206,8 +212,10 @@ describe('AI notes, evidence review and explicit commit', () => {
     boundary.commit.mockRejectedValueOnce(new boundary.ApiError(400, 'trace-validation', { 'items[0].title': ['Invalid title'] })).mockResolvedValueOnce(receipt);
     const actor = await extract(); await actor.click(screen.getByLabelText('Вибрати пропозицію 1'));
     await actor.click(screen.getByRole('button', { name: 'Зберегти вибрані завдання' }));
-    await screen.findByRole('alert'); const first = commitCalls()[0][2];
-    const title = screen.getByLabelText('Назва пропозиції 1'); expect(title).toBeEnabled(); await actor.clear(title); await actor.type(title, 'Виправлена назва');
+    await screen.findByText(/trace-validation/); const first = commitCalls()[0][2];
+    const title = screen.getByLabelText('Назва пропозиції 1'); expect(title).toBeEnabled();
+    expect(title).toHaveAccessibleDescription('Перевірте це поле.'); expect(title).toHaveFocus();
+    await actor.clear(title); await actor.type(title, 'Виправлена назва');
     await actor.click(screen.getByRole('button', { name: 'Зберегти вибрані завдання' }));
     await waitFor(() => expect(commitCalls()).toHaveLength(2));
     expect(new Headers(commitCalls()[1][2].headers).get('Idempotency-Key')).not.toBe(new Headers(first.headers).get('Idempotency-Key'));

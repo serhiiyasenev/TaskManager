@@ -7,6 +7,7 @@ import { DashboardPage } from './features/work/DashboardPage';
 import { TasksPage, TaskDetailPage, TaskFormPage } from './features/work/TasksPages';
 import { ProjectDetailPage, ProjectFormPage, ProjectsPage } from './features/work/ProjectsPages';
 import { TeamDetailPage, TeamsPage } from './features/teams/TeamsPages';
+import { AINotesPage } from './features/ai/AINotesPage';
 
 function Workspace() {
   const session = useSession();
@@ -31,6 +32,7 @@ function Workspace() {
         <NavLink to="/tasks"><span aria-hidden="true">☷</span>Завдання</NavLink>
         <NavLink to="/projects"><span aria-hidden="true">▱</span>Проєкти</NavLink>
         <NavLink to="/teams"><span aria-hidden="true">♧</span>Команда</NavLink>
+        <NavLink to="/ai-notes"><span aria-hidden="true">✦</span>AI нотатки</NavLink>
       </nav></div><div className="sidebar-footer">Ваші завдання.<br />Спільний результат.</div></aside>
     <div className="workspace"><header className="topbar"><span className="topbar-path">Робочий простір / TaskManager</span><div className="user-menu">
       <Link to="/profile" className="actions"><span className="avatar" aria-hidden="true">{name.split(' ').map(part => part[0]).join('').slice(0, 2)}</span>{name || session.user.userName}</Link>
@@ -52,6 +54,7 @@ export function App() {
       <Route path="/projects" element={<ProjectsPage />} /><Route path="/projects/new" element={<ProjectFormPage />} />
       <Route path="/projects/:id" element={<ProjectDetailPage />} /><Route path="/projects/:id/edit" element={<ProjectFormPage />} />
       <Route path="/teams" element={<TeamsPage />} /><Route path="/teams/:id" element={<TeamDetailPage />} />
+      <Route path="/ai-notes" element={<AINotesPage />} />
       <Route path="*" element={<><h1>Сторінку не знайдено</h1><Link to="/">Повернутися до огляду</Link></>} />
     </Route>
   </Routes>;

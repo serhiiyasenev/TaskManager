@@ -1,0 +1,54 @@
+{
+  "contract": "Roadmap step 25 and docs/modernization/ui-contract.md: private notes produce an owner-only draft; human evidence review, explicit selection and edited commit; safe recovery from unknown outcomes and changed rights.",
+  "targetViewports": ["1440x900", "390x844"],
+  "scope": "Actual built React App in disposable installed Chrome contexts with explicitly synthetic intercepted API responses. These checks do not prove Azure inference, server authorization, Identity cookies or SQL transactions.",
+  "run": {
+    "startTimeUtc": "2026-10-11T22:08:10.729Z",
+    "durationMs": 35291.002,
+    "passed": 14, "failed": 0, "skipped": 0, "flaky": 0,
+    "browserChannel": "chrome", "timeZone": "Europe/Kyiv",
+    "command": "node node_modules/@playwright/test/cli.js test ui-ai.spec.ts",
+    "workingDirectory": "frontend"
+  },
+  "accessibility": {
+    "status": "pass",
+    "evidence": "Rendered input/select/textarea controls had accessible labels. The proposal table has a distinct named focusable scrolling region; keyboard modality produced a solid focus outline of at least 2px. Source text and explanations remain ordinary text. This is scoped keyboard/label/layout evidence, not a formal WCAG or assistive-technology audit."
+  },
+  "responsive": {
+    "status": "pass",
+    "evidence": "Both CSS viewports rendered long synthetic task and participant names. Measured document width stayed within viewport width; the mobile review table scrolls within its named region. Visual inspection covered both mobile table ends, desktop review and partial success. The confirmation badge now wraps inside its selection cell without overlapping adjacent fields."
+  },
+  "contentStates": {
+    "loading": { "status": "pass", "evidence": "A held extraction displayed a disabled pending action and note fields, with no invented rows. Releasing the response rendered the draft." },
+    "empty": { "status": "pass", "evidence": "Zero proposals displayed an explanation and manual task link; no commit action was offered." },
+    "error": { "status": "pass", "evidence": "A schema-invalid source span produced a safe response error without review rows. HTTP 503 preserved notes and showed a safe synthetic trace; disabled status retained usable note input and manual creation." },
+    "partial": { "status": "pass", "evidence": "Only the explicitly selected edited row was submitted. The receipt disabled its materialized row and supplied the next draft version; the remaining row stayed unchecked and could be confirmed separately with a new key." },
+    "success": { "status": "pass", "evidence": "Confirmed rows linked to returned synthetic task IDs. A simulated committed response loss locked edits; retry preserved the exact body and Idempotency-Key, fetched fresh CSRF and recovered the same task receipt. Double click caused one initial commit. Browser storage stayed empty and the URL contained only the nonsecret draft ID." },
+    "permission": { "status": "pass", "evidence": "Controlled commit HTTP 403 removed cached member and project options, refreshed /api/auth/me, disabled saving and preserved human title edits with a safe access explanation." }
+  },
+  "renderedFindingsFixed": [
+    "Internal interpretation and clarification codes now map to human Ukrainian/English explanations; unknown markers receive a generic review notice. Date-only interpretation explicitly states 23:59 in the notes time zone.",
+    "Outer review and inner scrolling table now have distinct accessible names.",
+    "The narrow selection column and unwrapped confirmation badge no longer overlap adjacent fields."
+  ],
+  "limits": [
+    "All API responses are synthetic fixtures; production AI availability and output quality are not verified by this run.",
+    "Backend authorization, CSRF validation, persistence, receipt lifetime and concurrency require the separate HTTP/SQL tests and step 28 full-stack E2E.",
+    "Draft expiry, conflict refresh, field validation, deletion and resume are covered by focused component tests, not this browser subset.",
+    "Only installed Chrome and Ukrainian UI were exercised. English copy is prepared but a full English rendered workflow was not exercised.",
+    "This AI run did not remeasure touch target size, text contrast or reduced-motion CSS; step 24 evidence records those scoped shared-interface checks."
+  ],
+  "renderedEvidence": [
+    { "viewport": "1440x900", "artifact": "ai-screenshots/desktop-1440x900-ai-review.png", "observation": "Unchecked proposals, human date interpretation, immutable source and a wrapped confirmation badge." },
+    { "viewport": "1440x900", "artifact": "ai-screenshots/desktop-1440x900-ai-partial-saved.png", "observation": "Materialized first row links to the returned task; remaining proposal stays unchecked." },
+    { "viewport": "390x844", "artifact": "ai-screenshots/mobile-390x844-ai-review.png", "observation": "Stacked notes form and left side of the contained mobile review table." },
+    { "viewport": "390x844", "artifact": "ai-screenshots/mobile-390x844-ai-review-sources.png", "observation": "Scrolled source column remains readable, with an actual visible keyboard focus outline around the table region." },
+    { "viewport": "390x844", "artifact": "ai-screenshots/mobile-390x844-ai-loading.png", "observation": "Held extraction shows pending progress and locked input." },
+    { "viewport": "390x844", "artifact": "ai-screenshots/mobile-390x844-ai-empty.png", "observation": "Empty draft explains the state and keeps manual creation available." },
+    { "viewport": "390x844", "artifact": "ai-screenshots/mobile-390x844-ai-schema-error.png", "observation": "Invalid source span yields a safe response error while notes remain in the input." },
+    { "viewport": "390x844", "artifact": "ai-screenshots/mobile-390x844-ai-service-error.png", "observation": "Synthetic service outage shows safe error text and a correlation identifier." },
+    { "viewport": "390x844", "artifact": "ai-screenshots/mobile-390x844-ai-permission.png", "observation": "Revoked access hides directory options and keeps local human edits in the disabled review form." },
+    { "viewport": "390x844", "artifact": "ai-screenshots/mobile-390x844-ai-unknown-save.png", "observation": "Unknown save locks the exact confirmed payload and offers an explicit identical retry." },
+    { "viewport": "390x844", "artifact": "ai-screenshots/mobile-390x844-ai-recovered-save.png", "observation": "Identical retry recovers the materialized task without duplicating it." }
+  ]
+}

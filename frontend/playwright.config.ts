@@ -4,7 +4,7 @@ import { defineConfig } from '@playwright/test';
 // profile. The channel can be overridden by CI after installing its own browser.
 const channel = process.env.TASKMANAGER_UI_BROWSER ?? 'chrome';
 export default defineConfig({
-  testDir: './e2e', testMatch: 'ui.spec.ts', timeout: 30_000, expect: { timeout: 8_000 },
+  testDir: './e2e', testMatch: 'ui*.spec.ts', timeout: 30_000, expect: { timeout: 8_000 },
   fullyParallel: false, workers: 1, retries: 0, forbidOnly: Boolean(process.env.CI),
   outputDir: './test-results/ui',
   reporter: [['list'], ['json', { outputFile: './test-results/ui-summary.json' }]],

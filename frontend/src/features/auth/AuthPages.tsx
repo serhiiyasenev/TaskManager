@@ -10,7 +10,7 @@ const MessageSchema = z.object({ message: z.string() });
 const PreviewSchema = z.object({ teamName: z.string(), expired: z.boolean() });
 const AcceptedSchema = z.object({ teamId: z.number().int().positive() });
 const ProfileDetailsSchema = z.object({
-  id: z.number().int().positive(), userName: z.string(), email: z.string(), teamId: z.number().int().nullable(),
+  id: z.number().int().positive(), userName: z.string(), email: z.string(), teamId: z.number().int().nullish().transform(value => value ?? null),
   firstName: z.string(), lastName: z.string(), birthDay: z.string(),
 });
 const ProfileUpdatedSchema = z.object({ id: z.number().int().positive(), firstName: z.string(), lastName: z.string(), email: z.string() });
