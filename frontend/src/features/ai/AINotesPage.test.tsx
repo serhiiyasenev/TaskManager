@@ -45,18 +45,19 @@ function makeDraft() {
 const receipt = { draftId, draftVersion: versionTwo, items: [{ draftItemId: itemOne, taskId: 501,
   taskVersion: 'fb12a4c4-d45d-4085-8360-0eebd935bafc', outboxMessageId: 'c7f9c2cb-d941-40cf-ab90-3fb4079c31b5' }] };
 let draft = makeDraft(); let currentDraft = makeDraft();
+let currentTeam = team;
 let status = { available: true, provider: 'azure', maxInputCharacters: 20_000, maxItems: 25 };
 let extractionFailure: InstanceType<typeof boundary.ApiError> | undefined;
 
 beforeEach(() => {
-  draft = makeDraft(); currentDraft = makeDraft(); extractionFailure = undefined;
+  draft = makeDraft(); currentDraft = makeDraft(); currentTeam = team; extractionFailure = undefined;
   status = { available: true, provider: 'azure', maxInputCharacters: 20_000, maxItems: 25 };
   boundary.request.mockReset(); boundary.commit.mockReset(); boundary.refresh.mockReset();
   boundary.commit.mockResolvedValue(receipt); boundary.refresh.mockResolvedValue(undefined);
   boundary.request.mockImplementation(async (path: string, _schema: unknown, options?: { method?: string }) => {
     if (path === '/api/ai/status') return status;
     if (path === '/api/projects') return [project];
-    if (path === '/api/teams/17') return team;
+    if (path === '/api/teams/17') return currentTeam;
     if (path === '/api/ai/task-extractions' && options?.method === 'POST') { if (extractionFailure) throw extractionFailure; return draft; }
     if (path === `/api/ai/task-extractions/${draftId}/commit`) return boundary.commit(options);
     if (path === `/api/ai/task-extractions/${draftId}` && options?.method === 'DELETE') return undefined;
@@ -117,9 +118,10 @@ describe('AI notes, evidence review and explicit commit', () => {
   });
 
   it('does not infer an unresolved duplicate name or deadline and requires an explicit current assignee', async () => {
-    draft.items[0] = { ...draft.items[0], proposedAssigneeId: null, proposedDueAtUtc: null, interpretations: [], clarificationReasons: ['assignee_ambiguous', 'due_date_unresolved'] };
+    draft.items[0] = { ...draft.items[0], proposedAssigneeId: null, proposedDueAtUtc: null, interpretations: [], clarificationReasons: ['assignee_ambiguous', 'due_date_unresolved', 'assignee_membership_changed'] };
     const actor = await extract();
     expect(screen.getByText('Це ім’я мають кілька учасників. Оберіть потрібну людину зі списку.', { exact: true })).toBeInTheDocument();
+    expect(screen.getByText('Склад команди змінився після аналізу нотаток. Перевірте поточного виконавця та оберіть його вручну.', { exact: true })).toBeInTheDocument();
     expect(screen.getByLabelText('Виконавець пропозиції 1')).toHaveValue('');
     expect(screen.getByLabelText('Строк пропозиції 1')).toHaveValue('');
     await actor.click(screen.getByLabelText('Вибрати пропозицію 1'));
@@ -234,6 +236,31 @@ describe('AI notes, evidence review and explicit commit', () => {
     await actor.click(screen.getByRole('button', { name: 'Зберегти вибрані завдання' }));
     await waitFor(() => expect(commitCalls()).toHaveLength(2));
     expect(commitCalls()[1][2].body.expectedVersion).toBe(versionTwo);
+  });
+
+  it('requires explicit fresh review after generic validation without field errors when a cached assignee departed', async () => {
+    boundary.commit.mockRejectedValueOnce(new boundary.ApiError(400, 'trace-assignee-validation')).mockResolvedValueOnce(receipt);
+    const actor = await extract(); await actor.click(screen.getByLabelText('Вибрати пропозицію 1'));
+    const title = screen.getByLabelText('Назва пропозиції 1'); await actor.clear(title); await actor.paste('Мої правки перед зміною команди');
+    await actor.selectOptions(screen.getByLabelText('Виконавець пропозиції 1'), '43');
+    currentTeam = { ...team, users: [user] };
+    const directoryReads = boundary.request.mock.calls.filter(call => call[0] === '/api/teams/17').length;
+    await actor.click(screen.getByRole('button', { name: 'Зберегти вибрані завдання' }));
+    const first = commitCalls()[0][2];
+    const review = await screen.findByRole('button', { name: 'Перевірити актуальну чернетку' });
+    expect(title).toHaveValue('Мої правки перед зміною команди'); expect(screen.getByLabelText('Вибрати пропозицію 1')).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Зберегти вибрані завдання' })).toBeDisabled();
+    expect(boundary.request.mock.calls.filter(call => call[0] === '/api/teams/17')).toHaveLength(directoryReads);
+    await actor.click(review);
+    await waitFor(() => expect(within(screen.getByLabelText('Виконавець пропозиції 1')).queryByRole('option', { name: /another.olena@example.test/ })).not.toBeInTheDocument());
+    expect(boundary.request.mock.calls.some(call => call[0] === `/api/ai/task-extractions/${draftId}`)).toBe(true);
+    expect(title).toHaveValue('Мої правки перед зміною команди'); expect(screen.getByLabelText('Вибрати пропозицію 1')).toBeChecked();
+    expect(commitCalls()).toHaveLength(1);
+    await actor.selectOptions(screen.getByLabelText('Виконавець пропозиції 1'), '42');
+    await actor.click(screen.getByRole('button', { name: 'Зберегти вибрані завдання' }));
+    await waitFor(() => expect(commitCalls()).toHaveLength(2));
+    expect(commitCalls()[1][2].body.items[0]).toMatchObject({ title: 'Мої правки перед зміною команди', assigneeId: 42 });
+    expect(new Headers(commitCalls()[1][2].headers).get('Idempotency-Key')).not.toBe(new Headers(first.headers).get('Idempotency-Key'));
   });
 
   it('preserves local notes and edits when the server reports expiry', async () => {
