@@ -125,3 +125,8 @@ src/.vs/config/applicationhost.config
 *.pfx
 *.pem
 CoverageReport/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/

@@ -76,10 +76,22 @@ The owner's remote `fff5efa` removed only Consensia workflow. Auto-review initia
 blocked merging a CI deletion; the owner explicitly confirmed preserving it.
 Root merged without rewriting history and pushed `e0d14c1`. Never restore it.
 
-Next action: include real-SQL lifecycle test and CI smoke, run local focused gate,
-commit/push, inspect runner result, then advance to React/YARP step 24. Keep
-remaining runtime gates explicit. UI design contract and verified registry
-versions are prepared; no frontend runtime is delivered yet.
+Final external gates at `7e11f5f47ed51fb9b2b1d5542112b96a7f3db8e1` PASS:
+[SQL/backend run 161](https://github.com/serhiiyasenev/TaskManager/actions/runs/38166615743)
+and [container smoke run 1](https://github.com/serhiiyasenev/TaskManager/actions/runs/38166615774).
+Backend result: **398 passed, 0 failed, 0 skipped, 16 seconds**. Container images
+use the PR event merge SHA `762d8aa092d075102c84dadc6bb8703c97bfeef9`, which
+includes branch head 7e11f5f and verified main base; they were not published.
+The real-SQL HTTP lifecycle executes both receiver paths, guarded rename, wrong
+email/revocation and late-write rollback. Container gate builds and starts actual
+non-root API/Notifier/migrations/console, confirms SQL migration history, real
+SQL/broker readiness, 401 boundaries and Mailpit SMTP/console startup.
+These finish steps 22–23; they do not prove browser UI, durable inbox or Azure.
+
+Next action: active step 24 — React/YARP. Design contract and exact registry
+versions are prepared; no frontend runtime is delivered yet. Agents split gateway,
+backend task concurrency/pagination and browser auth UI; root owns frontend
+foundation/task/project/dashboard and shared verification. Preserve outbox/data.
 
 Draft PR #51 targets main from feature/ai-step-21-modernization. Preserve its
 single branch/dependency chain; no auto-merge. Restart from this trace, plan and
