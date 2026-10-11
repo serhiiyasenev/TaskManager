@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -303,12 +304,17 @@ public class DataIsolationTests
 internal sealed class DataIsolationFactory : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
+    private readonly IInterceptor? _interceptor;
 
-    private DataIsolationFactory() => _connection.Open();
-
-    public static async Task<DataIsolationFactory> CreateAsync()
+    private DataIsolationFactory(IInterceptor? interceptor = null)
     {
-        var factory = new DataIsolationFactory();
+        _interceptor = interceptor;
+        _connection.Open();
+    }
+
+    public static async Task<DataIsolationFactory> CreateAsync(IInterceptor? interceptor = null)
+    {
+        var factory = new DataIsolationFactory(interceptor);
         await factory.WithDatabaseAsync(async db =>
         {
             await db.Database.EnsureCreatedAsync();
@@ -371,7 +377,11 @@ internal sealed class DataIsolationFactory : WebApplicationFactory<Program>
             services.RemoveAll<TaskContext>();
             services.RemoveAll<DbContextOptions<TaskContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<TaskContext>>();
-            services.AddDbContext<TaskContext>(options => options.UseSqlite(_connection));
+            services.AddDbContext<TaskContext>(options =>
+            {
+                options.UseSqlite(_connection);
+                if (_interceptor is not null) options.AddInterceptors(_interceptor);
+            });
             services.RemoveAll<IQueueService>();
             services.AddSingleton<IQueueService, IsolationQueue>();
             services.AddAuthentication(options =>
