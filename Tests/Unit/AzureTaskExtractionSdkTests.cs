@@ -25,7 +25,9 @@ public class AzureTaskExtractionSdkTests
         Assert.True(handler.UsedConfiguredApiKey);
         using var body = JsonDocument.Parse(handler.Body!);
         var root = body.RootElement;
-        Assert.Equal(4000, root.GetProperty("max_completion_tokens").GetInt32());
+        // Azure.AI.OpenAI 2.1.0 maps MaxOutputTokenCount to max_tokens for
+        // its stable chat API (AzureChatClient.PostfixSwapMaxTokens).
+        Assert.Equal(4000, root.GetProperty("max_tokens").GetInt32());
         Assert.Equal(2, root.GetProperty("messages").GetArrayLength());
         Assert.Equal("system", root.GetProperty("messages")[0].GetProperty("role").GetString());
         Assert.Equal("user", root.GetProperty("messages")[1].GetProperty("role").GetString());
