@@ -136,7 +136,14 @@ public class BrowserAuthenticationTests
         {
             var response = await client.PostAsJsonAsync("/api/auth/login", attempt);
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-            var body = await response.Content.ReadAsStringAsync();
+            var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+            // Correlation identifiers differ per request; credential information
+            // must remain indistinguishable in the public error contract.
+            var body = JsonSerializer.Serialize(new
+            {
+                status = problem.GetProperty("status").GetInt32(),
+                title = problem.GetProperty("title").GetString()
+            });
             failure ??= body;
             Assert.Equal(failure, body);
         }

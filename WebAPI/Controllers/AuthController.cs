@@ -42,7 +42,9 @@ public sealed class AuthController(
         var result = await users.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
-            return BadRequest(new { error = "Registration could not be completed.", codes = result.Errors.Select(e => e.Code) });
+            return ValidationProblem(new ValidationProblemDetails(result.Errors.GroupBy(error => AccountField(error.Code))
+                .ToDictionary(group => group.Key, group => group.Select(error => error.Description).ToArray()))
+            { Title = "Registration could not be completed.", Status = StatusCodes.Status400BadRequest });
         }
         var token = await users.GenerateEmailConfirmationTokenAsync(user);
         await email.SendConfirmationAsync(user.Email!, user.Id.ToString(), token, ct);
@@ -57,11 +59,11 @@ public sealed class AuthController(
         var token = DecodeToken(request.Token);
         if (user is null || token is null)
         {
-            return BadRequest(new { error = "Invalid confirmation link." });
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid confirmation link.");
         }
         var result = await users.ConfirmEmailAsync(user, token);
         return result.Succeeded ? Ok(new { message = "Email confirmed." })
-            : BadRequest(new { error = "Invalid confirmation link." });
+            : Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid confirmation link.");
     }
 
     [HttpPost("resend-confirmation")]
@@ -84,12 +86,12 @@ public sealed class AuthController(
         var user = await users.FindByEmailAsync(request.Email);
         if (user is null)
         {
-            return Unauthorized(new { error = InvalidCredentialsMessage });
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: InvalidCredentialsMessage);
         }
         var result = await signIn.PasswordSignInAsync(user, request.Password, false, lockoutOnFailure: true);
         if (!result.Succeeded)
         {
-            return Unauthorized(new { error = InvalidCredentialsMessage });
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: InvalidCredentialsMessage);
         }
         return Ok(await ProfileAsync(user));
     }
@@ -132,12 +134,12 @@ public sealed class AuthController(
         var token = DecodeToken(request.Token);
         if (user is null || token is null)
         {
-            return BadRequest(new { error = "Invalid password reset request." });
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid password reset request.");
         }
         var result = await users.ResetPasswordAsync(user, token, request.NewPassword);
         if (!result.Succeeded)
         {
-            return BadRequest(new { error = "Invalid password reset request." });
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid password reset request.");
         }
         // A verified recovery link restores access to locked accounts, including
         // preserved legacy accounts locked during removal of demo credentials.
@@ -165,7 +167,9 @@ public sealed class AuthController(
         var result = await users.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!result.Succeeded)
         {
-            return BadRequest(new { error = "Password could not be changed.", codes = result.Errors.Select(e => e.Code) });
+            return ValidationProblem(new ValidationProblemDetails(result.Errors.GroupBy(error => error.Code == "PasswordMismatch" ? "currentPassword" : "newPassword")
+                .ToDictionary(group => group.Key, group => group.Select(error => error.Description).ToArray()))
+            { Title = "Password could not be changed.", Status = StatusCodes.Status400BadRequest });
         }
         await signIn.RefreshSignInAsync(user);
         return Ok(new { message = "Password changed." });
@@ -179,4 +183,8 @@ public sealed class AuthController(
         try { return SmtpAccountEmailSender.DecodeToken(token); }
         catch (FormatException) { return null; }
     }
+
+    private static string AccountField(string code) => code.Contains("Password", StringComparison.Ordinal) ? "password"
+        : code.Contains("Email", StringComparison.Ordinal) ? "email"
+        : code.Contains("UserName", StringComparison.Ordinal) ? "userName" : "account";
 }
