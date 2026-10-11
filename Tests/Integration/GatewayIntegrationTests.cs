@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -111,14 +113,29 @@ public class GatewayIntegrationTests : IClassFixture<GatewayFixture>
     [Fact]
     public async Task WebSocket_UpgradesThroughGatewayAndRelaysFramesWithBrowserCookie()
     {
-        var socketClient = _fixture.Factory.Server.CreateWebSocketClient();
-        socketClient.ConfigureRequest = request =>
-        {
-            request.Headers.Add("Cookie", "__Host-TaskManager.Session=synthetic-session");
-            request.Headers.Add("Origin", "https://localhost:7151");
-        };
+        // TestServer has no IHttpUpgradeFeature; real Kestrel is required for YARP upgrades.
+        using var key = RSA.Create(2048);
+        var certificateRequest = new CertificateRequest("CN=localhost", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var names = new SubjectAlternativeNameBuilder();
+        names.AddDnsName("localhost");
+        names.AddIpAddress(IPAddress.Loopback);
+        certificateRequest.CertificateExtensions.Add(names.Build());
+        using var generatedCertificate = certificateRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1));
+        // A PKCS#12 roundtrip makes the private key usable by Windows Schannel as well as OpenSSL.
+        using var certificate = X509CertificateLoader.LoadPkcs12(generatedCertificate.Export(X509ContentType.Pfx), null);
+        using var factory = _fixture.NewFactory();
+        factory.UseKestrel(options => options.Listen(IPAddress.Loopback, 0, listener => listener.UseHttps(certificate)));
+        factory.StartServer();
+        var address = factory.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
+        Assert.StartsWith("https://", address, StringComparison.OrdinalIgnoreCase);
+        var socketAddress = new UriBuilder(address) { Scheme = "wss", Host = "localhost", Path = "/chathub" }.Uri;
+        using var socket = new ClientWebSocket();
+        socket.Options.SetRequestHeader("Cookie", "__Host-TaskManager.Session=synthetic-session");
+        socket.Options.SetRequestHeader("Origin", "https://localhost:7151");
+        socket.Options.RemoteCertificateValidationCallback = (_, peerCertificate, _, _) =>
+            peerCertificate is not null && peerCertificate.GetCertHashString() == certificate.Thumbprint;
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        using var socket = await socketClient.ConnectAsync(new Uri("wss://localhost:7151/chathub"), timeout.Token);
+        await socket.ConnectAsync(socketAddress, timeout.Token);
         var payload = Encoding.UTF8.GetBytes("synthetic-private-frame");
         await socket.SendAsync(new ArraySegment<byte>(payload), WebSocketMessageType.Text, true, timeout.Token);
         var buffer = new byte[128];
@@ -177,6 +194,27 @@ public class GatewayIntegrationTests : IClassFixture<GatewayFixture>
     }
 
     [Theory]
+    [InlineData(503)]
+    [InlineData(307)]
+    public async Task ApiReadinessFailure_RemovesGatewayFromReadinessButKeepsLiveness(int upstreamStatus)
+    {
+        _fixture.SetApiReadiness(upstreamStatus);
+        try
+        {
+            using var client = _fixture.Factory.CreateClient(GatewayFixture.ClientOptions);
+            var previousProbes = _fixture.ApiReadinessRequests;
+            using var live = await client.GetAsync("/health/live");
+            Assert.Equal(HttpStatusCode.OK, live.StatusCode);
+            Assert.Equal(previousProbes, _fixture.ApiReadinessRequests);
+            using var ready = await client.GetAsync("/health/ready");
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, ready.StatusCode);
+            Assert.True(_fixture.ApiReadinessRequests > previousProbes);
+            Assert.Null(ready.Headers.Location);
+        }
+        finally { _fixture.SetApiReadiness(200); }
+    }
+
+    [Theory]
     [InlineData("Gateway:ApiDestination", "")]
     [InlineData("Gateway:NotifierDestination", "")]
     [InlineData("Gateway:ApiDestination", "ftp://backend.example.test/")]
@@ -222,6 +260,10 @@ public sealed class GatewayFixture : IAsyncLifetime
     private WebApplication? _notifier;
     private string _apiAddress = "";
     private string _notifierAddress = "";
+    private int _apiReadinessStatus = 200;
+    private int _apiReadinessRequests;
+    public int ApiReadinessRequests => Volatile.Read(ref _apiReadinessRequests);
+    public void SetApiReadiness(int status) => Volatile.Write(ref _apiReadinessStatus, status);
     private readonly string _webRoot = Path.Combine(Path.GetTempPath(), "taskmanager-gateway-tests-" + Guid.NewGuid().ToString("N"));
     public GatewayApplicationFactory Factory { get; private set; } = null!;
     public static WebApplicationFactoryClientOptions ClientOptions => new()
@@ -235,6 +277,13 @@ public sealed class GatewayFixture : IAsyncLifetime
         await File.WriteAllTextAsync(Path.Combine(_webRoot, "index.html"), "<!doctype html><html lang=\"uk\"><body>gateway-test-shell</body></html>");
         await File.WriteAllTextAsync(Path.Combine(_webRoot, "assets", "app.test.css"), ".fixture { color: blue; }");
         _api = CreateUpstream();
+        _api.MapGet("/health/ready", (HttpContext context) =>
+        {
+            Interlocked.Increment(ref _apiReadinessRequests);
+            context.Response.StatusCode = Volatile.Read(ref _apiReadinessStatus);
+            if (context.Response.StatusCode == 307) context.Response.Headers.Location = "/must-not-follow";
+            return Task.CompletedTask;
+        });
         _api.MapMethods("/api/{**path}", ["GET", "POST", "PUT", "PATCH", "DELETE"], context => Observe(context, "api"));
         await _api.StartAsync();
         _apiAddress = Address(_api);
