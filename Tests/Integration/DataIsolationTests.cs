@@ -306,11 +306,17 @@ internal sealed class DataIsolationFactory : WebApplicationFactory<Program>
     private readonly SqliteConnection? _connection;
     private readonly IInterceptor? _interceptor;
     private readonly string? _sqlConnection;
+    private readonly IReadOnlyDictionary<string, string?>? _additionalConfiguration;
+    private readonly Action<IServiceCollection>? _configureServices;
 
-    private DataIsolationFactory(IInterceptor? interceptor = null, string? sqlConnection = null)
+    private DataIsolationFactory(IInterceptor? interceptor = null, string? sqlConnection = null,
+        IReadOnlyDictionary<string, string?>? additionalConfiguration = null,
+        Action<IServiceCollection>? configureServices = null)
     {
         _interceptor = interceptor;
         _sqlConnection = sqlConnection;
+        _additionalConfiguration = additionalConfiguration;
+        _configureServices = configureServices;
         if (sqlConnection is null)
         {
             _connection = new SqliteConnection("Data Source=:memory:");
@@ -318,9 +324,11 @@ internal sealed class DataIsolationFactory : WebApplicationFactory<Program>
         }
     }
 
-    public static async Task<DataIsolationFactory> CreateAsync(IInterceptor? interceptor = null, string? sqlConnection = null)
+    public static async Task<DataIsolationFactory> CreateAsync(IInterceptor? interceptor = null, string? sqlConnection = null,
+        IReadOnlyDictionary<string, string?>? additionalConfiguration = null,
+        Action<IServiceCollection>? configureServices = null)
     {
-        var factory = new DataIsolationFactory(interceptor, sqlConnection);
+        var factory = new DataIsolationFactory(interceptor, sqlConnection, additionalConfiguration, configureServices);
         await factory.WithDatabaseAsync(async db =>
         {
             await db.Database.EnsureCreatedAsync();
@@ -376,11 +384,15 @@ internal sealed class DataIsolationFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
-        builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        builder.ConfigureAppConfiguration((_, configuration) =>
         {
-            ["BootstrapAdmin:Enabled"] = "false", ["Reminders:Enabled"] = "false", ["ConnectionStrings:DbConnection"] = _sqlConnection ?? "Server=metadata-only;Database=unused",
-            ["Jwt:Key"] = "isolation-test-key-with-at-least-thirty-two-characters"
-        }));
+            configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["BootstrapAdmin:Enabled"] = "false", ["Reminders:Enabled"] = "false", ["ConnectionStrings:DbConnection"] = _sqlConnection ?? "Server=metadata-only;Database=unused",
+                ["Jwt:Key"] = "isolation-test-key-with-at-least-thirty-two-characters"
+            });
+            if (_additionalConfiguration is not null) configuration.AddInMemoryCollection(_additionalConfiguration);
+        });
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IHostedService>();
@@ -402,6 +414,7 @@ internal sealed class DataIsolationFactory : WebApplicationFactory<Program>
                 options.DefaultChallengeScheme = IsolationAuthenticationHandler.SchemeName;
                 options.DefaultForbidScheme = IsolationAuthenticationHandler.SchemeName;
             }).AddScheme<AuthenticationSchemeOptions, IsolationAuthenticationHandler>(IsolationAuthenticationHandler.SchemeName, _ => { });
+            _configureServices?.Invoke(services);
         });
     }
 
