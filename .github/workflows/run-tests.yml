@@ -79,6 +79,17 @@ jobs:
       with:
         files: '**/TestResults/**/test_results.trx'
         check_name: 'Test Results'
+        # Real SQL/HTTP regression logs exceed lxml's default text-node limit.
+        # Keep complete runs and their annotations, including failures.
+        large_files: true
+
+    - name: Preserve test diagnostics
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-diagnostics
+        path: TestResults/**/*.trx
+        retention-days: 7
 
     - name: Merge and generate coverage report
       run: |

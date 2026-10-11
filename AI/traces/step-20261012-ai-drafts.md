@@ -104,6 +104,37 @@ new files in otherwise disjoint agent scopes. Agents do not run shared Git/build
 
 ## Exact next actions
 
+Current published head0ff4096f1ddeea54f7d799a7709a3f0b967814cb, PRmergeevent
+752477001b042218066ec6a1865e3e75245120d9 againstmainb3ff3aa:
+
+- Real frontendCI38180121260/job114590701899 PASS: audit0,69unit,38Chromium
+  desktop/mobile cases39.1s,lint/types/productionbuild.
+- Real five-imageCI38180121268/job114590701882 PASS: allactualUID1654,
+  migrationlatestSQL/exit0,APIlive/ready200,HTTPS SPA/API/hub/CSRFprivacy,
+  SMTP/console. Imagesnotpublished; durableinboxdeliverynotyetclaimed.
+- Real SQL/backendCI38180121263/job114590701992 FAIL:624PASS,2FAIL,0skip,
+  626total22s. Actual same-key and different-key parallel commits return200/500,
+  expected200/200 and200/409. Productquota and historicalschemaforwardupgrade
+  passed. Leave the concurrency tests unchanged;25 remains active.
+- EF10.0.12 official SqlServerExecutionStrategy wraps transient SQL exceptions
+  in InvalidOperationException; current deadlock predicate only recognizes
+  directSql1205/oneDbUpdate wrapper. This is a likely cause under investigation:
+  https://raw.githubusercontent.com/dotnet/efcore/v10.0.12/src/EFCore.SqlServer/Storage/Internal/SqlServerExecutionStrategy.cs
+- Agentadding command-boundary wrapped1205 HTTP regression: singledeadlock
+  atomicretry200, persistentdeadlockbounded2/409, wrappedtimeoutnotretried.
+  No productionfixuntilthatlocalRED; noSQLtestweakening.
+- Testpublisher independently failed parsing15.5MB TRX defaulttextnodes.
+  Supported large_files:true and always-preserved TRXdiagnostics added, retaining
+  complete runannotations/errors. Input verified in official actionv2.24.0.
+
+Wrappeddeadlock regressionvalidRED completed2FAIL/1PASS, checkpointae170de;
+TRXconfirms actualtypedSqlException1205 insideInvalidOperationException.
+Precisepredicate nowwalksmax16innerlevels andchecksSQL errorrecordsfor1205only.
+Twoattempts,timeout/nongeneralretry androllback semanticsremainunchanged.
+Focused allAI/nativeSDK/schema/modelgate125PASS,3SQLskip,0fail/128total24s.
+Publishthisfix andinspectnewactualSQLCI, especiallytwo unchanged parallelcommit
+cases. Only afterallrequiredgatesPASS accept25.
+
 Latest local full gate is GREEN:620PASS,6realSQLskip,0fail/626total,40s,
 line89.27%(4280/4794),branch72.53%(1920/2647). Two preceding full runs aborted
 with nofailedcases; owned Windows .NET Runtime events proved an unhandled
