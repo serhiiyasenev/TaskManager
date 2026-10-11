@@ -139,7 +139,7 @@ public class TaskReminderScheduler(
         var db = scope.ServiceProvider.GetRequiredService<TaskContext>();
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
         var ids = await db.NotificationOutbox.AsNoTracking()
-            .Where(m => m.Status == NotificationOutboxStatus.Pending
+            .Where(m => m.Kind == DAL.Entities.NotificationOutboxKind.Reminder && m.Status == NotificationOutboxStatus.Pending
                 && (m.LockedUntilUtc == null || m.LockedUntilUtc <= nowUtc))
             .OrderBy(m => m.CreatedAtUtc).ThenBy(m => m.Id)
             .Select(m => m.Id).Take(BatchSize).ToListAsync(ct);
@@ -155,7 +155,8 @@ public class TaskReminderScheduler(
         {
             var message = await db.NotificationOutbox.SingleOrDefaultAsync(m => m.Id == id, ct);
             var nowUtc = _clock.GetUtcNow().UtcDateTime;
-            if (message is null || message.Status != NotificationOutboxStatus.Pending || message.LockedUntilUtc > nowUtc)
+            if (message is null || message.Kind != DAL.Entities.NotificationOutboxKind.Reminder
+                || message.Status != NotificationOutboxStatus.Pending || message.LockedUntilUtc > nowUtc)
                 return;
 
             // LockId + Status form a compare-and-swap claim across processes.

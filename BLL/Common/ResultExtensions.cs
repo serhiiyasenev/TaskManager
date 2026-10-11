@@ -25,6 +25,10 @@ public static class ResultExtensions
             "Error.Conflict" => new ConflictObjectResult(ToProblem(result.Error, 409)),
             "Error.Unauthorized" => new UnauthorizedObjectResult(ToProblem(result.Error, 401)),
             "Error.Forbidden" => new ObjectResult(ToProblem(result.Error, 403)) { StatusCode = 403 },
+            "Error.Gone" => new ObjectResult(ToProblem(result.Error, 410)) { StatusCode = 410 },
+            "Error.PreconditionRequired" => new ObjectResult(ToProblem(result.Error, 428)) { StatusCode = 428 },
+            "Error.TooManyRequests" => new ObjectResult(ToProblem(result.Error, 429)) { StatusCode = 429 },
+            "Error.ServiceUnavailable" => new ObjectResult(ToProblem(result.Error, 503)) { StatusCode = 503 },
             _ => new ObjectResult(ToProblem(result.Error, 500)) { StatusCode = 500 }
         };
     }
@@ -47,6 +51,10 @@ public static class ResultExtensions
             "Error.Conflict" => new ConflictObjectResult(ToProblem(result.Error, 409)),
             "Error.Unauthorized" => new UnauthorizedObjectResult(ToProblem(result.Error, 401)),
             "Error.Forbidden" => new ObjectResult(ToProblem(result.Error, 403)) { StatusCode = 403 },
+            "Error.Gone" => new ObjectResult(ToProblem(result.Error, 410)) { StatusCode = 410 },
+            "Error.PreconditionRequired" => new ObjectResult(ToProblem(result.Error, 428)) { StatusCode = 428 },
+            "Error.TooManyRequests" => new ObjectResult(ToProblem(result.Error, 429)) { StatusCode = 429 },
+            "Error.ServiceUnavailable" => new ObjectResult(ToProblem(result.Error, 503)) { StatusCode = 503 },
             _ => new ObjectResult(ToProblem(result.Error, 500)) { StatusCode = 500 }
         };
     }

@@ -13,6 +13,11 @@ namespace DAL.Context
         public DbSet<Task> Tasks { get; set; }
         public DbSet<Team> Teams { get; set; }
         public DbSet<NotificationOutboxMessage> NotificationOutbox { get; set; }
+        public DbSet<AiTaskDraft> AiTaskDrafts { get; set; }
+        public DbSet<AiTaskDraftItem> AiTaskDraftItems { get; set; }
+        public DbSet<AiTaskMaterialization> AiTaskMaterializations { get; set; }
+        public DbSet<AiTaskCommitReceipt> AiTaskCommitReceipts { get; set; }
+        public DbSet<AiDailyUsage> AiDailyUsage { get; set; }
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {

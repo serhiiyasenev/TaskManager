@@ -18,10 +18,10 @@ public sealed class TaskWriteRequest
     public TaskState State { get; set; }
     public DateTime? DueDate { get; set; }
     public bool ReminderEnabled { get; set; }
-    [Range(1, 43200)]
+    [Range(1, 7 * 24 * 60)]
     public int? ReminderOffsetMinutes { get; set; }
     public bool EscalationEnabled { get; set; }
-    [Range(1, 43200)]
+    [Range(1, 7 * 24 * 60)]
     public int? EscalationDelayMinutes { get; set; }
     public Guid? ExpectedVersion { get; set; }
 

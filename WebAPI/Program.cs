@@ -24,7 +24,9 @@ using WebAPI.Authentication;
 using BLL.Authorization;
 using TaskManager.Hosting;
 
-Serilog.Debugging.SelfLog.Enable(msg => File.AppendAllText("serilog-selflog.txt", msg + Environment.NewLine));
+// Sink failures must not crash the application through a competing file append.
+// Serilog's diagnostic callback can run concurrently with host startup/timers.
+Serilog.Debugging.SelfLog.Enable(TextWriter.Synchronized(Console.Error));
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddTrustedProxyForwarding(builder.Configuration);
@@ -85,6 +87,7 @@ builder.Services.AddBrowserAuthentication(builder.Configuration, builder.Environ
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
 builder.Services.AddScoped<IUserAccess, DatabaseUserAccess>();
+builder.Services.AddTaskExtraction(builder.Configuration);
 
 // Direct legacy service tests keep their constructors; production always
 // requires the caller scope and cannot silently use the unscoped test path.
@@ -153,8 +156,6 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-
-Serilog.Debugging.SelfLog.Enable(Console.Error);
 
 var app = builder.Build();
 app.UseTrustedProxyForwarding();
