@@ -60,16 +60,53 @@ First frontend CI exposed a missing tracked `.node-version` file (the exact
 version was already in package engines/Docker). Added the file; no audit/test
 gate was bypassed. Inspect the next actual run rather than reusing local evidence.
 
-## Exact continuation
+## Final external gates — PASS
 
-Finish rendered evidence and ECC finish checker; commit only synthetic screenshots
-and concise machine-readable summary. Push this branch to existing draft PR51;
-inspect real backend/SQL, frontend and five-image container runs. Fix failures,
-record exact head/run evidence, then mark24 complete and advance25.
+Functional branch head `cb524a5a7d7a9fc4c1b5db0a2c01c01eb6b02d8e`, PR event
+merge `4784353098d3c8fe383efc868bcfa6ee46c68354` against main
+`b3ff3aa2499ff721e29b82b9a949e9d66af5528e`:
+
+- [Backend/SQL run163](https://github.com/serhiiyasenev/TaskManager/actions/runs/38175150342):
+  **495 passed, 0 failed, 0 skipped, 19 seconds**. All three real-SQL migration,
+  membership and task lifecycle gates executed successfully.
+- [Frontend run2](https://github.com/serhiiyasenev/TaskManager/actions/runs/38175150329):
+  pinned Node/npm/locked install, audit **0 vulnerabilities**, lint/typecheck,
+  **44 unit tests**, coverage thresholds, production build and **24 Chromium
+  desktop/mobile cases (20.4 seconds)** PASS.
+- [Container run3](https://github.com/serhiiyasenev/TaskManager/actions/runs/38175150324):
+  all five images built and executed as UID1654, migration bundle exited0 and
+  latest migration found in SQL; API SQL/broker readiness, real HTTPS SPA/assets,
+  API/hub401, secure proxied antiforgery cookie, privacy headers/query logs,
+  Mailpit HTTP/SMTP and console startup/exit PASS. Images were not published.
+- Local rendered evidence, selected synthetic screenshots and limits:
+  `docs/modernization/ui-evidence/report.json`. Installed ECC frontend finish
+  checker exited0: `Evidence record complete; visual correctness still requires
+  rendered inspection.` Root inspected dashboard/mobile form/registration;
+  agent inspected all selected states. Full stack UI E2E remains step28.
+
+Step24 is complete. Next active step25: negotiate shared draft/source/commit
+DTOs, write meaningful extraction/atomicity RED tests, implement configured
+official Azure provider and explicit unavailable/testing-only fake separation,
+draft review UI, idempotent SQL commit and real-model evaluation runner.
+
+## ECC self-evaluation — scoped step24, 4.0/5
+
+Accuracy4: actual local/SQL/container/browser evidence recorded; Chrome only and
+synthetic browser transport limit remain explicit. Completeness4: required
+step24 workflows pass; live full-stack UI checks are the step28 gate. Clarity4:
+UI/errors are Ukrainian, with English auth/team dictionaries; remaining feature
+strings need the same translation structure as features expand. Actionability4:
+reviewable draft PR and reproducible HTTPS scripts/CI exist, local Docker is
+absent. Conciseness4: shared transport/gateway keep business logic in API; task
+form markup is dense and can become focused components alongside AI/inbox.
+Highest-impact next work is the agreed AI transaction and durable inbox, then
+actual full-stack E2E. This assessment does not mark the full modernization done.
+Self-check: the request remains active because steps25–28 are still required.
 
 Agents: delivery_audit owns gateway/HTTPS/container; runtime_audit owns task
 version/paging/atomic rights checks; security_audit owns auth/team UI and rendered
 QA; root owns shared builds/tests/Git and remaining frontend. Sources are frozen
-for step24 verification. Step25 agents have read-only contract preparation only.
+for completed step24 verification. Step25 contracts are prepared read-only and
+agents may now implement disjoint parts after root accepts the common contract.
 AI drafts, durable inbox/worker transports, Azure delivery and full-stack/live
 verification are required future steps and are not delivered yet.
