@@ -106,7 +106,7 @@ builder.Services.AddHealthChecks()
         connectionString: builder.Configuration.GetConnectionString("DbConnection")!,
         name: "sql-server",
         failureStatus: HealthStatus.Unhealthy,
-        tags: ["db", "sql", "sqlserver"]);
+        tags: ["ready", "db", "sql", "sqlserver"]);
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -189,8 +189,7 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
 
 app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
-    Predicate = check => check.Tags.Contains("ready"),
-    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+    Predicate = check => check.Tags.Contains("ready")
 });
 
 app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
