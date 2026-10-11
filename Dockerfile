@@ -35,13 +35,12 @@ RUN dotnet publish Client/Client.csproj --configuration Release --no-restore \
 
 FROM build AS publish-migrations
 RUN dotnet tool restore
-# Public design-time values permit host construction without build credentials.
-# Deployment configuration is read again when the bundle executes.
+# TaskContextDesignFactory constructs tooling without the API/auth host.
+# Only the real database connection is supplied when the bundle executes.
 RUN DOTNET_ENVIRONMENT=Production \
     ASPNETCORE_ENVIRONMENT=Production \
     BootstrapAdmin__Enabled=false \
     Reminders__Enabled=false \
-    Jwt__Key=TaskManagerDesignTimeConfigurationOnly \
     ConnectionStrings__DbConnection="Server=localhost;Database=TaskManagerDesign;Integrated Security=True;TrustServerCertificate=True" \
     dotnet tool run dotnet-ef migrations bundle --project DAL/DAL.csproj \
     --startup-project WebAPI/WebAPI.csproj --configuration Release \

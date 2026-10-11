@@ -49,9 +49,9 @@ Run the optional console client after startup:
 ```
 
 Its Compose profile is `console`. The profile provides `Api__BaseUrl` and
-`SignalR__HubUrl` for service DNS names. The legacy client originally hardcoded
-localhost HTTPS URLs; its environment configuration must be implemented before
-the container console can connect. The API and Notifier stack can run independently.
+`SignalR__HubUrl` for service DNS names. Use menu 14 to sign in with a confirmed
+account and menu 15 to sign out. The JWT stays in process memory and is attached
+to API requests and the authenticated SignalR connection. A 401 clears the session.
 
 Stop services while retaining data:
 
@@ -61,8 +61,10 @@ Stop services while retaining data:
 
 Named volumes retain SQL data, RabbitMQ data and the application Data Protection
 directory at `/home/app/.aspnet/DataProtection-Keys`. The API and Notifier mount
-the product's key volume. Cookie sharing additionally needs compatible server
-authentication and Data Protection configuration in the auth modernization step.
+the product's key volume. Both hosts use the TaskManager application name and
+cookie scheme. Mailpit (`http://localhost:8025`) receives local confirmation and
+recovery messages. See [authentication and access](authentication-and-access.md)
+for the HTTPS browser origin and email/key configuration.
 Back up existing databases before applying new migrations. Downgrading application
 images does not undo database changes; review migration `Down` operations and use
 a verified backup/restore procedure when a schema rollback is necessary.

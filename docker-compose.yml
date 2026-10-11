@@ -21,6 +21,12 @@ x-api-environment: &api-environment
   Jwt__Key: ${TASKMANAGER_JWT_KEY:?Run scripts/local-init.ps1 or set TASKMANAGER_JWT_KEY}
   Jwt__Issuer: TaskManager
   Jwt__Audience: TaskManagerClients
+  BrowserAuth__PublicOrigin: ${PUBLIC_ORIGIN:-https://localhost:7151}
+  DataProtection__KeyRingPath: /home/app/.aspnet/DataProtection-Keys
+  Email__SmtpHost: mailpit
+  Email__SmtpPort: "1025"
+  Email__UseTls: "false"
+  Email__FromAddress: noreply@taskmanager.local
   BootstrapAdmin__Enabled: "false"
   Serilog__Using__0: Serilog.Sinks.Console
   Serilog__WriteTo__0__Name: Console
@@ -28,6 +34,13 @@ x-api-environment: &api-environment
   Serilog__Enrich__0: FromLogContext
 
 services:
+  mailpit:
+    image: axllent/mailpit:v1.31.5
+    ports:
+      - "127.0.0.1:${MAILPIT_PORT:-8025}:8025"
+    mem_limit: 128m
+    restart: unless-stopped
+
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04
     platform: linux/amd64
@@ -128,7 +141,7 @@ services:
       rabbitmq:
         condition: service_healthy
     environment:
-      <<: *rabbit-environment
+      <<: [*api-environment, *rabbit-environment]
       DOTNET_ENVIRONMENT: Development
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080

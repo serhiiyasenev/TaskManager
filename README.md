@@ -150,12 +150,12 @@ Install SQL Server and RabbitMQ (or run them via Docker)
 
 Configure connection strings in appsettings.json for WebAPI and Notifier
 
-`WebAPI/appsettings.Development.json` has `BootstrapAdmin` enabled in `Development`, but the password is intentionally empty.
-
-- Email: `admin@example.com`
-- Password: set `BootstrapAdmin:Password` via User Secrets or an environment variable (for example `BootstrapAdmin__Password`) before starting the app
-
-If `BootstrapAdmin:Password` is missing (or left as a placeholder value), WebAPI startup will fail with a configuration error.
+Bootstrap administration is disabled by default. Register and confirm ordinary
+accounts using the local email sink. An operator can explicitly enable the
+development bootstrap with an email and a private strong password, then disable
+it. Production does not automatically seed administrators or demo passwords.
+Configure `Jwt__Key`, SQL, `BrowserAuth__PublicOrigin`, email and persistent keys
+as described in [authentication and access](docs/authentication-and-access.md).
 
 Run the following commands in the projects root:
 
