@@ -22,6 +22,185 @@ namespace DAL.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("DAL.Entities.AiDailyUsage", b =>
+                {
+                    b.Property<string>("ScopeKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateOnly>("DayUtc")
+                        .HasColumnType("date");
+
+                    b.Property<long>("ReservedTokens")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ScopeKey", "DayUtc");
+
+                    b.ToTable("AiDailyUsage", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskCommitReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ExpectedDraftVersion")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ReplayExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResponseJson")
+                        .IsRequired()
+                        .HasMaxLength(65536)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ResultDraftVersion")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SourceDraftId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReplayExpiresAtUtc");
+
+                    b.HasIndex("OwnerId", "KeyHash")
+                        .IsUnique();
+
+                    b.ToTable("AiTaskCommitReceipts", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("NotesText")
+                        .HasMaxLength(20000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("ReferenceDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("RetainUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RetainUntilUtc");
+
+                    b.HasIndex("OwnerId", "CreatedAtUtc");
+
+                    b.ToTable("AiTaskDrafts", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraftItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CandidateJson")
+                        .HasMaxLength(131072)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("DraftId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DraftId", "Ordinal")
+                        .IsUnique();
+
+                    b.ToTable("AiTaskDraftItems", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskMaterialization", b =>
+                {
+                    b.Property<Guid>("DraftItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("LiveTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OriginalTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("OutboxMessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("DraftItemId");
+
+                    b.HasIndex("LiveTaskId");
+
+                    b.HasIndex("OutboxMessageId")
+                        .IsUnique();
+
+                    b.ToTable("AiTaskMaterializations", (string)null);
+                });
+
             modelBuilder.Entity("DAL.Entities.ExecutedTask", b =>
                 {
                     b.Property<int>("Id")
@@ -55,6 +234,9 @@ namespace DAL.Migrations
 
                     b.Property<bool>("IsEscalation")
                         .HasColumnType("bit");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
 
                     b.Property<Guid?>("LockId")
                         .IsConcurrencyToken()
@@ -530,6 +712,65 @@ namespace DAL.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("DAL.Entities.AiTaskCommitReceipt", b =>
+                {
+                    b.HasOne("DAL.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraft", b =>
+                {
+                    b.HasOne("DAL.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraftItem", b =>
+                {
+                    b.HasOne("DAL.Entities.AiTaskDraft", "Draft")
+                        .WithMany("Items")
+                        .HasForeignKey("DraftId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Draft");
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskMaterialization", b =>
+                {
+                    b.HasOne("DAL.Entities.AiTaskDraftItem", "DraftItem")
+                        .WithOne("Materialization")
+                        .HasForeignKey("DAL.Entities.AiTaskMaterialization", "DraftItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Entities.Task", "LiveTask")
+                        .WithMany()
+                        .HasForeignKey("LiveTaskId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("DraftItem");
+
+                    b.Navigation("LiveTask");
+                });
+
             modelBuilder.Entity("DAL.Entities.NotificationOutboxMessage", b =>
                 {
                     b.HasOne("DAL.Entities.Task", null)
@@ -664,6 +905,16 @@ namespace DAL.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraft", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraftItem", b =>
+                {
+                    b.Navigation("Materialization");
                 });
 
             modelBuilder.Entity("DAL.Entities.Project", b =>

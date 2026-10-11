@@ -103,6 +103,29 @@ public class LegacyAccountMigrationTests
             Assert.Equal(taskCount, versionedTasks.Count);
             Assert.All(versionedTasks, task => Assert.NotEqual(Guid.Empty, task.Version));
             Assert.Equal(taskCount, versionedTasks.Select(task => task.Version).Distinct().Count());
+
+            // Exercise the forward AI repair from a populated previous schema:
+            // old occurrences retain their ID/state and default to Reminder.
+            var oldMessageId = Guid.NewGuid();
+            var oldTaskId = versionedTasks.First().Id;
+            var oldCreatedAt = DateTime.UtcNow;
+            await db.Database.ExecuteSqlInterpolatedAsync($@"INSERT INTO [NotificationOutbox]
+                ([Id], [TaskId], [IsEscalation], [QueueName], [Payload], [CreatedAtUtc], [Status])
+                VALUES ({oldMessageId}, {oldTaskId}, {false}, {"migration-test"}, {"{}"}, {oldCreatedAt}, {0})");
+            await migrator.MigrateAsync("20261011215856_AddAiTaskDrafts");
+            db.ChangeTracker.Clear();
+            Assert.Equal(taskCount, await db.Tasks.CountAsync());
+            Assert.Equal(projectCount, await db.Projects.CountAsync());
+            Assert.Equal(userCount + 1, await db.Users.CountAsync());
+            var afterAi = await db.Tasks.AsNoTracking().ToDictionaryAsync(task => task.Id, task => task.Version);
+            Assert.All(versionedTasks, task => Assert.Equal(task.Version, afterAi[task.Id]));
+            var oldMessage = await db.NotificationOutbox.AsNoTracking().SingleAsync(message => message.Id == oldMessageId);
+            Assert.Equal(oldTaskId, oldMessage.TaskId);
+            Assert.Equal(DAL.Entities.NotificationOutboxKind.Reminder, oldMessage.Kind);
+            Assert.Equal(DAL.Entities.NotificationOutboxStatus.Pending, oldMessage.Status);
+            Assert.Equal("synthetic-human-hash-not-a-seed", (await db.Users.AsNoTracking().SingleAsync(user => user.Id == human.Id)).PasswordHash);
+            Assert.Empty(await db.AiTaskDrafts.ToListAsync());
+            Assert.Empty(await db.AiTaskCommitReceipts.ToListAsync());
         }
         finally
         {
