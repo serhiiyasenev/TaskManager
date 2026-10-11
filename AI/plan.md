@@ -53,7 +53,7 @@ The owner explicitly requested implementation of the supplied brief and use of a
 
 ### Active step
 
-25 — AI drafts and transactional commit. Steps 22–24 pass local regression and real Linux CI SQL/frontend/container gates (step24 at cb524a5). Complete and trace each step before advancing. Parallel agents may inspect or implement disjoint parts of the same active step; only the coordinating agent stages/commits and runs the shared backend suite.
+26 — Durable notifications and worker transports. Steps22–25 pass local and real Linux CI SQL/frontend/container gates (step25 at d717ffc). Complete and trace each step before advancing. Parallel agents may inspect or implement disjoint parts of the same active step; only the coordinating agent stages/commits and runs the shared backend suite.
 
 | # | Step | Acceptance criteria |
 |---|------|---------------------|
@@ -61,7 +61,7 @@ The owner explicitly requested implementation of the supplied brief and use of a
 | 22 | ✅ Reproducible .NET 10 runtime | Stable SDK/packages pinned, Release build/tests/audit, multi-stage non-root images/Compose, SQL-aware readiness; real Linux container smoke PASS run 38166615774 |
 | 23 | ✅ Authentication and data isolation | Identity cookie/JWT, confirmation/recovery/password/logout/me, CSRF/rate limits/filesystem key ring/SMTP; scoped data/private hub, owned teams/invites/race guards; real SQL lifecycle/migration PASS run 38166615743 |
 | 24 | ✅ Web host and Ukrainian React workflows | Same-origin YARP, responsive accessible auth/dashboard/projects/teams/task list/board/forms, real API operations, loading/empty/error/session/concurrency states, typed validated API and pinned npm lockfile; SQL/backend495, frontend44/browser24 and five-image HTTPS container CI PASS at cb524a5 |
-| 25 | AI drafts and transactional commit | Official configured Azure SDK, unavailable/fake separation, structured source-backed drafts, reference-date/timezone resolution, restricted assignees, expiry/version/revalidation, idempotency/unique constraints/atomic task+outbox commit; failure tests and 30 UA/EN evaluation cases |
+| 25 | ✅ AI drafts and transactional commit | Official configured Azure SDK, unavailable/fake separation, structured source-backed drafts, reference-date/timezone resolution, restricted assignees, expiry/version/revalidation, idempotency/unique constraints/atomic task+outbox commit; failure tests and30UA/EN cases; real SQL629/browser38/five-image CI PASS at d717ffc (live model evaluation requires actual deployment/auth/budget in28) |
 | 26 | Durable notifications and worker transports | SQL inbox/dedup before broker ack, private authenticated realtime/reconnect, bounded retry/DLQ, RabbitMQ+Service Bus adapters, scheduler moved out of API, stable IDs/leases/confirms preserved |
 | 27 | Azure infrastructure and delivery gates | Bicep web/API/notifier/SQL/Service Bus/SignalR/AI/key ring/email/monitoring/budget, managed identity and SQL grants, OIDC CI/deploy, single-run migrations, what-if/smoke/traffic/rollback scripts and runbook |
 | 28 | End-to-end and live verification | Meaningful backend/SQL/frontend/Playwright/audit/container checks, local demo/README/examples; opt-in real AI evaluation and Azure deploy/live checks when credentials/parameters/budget available; exact limitations recorded |

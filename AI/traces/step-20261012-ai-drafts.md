@@ -104,6 +104,46 @@ new files in otherwise disjoint agent scopes. Agents do not run shared Git/build
 
 ## Exact next actions
 
+### ACCEPTED25 / current continuation
+
+Functionalheadd717ffc0038bcb6a96b25926c659954dfc503ec9, testedPRmerge
+c361128809f368cb975cc76172e62bc1ef622607 againstmainb3ff3aa:
+
+| Gate | Real evidence |
+|---|---|
+| Backend/realSQL | run38181459908/job114594726125 PASS:629/629,0fail/skip,33s |
+| Frontend/browser | run38181459901/job114594726023 PASS:audit0,69unit,38Chromium36.7s,lint/types/build |
+| Five images/stack | run38181459947/job114594726308 PASS:UID1654,migrationlatestSQL,HTTP/HTTPS routing+CSRFprivacy+SMTP+console |
+| Backendcoverage | actualcoverageartifact11718266699 Summary.json:line89.6%(4302/4799),branch73.2%(1909/2607) |
+
+Allthreecurrent-headgatesandACE-FCAvalidatePASS. Complete TRX diagnostics are
+artifact11718481269; no testskip/ignoredrun/analyzer/audit/module exclusion was
+added. Same-key and different-key actualSQL concurrent confirmations, sharedquota
+and previous-schema data preservation now pass. Images were built/tested, not
+published to a registry. LocalAzureAI/modelquality/productiondeploy remainhonest
+SKIP pending actualendpoint/auth/region/budgets in28; fake/providerwire checks
+are not model evidence. DraftPR51 staysopen/unmerged.
+
+Step25 is complete under its stated code/CI acceptance; fullproject is still
+in progress. Active26: shared machine-checkable notification contract, SQL
+durableinbox/marker beforeACK, boundedRabbit+ServiceBus settlement, scoped
+realtime/reconnect UI, scheduler/retention inNotifier. Onlyroot stages/commits,
+runsbackendbuilds and scaffolds migration. FreezeALLC# beforeeachsharedbuild.
+
+### ECC self-evaluation (step25 output only)
+
+| Axis | Score | Evidence / improvement |
+|---|---:|---|
+| Accuracy | 4 | Currentreal629/38/five-imagePASS; live deployment/model behavior still needs28 evidence. |
+| Completeness | 4 | Full25 draft/commit/TTL/quota/SDK/UI/evaluation contracts delivered; realAI unavailable without deployment/auth/budget. |
+| Clarity | 4 | PR/provider/eval/UI docs distinguish synthetic/local/realCI/live scopes; historical traces remain detailed. |
+| Actionability | 4 | Reproducible scripts/draftPR/runner and exact head/runs; live operators must supply missing Azure parameters. |
+| Conciseness | 3 | Multiple RED/crash/CI checkpoints make this trace long; current outcome is summarized here for restart. |
+
+Average3.8. Nextimprovements: implement required26–28; run boundedrealAI once
+configured; keep current continuation summaries above historical diagnostics.
+Would the user agree: this rates25 only, never claims the full request isdone.
+
 Current published head0ff4096f1ddeea54f7d799a7709a3f0b967814cb, PRmergeevent
 752477001b042218066ec6a1865e3e75245120d9 againstmainb3ff3aa:
 
