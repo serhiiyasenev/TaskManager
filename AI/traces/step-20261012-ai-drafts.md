@@ -78,22 +78,68 @@ new files in otherwise disjoint agent scopes. Agents do not run shared Git/build
   and scheduler; focused frontend RED1/backend RED2 reproduced the discrepancy.
   No existing scheduler guarantee widened or old endpoint removed.
 
+## Continuation evidence (2026-10-12)
+
+- Current checkpoint438c42e recorded actual directory3 and pricing10 RED.
+  Directory refresh/never-retarget fix and pricing implementation now pass their
+  focused cases. Latest focused run:18total,17PASS,1expectedFAIL for new zero-input
+  token accounting; RED checkpoint3c75c44. Normalization is in progress.
+- Native SDK wire16, contradictory name/date2, evaluator10 and retention3 passed
+  in the preceding aggregate. SDK2.1.0 sends max_tokens by its verified Azure
+  compatibility mapping; its ceiling remains4000. No live inference was called.
+- Additive migration20261011215856_AddAiTaskDrafts was scaffolded successfully and
+  inspected: five AI tables, owner/key and materialization uniqueness, GUID
+  concurrency versions, existing outbox Kind default0/Reminder. No old migration
+  modified. Extended realSQL previous-schema test preserves prior task versions,
+  users/hashes and an existing pending outbox occurrence; execution awaits CI.
+- Full frontend local gate:68PASS, line91.10%, statement81.90%, branch73.48%,
+  function79.77%; lint/types/production build PASS, no lowered thresholds.
+  Rendered Chrome preliminary AI run14PASS (synthetic intercepted API only).
+  Review then found duplicate landmark labels and nowrap badge overlap; distinct
+  human proposal-table name and scoped130px/wrapping fix are implemented.
+  Fresh build PASS; browser recheck now also exercises revoked commit rights.
+- RealSQL concurrent independent-context same-key/different-key materialization
+  and shared daily quota tests are being added. No SQLite result is presented as
+  evidence for SQL lock/range/deadlock behavior.
+
 ## Exact next actions
 
-Await delivery SDK/grader/runner source READY and runtime expiry/race source READY;
-run focused GREEN and new races RED, fix proven failures. Add actual SQL concurrent
-receipt/materialization/quota lifecycle gate. Root must scaffold ONE additive
-AI drafts/Kind migration after model freezes, inspect SQL constraints and upgrade
-from previous schema with existing data. No old migration edits.
+Latest local full gate is GREEN:620PASS,6realSQLskip,0fail/626total,40s,
+line89.27%(4280/4794),branch72.53%(1920/2647). Two preceding full runs aborted
+with nofailedcases; owned Windows .NET Runtime events proved an unhandled
+IOException in the pre-existing SelfLog File.AppendAllText callback under
+parallel host startup/Loki timers. Replaced the unsafe append and later override
+with one synchronized stderr diagnostic writer. Full run then completed; no test,
+collector, analyzer or production module was disabled/excluded.
+
+Locked restore/audit and full Release solution build PASS (27historicalwarnings,
+0errors). Evaluation CLI without live opt-in printed SKIP and exited2 as intended;
+no inference/network cost was authorized. AI browser14PASS, ECC evidencechecker
+exit0, selected11synthetic screenshots and scoped limits committed8e952ec.
+
+Backend/provider/transaction/model sources now committed7d883f0/7d1a447 and
+additive migration/realSQL gates c2e48d1. Root is resolving the concrete UI400
+interoperability finding before push: actual business-validation ProblemDetails
+does not contain MVC row errors. Narrow tests validRED d50b4f4; generic400 must
+offer current draft/directory review preserving edits, while existing field-error
+400 remains directly correctable. Known membership-change explanation is added.
+The final UI400 fix now passes18focused/69full frontend tests. Full final
+coverage: line91.12%(626/687),statement81.92%(979/1195),branch73.52%(836/1137),
+function79.77%(288/361); types/lint/build PASS. UI400 is component-only evidence,
+explicitly distinguished from browser14. Await actual626no-skipSQL/38browser/
+five-image CI before accepting25 and advancing26. Draft PR51 remains unmerged.
+
+Root must commit final UI400 recovery and docs, push the complete GREEN head,
+inspect its actual workflow runs/jobs/logs, repair concrete CI failures if any,
+then record exact evidence and accept25. Source owners remain frozen for C#.
 
 Root DI/controller exist; Disabled uses unavailable transport, Azure uses
 AzureSdkTaskExtractionChatTransport(options,environment); test fixtures override
 ITaskExtractionProvider. Rate policy current authenticated ID, configured6/min;
 global SQL quota bounds multi-replica spend. New Error statuses410/428/429/503.
-Integrate AINotesPage route/nav/styles; verify source snippets, partial batches,
-unknown network replay and full coverage without excluding production code.
-Finish opt-in live evaluation runner with explicit token/cost limit and honest
-SKIP; do not make cloud calls absent deployment/credentials/budget.
+AINotesPage route/nav/styles, partial batches, exact unknown replay and live
+evaluation token/cost bounds are implemented and verified in their stated local
+scopes. Do not make cloud calls absent deployment/credentials/budget.
 
 After full local gates, real SQL/frontend/container CI and trace, mark25 complete
 then implement26 durable inbox/worker transports. TaskCreated outbox is deliberately

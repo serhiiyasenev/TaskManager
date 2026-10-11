@@ -5,7 +5,30 @@
 ![AI Validation](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-validation.yml/badge.svg)
 
 **TaskManager** is a multi-component project management and task tracking system built with **.NET 10**, **SignalR**, **RabbitMQ**, **Serilog**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
-The system supports **real-time notifications**, **asynchronous task processing**, **analytics**, and **modular expansion**.
+The browser application uses Ukrainian React/TypeScript screens and a separate
+ASP.NET Core YARP web host. Identity cookies, confirmed email and server-side
+team/project permissions protect browser operations; the existing JWT console
+client remains supported.
+
+## Notes to reviewed tasks
+
+Open **AI нотатки**, choose an accessible project and the notes' date/time zone,
+then request proposals. Review the quoted source, choose an allowed assignee,
+edit each proposal and explicitly select the rows to save. Suggestions and
+unresolved people/deadlines require human review. Extraction creates only a
+private expiring draft; confirmation atomically creates tasks, materialization
+links, an idempotency receipt and pending notification outbox entries.
+
+AI defaults to unavailable, with manual task creation available. Configure a real
+Azure OpenAI deployment through [AI provider settings](docs/ai-provider.md).
+The separate [30-case evaluation runner](evaluation/task-extraction/README.md)
+requires explicit live opt-in and token/cost limits; fixture tests are not model
+quality measurements.
+
+The authoritative implementation status is [AI/plan.md](AI/plan.md), with exact
+verification results in [AI/traces](AI/traces). Durable notification inbox,
+worker delivery, Azure provisioning and full-stack acceptance follow the active
+roadmap; pending created-task messages are not yet an inbox delivery guarantee.
 
 ---
 
