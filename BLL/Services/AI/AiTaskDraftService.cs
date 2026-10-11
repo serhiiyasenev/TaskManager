@@ -543,8 +543,19 @@ public sealed class AiTaskDraftService(
         return Error.Conflict("The AI operation raced with another write.");
     }
 
-    private static bool IsDeadlock(Exception exception) => exception is SqlException { Number: 1205 }
-        or DbUpdateException { InnerException: SqlException { Number: 1205 } };
+    private static bool IsDeadlock(Exception exception)
+    {
+        // EF's default SQL execution strategy can wrap the server failure in an
+        // InvalidOperationException. Only a typed SQL deadlock permits retry.
+        Exception? current = exception;
+        for (var depth = 0; current is not null && depth < 16; current = current.InnerException, depth++)
+        {
+            if (current is not SqlException sqlException) continue;
+            foreach (SqlError error in sqlException.Errors)
+                if (error.Number == 1205) return true;
+        }
+        return false;
+    }
     private sealed record ProjectAccess(int UserId, int TeamId, string Name);
     private (int Accepted, int Edited)? _committedMetrics;
 }
