@@ -6,6 +6,8 @@ using BLL.Interfaces;
 using BLL.Interfaces.Analytics;
 using BLL.Mapping;
 using BLL.Services;
+using BLL.Services.AI;
+using BLL.Services.Notifications;
 using BLL.Services.Analytics;
 using BLL.Validators;
 using DAL.Extensions;
@@ -88,6 +90,11 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
 builder.Services.AddScoped<IUserAccess, DatabaseUserAccess>();
 builder.Services.AddTaskExtraction(builder.Configuration);
+builder.Services.AddScoped<INotificationInboxService, NotificationInboxService>();
+builder.Services.AddScoped<INotificationMessageProcessor, NotificationMessageProcessor>();
+builder.Services.AddScoped<IAiDraftRetentionService, AiDraftRetentionService>();
+builder.Services.AddScoped<INotificationRetentionService, NotificationRetentionService>();
+builder.Services.AddSingleton<ITaskNotificationDispatcher, TaskNotificationDispatcher>();
 
 // Direct legacy service tests keep their constructors; production always
 // requires the caller scope and cannot silently use the unscoped test path.

@@ -131,6 +131,7 @@ namespace DAL.Context
 
             modelBuilder.Entity<ExecutedTask>().HasKey(e => e.Id);
             modelBuilder.ConfigureAiDrafts();
+            modelBuilder.ConfigureNotificationInbox();
         }
 
     }

@@ -14,7 +14,10 @@ public enum NotificationEventType
 public record ExecutedTaskNotification(
     int TaskId,
     string TaskName,
-    DateTime CompletedAtUtc);
+    DateTime CompletedAtUtc,
+    int? PerformerId = null,
+    int? ProjectId = null,
+    string? ProjectName = null);
 
 public record TaskReminderNotification(
     int TaskId,

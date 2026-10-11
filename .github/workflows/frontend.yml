@@ -37,6 +37,8 @@ jobs:
           npm ci --ignore-scripts
       - name: Dependency audit
         run: npm audit --audit-level=high
+      - name: Check canonical notification contract outputs
+        run: node ../scripts/generate-notification-contract.mjs --check
       - name: Lint, types and unit coverage
         run: |
           npm run lint

@@ -2,6 +2,7 @@ extern alias NotifierLib;
 using Microsoft.AspNetCore.SignalR;
 using Moq;
 using NotifierLib::Notifier;
+using NotifierLib::Notifier.Notifications;
 using Xunit;
 
 namespace Tests.Unit;
@@ -21,7 +22,7 @@ public class ChatHubTests
         var clients = new Mock<IHubCallerClients>();
         clients.Setup(c => c.All).Returns(proxy.Object);
 
-        var hub = new ChatHub();
+        var hub = new ChatHub(Mock.Of<INotificationRecipientScope>());
         typeof(Hub).GetProperty("Clients")!.SetValue(hub, clients.Object);
 
         await Assert.ThrowsAsync<HubException>(() => hub.SendMessage("user", "hello"));

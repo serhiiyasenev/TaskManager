@@ -21,7 +21,7 @@ namespace Tests.Integration;
 public class NotificationOutboxTests
 {
     [Fact]
-    public async Task TaskCreatedEntry_RemainsPendingForCompatibleConsumer_AndDoesNotBecomeReminderOccurrence()
+    public async Task TaskCreatedEntry_PublishesWithRemindersDisabled_AndDoesNotBecomeReminderOccurrence()
     {
         await using var h = await Harness.CreateAsync();
         var id = Guid.NewGuid();
@@ -41,15 +41,15 @@ public class NotificationOutboxTests
             });
             await db.SaveChangesAsync();
         }
-        await h.RunAsync();
+        await h.RunAsync(false);
         await using var final = h.CreateContext();
         var message = await final.NotificationOutbox.SingleAsync(m => m.Id == id);
-        Assert.Equal(OutboxStatus.Pending, message.Status);
+        Assert.Equal(OutboxStatus.Published, message.Status);
         Assert.Null(message.LockId);
         Assert.Null(message.LockedUntilUtc);
-        Assert.Null(message.PublishedAtUtc);
+        Assert.NotNull(message.PublishedAtUtc);
         Assert.Null((await final.Tasks.FindAsync(h.TaskId))!.ReminderNotificationId);
-        Assert.Empty(h.Queue.Attempts);
+        Assert.Single(h.Queue.Attempts);
     }
 
     [Fact]
@@ -285,8 +285,8 @@ public class NotificationOutboxTests
             return h;
         }
 
-        public Task RunAsync() => new TaskReminderScheduler(
-            _provider.GetRequiredService<IServiceScopeFactory>(), Options.Create(new ReminderOptions()),
+        public Task RunAsync(bool remindersEnabled = true) => new TaskReminderScheduler(
+            _provider.GetRequiredService<IServiceScopeFactory>(), Options.Create(new ReminderOptions { Enabled = remindersEnabled }),
             Options.Create(new RabbitMqOptions { ReminderQueueName = "TaskReminders" }),
             NullLogger<TaskReminderScheduler>.Instance, Clock).RunOnceAsync();
 
