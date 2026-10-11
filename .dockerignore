@@ -13,6 +13,12 @@
 !Notifier/**
 !Client/
 !Client/**
+!Hosting/
+!Hosting/**
+!WebHost/
+!WebHost/**
+!frontend/
+!frontend/**
 
 # Configuration and credentials must not enter build context or image layers.
 **/appsettings*.json
@@ -28,6 +34,11 @@
 **/.vs
 **/.tools
 **/node_modules
+frontend/dist
+frontend/coverage
+frontend/test-results
+frontend/playwright-report
+WebHost/wwwroot
 **/*.user
 **/*.suo
 **/*.log

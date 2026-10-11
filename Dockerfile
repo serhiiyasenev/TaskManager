@@ -2,6 +2,15 @@
 ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0.401-noble
 ARG ASPNET_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0.12-noble
 ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/runtime:10.0.12-noble
+ARG NODE_IMAGE=node:24.18.0-bookworm-slim
+
+FROM ${NODE_IMAGE} AS frontend-build
+WORKDIR /frontend
+RUN npm install --global npm@12.2.0 --ignore-scripts
+COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
+RUN npm ci --ignore-scripts && npm audit --audit-level=high
+COPY frontend/ ./
+RUN npm run build
 
 FROM ${SDK_IMAGE} AS build
 WORKDIR /src
@@ -12,14 +21,23 @@ COPY BLL/BLL.csproj BLL/packages.lock.json BLL/
 COPY WebAPI/WebAPI.csproj WebAPI/packages.lock.json WebAPI/
 COPY Notifier/Notifier.csproj Notifier/packages.lock.json Notifier/
 COPY Client/Client.csproj Client/packages.lock.json Client/
+COPY Hosting/Hosting.csproj Hosting/packages.lock.json Hosting/
+COPY WebHost/WebHost.csproj WebHost/packages.lock.json WebHost/
 RUN dotnet restore WebAPI/WebAPI.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904 \
     && dotnet restore Notifier/Notifier.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904 \
-    && dotnet restore Client/Client.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
+    && dotnet restore Client/Client.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904 \
+    && dotnet restore WebHost/WebHost.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
 COPY DAL/ DAL/
 COPY BLL/ BLL/
 COPY WebAPI/ WebAPI/
 COPY Notifier/ Notifier/
 COPY Client/ Client/
+COPY Hosting/ Hosting/
+COPY WebHost/ WebHost/
+
+FROM build AS publish-web
+RUN dotnet publish WebHost/WebHost.csproj --configuration Release --no-restore \
+    --output /out/web -p:UseAppHost=false -warnaserror:NU1901,NU1902,NU1903,NU1904
 
 FROM build AS publish-webapi
 RUN dotnet publish WebAPI/WebAPI.csproj --configuration Release --no-restore \
@@ -58,6 +76,12 @@ EXPOSE 8080
 FROM aspnet-base AS webapi
 COPY --from=publish-webapi --chown=app:app /out/webapi/ ./
 ENTRYPOINT ["dotnet", "WebAPI.dll"]
+
+FROM aspnet-base AS web
+COPY --from=publish-web --chown=app:app /out/web/ ./
+COPY --from=frontend-build --chown=app:app /frontend/dist/ ./wwwroot/
+EXPOSE 8443
+ENTRYPOINT ["dotnet", "TaskManager.WebHost.dll"]
 
 FROM aspnet-base AS notifier
 COPY --from=publish-notifier --chown=app:app /out/notifier/ ./

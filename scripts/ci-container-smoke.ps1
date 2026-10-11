@@ -22,8 +22,9 @@ function New-ContainerSmokeSecret {
 }
 
 function Assert-ContainerSmokeHttp {
-    param([string] $Uri, [int] $StatusCode, [string] $Method = 'GET')
-    $response = Invoke-WebRequest -Uri $Uri -Method $Method -TimeoutSec 10 -MaximumRedirection 0 -SkipHttpErrorCheck
+    param([string] $Uri, [int] $StatusCode, [string] $Method = 'GET', [switch] $DevelopmentCertificate)
+    if ($DevelopmentCertificate -and ([Uri]$Uri).Host -ne 'localhost') { throw 'Development certificate smoke must stay on localhost.' }
+    $response = Invoke-WebRequest -Uri $Uri -Method $Method -TimeoutSec 10 -MaximumRedirection 0 -SkipHttpErrorCheck -SkipCertificateCheck:$DevelopmentCertificate
     if ([int] $response.StatusCode -ne $StatusCode) {
         throw "HTTP smoke failed: $Method $Uri expected $StatusCode, received $($response.StatusCode)."
     }
@@ -65,7 +66,9 @@ try {
     $sqlPassword = 'Aa9!' + (New-ContainerSmokeSecret)
     $rabbitPassword = New-ContainerSmokeSecret
     $jwtKey = New-ContainerSmokeSecret
-    foreach ($secret in @($sqlPassword, $rabbitPassword, $jwtKey)) {
+    $certificatePassword = New-ContainerSmokeSecret
+    $certificatePath = Join-Path $temporaryPath 'localhost.pfx'
+    foreach ($secret in @($sqlPassword, $rabbitPassword, $jwtKey, $certificatePassword)) {
         Write-Host ('::add-mask::' + $secret)
     }
 
@@ -79,7 +82,10 @@ try {
         "TASKMANAGER_JWT_KEY=$jwtKey"
         'API_PORT=38080'
         'NOTIFIER_PORT=38081'
-        'PUBLIC_ORIGIN=https://localhost:7151'
+        'PUBLIC_ORIGIN=https://localhost:37551'
+        'WEB_PORT=37551'
+        "GATEWAY_CERT_PATH=$certificatePath"
+        "GATEWAY_CERT_PASSWORD=$certificatePassword"
         'MAILPIT_PORT=38025'
         'SQL_PORT=31433'
         'RABBITMQ_PORT=35672'
@@ -87,17 +93,18 @@ try {
     )
     [IO.File]::WriteAllLines($environmentPath, $environmentLines, [Text.UTF8Encoding]::new($false))
     [IO.File]::SetUnixFileMode($environmentPath, [IO.UnixFileMode]::UserRead -bor [IO.UnixFileMode]::UserWrite)
+    New-TaskManagerDevelopmentCertificate -CertificatePath $certificatePath -Password $certificatePassword
 
-    Invoke-TaskManagerCompose -Context $context -Arguments @('config', '--quiet')
-    Invoke-TaskManagerCompose -Context $context -Arguments @('--profile', 'console', 'build', 'webapi', 'notifier', 'migrations', 'client')
-    foreach ($imageName in @('api', 'notifier', 'migrations', 'client')) {
+    Invoke-TaskManagerCompose -Context $context -Arguments @('--profile', 'web', 'config', '--quiet')
+    Invoke-TaskManagerCompose -Context $context -Arguments @('--profile', 'web', '--profile', 'console', 'build', 'webapi', 'notifier', 'migrations', 'client', 'web')
+    foreach ($imageName in @('api', 'notifier', 'migrations', 'client', 'web')) {
         Assert-ContainerSmokeImage -Image "taskmanager-${imageName}:$imageTag"
     }
 
     $composeStarted = $true
     # Mailpit is explicit because it is not a Compose dependency of the API.
     Invoke-TaskManagerCompose -Context $context -Arguments @(
-        'up', '--detach', '--no-build', '--wait', '--wait-timeout', '300', 'mailpit', 'webapi', 'notifier')
+        '--profile', 'web', 'up', '--detach', '--no-build', '--wait', '--wait-timeout', '300', 'mailpit', 'webapi', 'notifier', 'web')
 
     $migrationContainers = @(Invoke-TaskManagerCompose -Context $context -Arguments @('ps', '--all', '--quiet', 'migrations'))
     if ($migrationContainers.Count -ne 1 -or $migrationContainers[0] -notmatch '^[0-9a-f]{12,64}$') {
@@ -134,6 +141,35 @@ try {
     Assert-ContainerSmokeHttp -Uri 'http://127.0.0.1:38081/chathub/negotiate?negotiateVersion=1' -Method POST -StatusCode 401
     Write-Host 'PASS anonymous API and SignalR negotiate return 401'
 
+    $webOrigin = 'https://localhost:37551'
+    foreach ($path in @('/', '/projects', '/confirm-email?token=synthetic-query-privacy-proof', '/health/live', '/health/ready', '/api/auth/csrf')) {
+        Assert-ContainerSmokeHttp -Uri ($webOrigin + $path) -StatusCode 200 -DevelopmentCertificate
+    }
+    Assert-ContainerSmokeHttp -Uri ($webOrigin + '/api/Tasks') -StatusCode 401 -DevelopmentCertificate
+    Assert-ContainerSmokeHttp -Uri ($webOrigin + '/chathub/negotiate?negotiateVersion=1') -Method POST -StatusCode 401 -DevelopmentCertificate
+    Assert-ContainerSmokeHttp -Uri ($webOrigin + '/health/unknown') -StatusCode 404 -DevelopmentCertificate
+    $shell = Invoke-WebRequest -Uri ($webOrigin + '/') -SkipCertificateCheck -TimeoutSec 10
+    if ($shell.Headers['Referrer-Policy'] -ne 'no-referrer' -or $shell.Headers['Cache-Control'] -notcontains 'no-store') {
+        throw 'Gateway privacy headers are missing.'
+    }
+    $scriptMatch = [regex]::Match($shell.Content, '<script[^>]+src="(/assets/[A-Za-z0-9._-]+\.js)"')
+    if (-not $scriptMatch.Success) { throw 'Built React entrypoint is missing from the gateway shell.' }
+    Assert-ContainerSmokeHttp -Uri ($webOrigin + $scriptMatch.Groups[1].Value) -StatusCode 200 -DevelopmentCertificate
+    $csrfResponse = Invoke-WebRequest -Uri ($webOrigin + '/api/auth/csrf') -SkipCertificateCheck -TimeoutSec 10
+    $csrfCookie = $csrfResponse.Headers['Set-Cookie'] -join ';'
+    if ($csrfCookie -notmatch '__Host-TaskManager\.Antiforgery=' -or $csrfCookie -notmatch '(?i);\s*secure' -or $csrfCookie -match '(?i);\s*domain=') {
+        throw 'The proxied HTTPS antiforgery cookie contract is invalid.'
+    }
+    $webContainers = @(Invoke-TaskManagerCompose -Context $context -Arguments @('--profile', 'web', 'ps', '--quiet', 'web'))
+    if ($webContainers.Count -ne 1) { throw 'Expected exactly one web container.' }
+    $webUser = & docker exec $webContainers[0] id -u
+    if ($LASTEXITCODE -ne 0 -or "$webUser".Trim() -ne '1654') { throw 'Web gateway must run as UID 1654.' }
+    $gatewayLogs = @(& docker logs $webContainers[0] 2>&1)
+    if ($LASTEXITCODE -ne 0 -or ($gatewayLogs -join "`n") -match 'synthetic-query-privacy-proof') {
+        throw 'Gateway query privacy verification failed.'
+    }
+    Write-Host 'PASS HTTPS SPA/assets/API/hub/CSRF-cookie routing, privacy and running web UID'
+
     Assert-ContainerSmokeHttp -Uri 'http://127.0.0.1:38025/' -StatusCode 200
     Invoke-TaskManagerCompose -Context $context -Arguments @(
         'exec', '-T', 'webapi', 'bash', '-c',
@@ -151,7 +187,7 @@ try {
 finally {
     if ($composeStarted) {
         try {
-            Invoke-TaskManagerCompose -Context $context -Arguments @('down', '--volumes', '--remove-orphans', '--timeout', '10')
+            Invoke-TaskManagerCompose -Context $context -Arguments @('--profile', 'web', '--profile', 'console', 'down', '--volumes', '--remove-orphans', '--timeout', '10')
         }
         catch {
             Write-Warning 'Disposable Compose cleanup failed; the GitHub-hosted runner will be discarded.'

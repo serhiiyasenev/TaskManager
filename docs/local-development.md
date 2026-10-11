@@ -6,6 +6,9 @@ SQL Server image supports that platform.
 
 ## Container setup
 
+For the HTTPS browser gateway and React stack, follow [web gateway setup](web-gateway.md).
+The commands below retain the API/Notifier/console development stack.
+
 Docker with Compose v2 must be installed and running. These scripts do not install
 tools. Allocate at least 4 GB of memory to Docker. From the repository root:
 
@@ -84,6 +87,11 @@ outputs are excluded from Docker build context. Compose supplies environment
 configuration including console logging. Local images use the `local` tag;
 release pipelines must set `TASKMANAGER_IMAGE_TAG` to a commit SHA or immutable
 artifact identity and deploy verified digests.
+
+The web target builds React with Node `24.18.0-bookworm-slim` and npm `12.2.0`,
+then copies only `dist` into the ASP.NET gateway. Node and npm are not in the web
+runtime image. Its build runs locked `npm ci --ignore-scripts`, audit and the real
+TypeScript/Vite build; environment files/certificates remain excluded.
 
 The local database uses `sa` for development. Production must use separate runtime
 and migration identities with scoped SQL permissions. Notifier's current root

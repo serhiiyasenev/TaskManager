@@ -19,7 +19,7 @@ development database created by this run; production identities are separate.
 
 ## What the check verifies
 
-- All four current Docker targets build: API, Notifier, migration bundle and console.
+- All five current Docker targets build: web gateway, API, Notifier, migration bundle and console.
   Locked restores and NuGet audit failures retain the Dockerfile's normal gates.
 - Every built image declares UID 1654 and executes a command as that user.
   The running API and Notifier also execute as UID 1654 and can write their mounted
@@ -30,6 +30,10 @@ development database created by this run; production identities are separate.
   Anonymous task requests and SignalR negotiation return 401 without redirects.
 - Mailpit returns HTTP 200 and accepts SMTP connections from the API network.
 - The console image starts its normal menu and exits with option 13.
+- HTTPS gateway serves the built SPA and its JavaScript asset, proxies API and hub
+  errors, returns a Secure antiforgery cookie and excludes private queries from
+  gateway logs. A generated self-signed development certificate is accepted only
+  for localhost requests inside this disposable CI adapter.
 
 The script removes its Compose project, volumes and temporary environment file in
 `finally`. Cancellation can interrupt cleanup; the GitHub-hosted VM is discarded.
@@ -39,7 +43,9 @@ No shared host, user database or existing developer `.env` is used by this adapt
 ## Recording evidence
 
 Record the successful Actions run URL and event SHA in the delivery trace before
-claiming container runtime verification. A committed workflow proves that the
+claiming container runtime verification. The earlier four-image gate passed before
+gateway addition; the five-image HTTPS extension requires its own successful run.
+A committed workflow proves that the
 gate exists; it does not prove a passing run. Docker was unavailable in the local
 implementation workspace on 2026-10-11, so the new gate was checked statically
 there. The first runner result remains required.
@@ -50,7 +56,8 @@ deployment require their own integration evidence. Unit/integration tests and
 governance validation remain separate required checks. Branch protection must
 require the container check if it is to block merging.
 
-For local use, follow [local development](local-development.md). The CI adapter
+For local use, follow [local development](local-development.md) and
+[HTTPS web gateway](web-gateway.md). The CI adapter
 refuses non-GitHub or non-Linux execution because it deletes its disposable data.
 
 ## Official references
