@@ -30,6 +30,8 @@
   <ItemGroup>
     <ProjectReference Include="..\BLL\BLL.csproj" />
     <ProjectReference Include="..\Client\Client.csproj" />
+    <ProjectReference Include="..\Hosting\Hosting.csproj" />
+    <ProjectReference Include="..\WebHost\WebHost.csproj" />
     <ProjectReference Include="..\WebAPI\WebAPI.csproj" />
     <ProjectReference Include="..\Notifier\Notifier.csproj" Aliases="NotifierLib" />
   </ItemGroup>

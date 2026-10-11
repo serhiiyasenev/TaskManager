@@ -327,6 +327,9 @@
           "Microsoft.EntityFrameworkCore.SqlServer": "[10.0.12, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
+      },
+      "TaskManager.Hosting": {
+        "type": "Project"
       }
     }
   }
