@@ -21,6 +21,38 @@ namespace Tests.Integration;
 public class NotificationOutboxTests
 {
     [Fact]
+    public async Task TaskCreatedEntry_RemainsPendingForCompatibleConsumer_AndDoesNotBecomeReminderOccurrence()
+    {
+        await using var h = await Harness.CreateAsync();
+        var id = Guid.NewGuid();
+        await using (var db = h.CreateContext())
+        {
+            var task = (await db.Tasks.FindAsync(h.TaskId))!;
+            task.ReminderEnabled = false;
+            db.NotificationOutbox.Add(new OutboxMessage
+            {
+                Id = id, TaskId = h.TaskId, Kind = DAL.Entities.NotificationOutboxKind.TaskCreated,
+                QueueName = "TaskReminders", CreatedAtUtc = h.Clock.GetUtcNow().UtcDateTime,
+                Payload = JsonSerializer.Serialize(new TaskNotificationEnvelope
+                {
+                    Type = NotificationEventType.TaskCreated, CorrelationId = id.ToString("N"),
+                    TaskCreated = new(id, h.TaskId, task.Name, task.PerformerId, task.ProjectId, "Project", task.CreatedAt)
+                })
+            });
+            await db.SaveChangesAsync();
+        }
+        await h.RunAsync();
+        await using var final = h.CreateContext();
+        var message = await final.NotificationOutbox.SingleAsync(m => m.Id == id);
+        Assert.Equal(OutboxStatus.Pending, message.Status);
+        Assert.Null(message.LockId);
+        Assert.Null(message.LockedUntilUtc);
+        Assert.Null(message.PublishedAtUtc);
+        Assert.Null((await final.Tasks.FindAsync(h.TaskId))!.ReminderNotificationId);
+        Assert.Empty(h.Queue.Attempts);
+    }
+
+    [Fact]
     public async Task RepeatedScan_PublishesEachOccurrenceOnce_AndMarksOnlyAfterConfirmation()
     {
         await using var h = await Harness.CreateAsync();
