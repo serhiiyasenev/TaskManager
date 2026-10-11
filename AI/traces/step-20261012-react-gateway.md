@@ -56,6 +56,10 @@ malformed confirmation IDs. New UI assignee/full conflict review RED is
   valid only for steps22–23; new five-image/HTTPS and current real-SQL/frontend
   CI results are pending. Do not mark this step complete until these pass.
 
+First frontend CI exposed a missing tracked `.node-version` file (the exact
+version was already in package engines/Docker). Added the file; no audit/test
+gate was bypassed. Inspect the next actual run rather than reusing local evidence.
+
 ## Exact continuation
 
 Finish rendered evidence and ECC finish checker; commit only synthetic screenshots
