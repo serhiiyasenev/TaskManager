@@ -213,7 +213,8 @@ export function AINotesPage() {
         else {
           setUnknown(null);
           if (error instanceof ApiError) {
-            setBlock(error.status === 409 || error.status === 428 ? 'stale' : error.status === 410 ? 'expired' : error.status === 403 ? 'forbidden' : error.status === 404 ? 'missing' : null);
+            const needsReview = error.status === 409 || error.status === 428 || (error.status === 400 && !Object.keys(error.fieldErrors).length);
+            setBlock(needsReview ? 'stale' : error.status === 410 ? 'expired' : error.status === 403 ? 'forbidden' : error.status === 404 ? 'missing' : null);
             if (error.status === 400) {
               const errors: Record<string, Errors> = {};
               for (const field of Object.keys(error.fieldErrors)) {

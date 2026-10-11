@@ -34,7 +34,7 @@
   "limits": [
     "All API responses are synthetic fixtures; production AI availability and output quality are not verified by this run.",
     "Backend authorization, CSRF validation, persistence, receipt lifetime and concurrency require the separate HTTP/SQL tests and step 28 full-stack E2E.",
-    "Draft expiry, conflict refresh, field validation, deletion and resume are covered by focused component tests, not this browser subset.",
+    "Draft expiry, conflict refresh, field validation, generic HTTP 400 fresh-directory review, deletion and resume are covered by focused component tests, not this browser subset.",
     "Only installed Chrome and Ukrainian UI were exercised. English copy is prepared but a full English rendered workflow was not exercised.",
     "This AI run did not remeasure touch target size, text contrast or reduced-motion CSS; step 24 evidence records those scoped shared-interface checks."
   ],

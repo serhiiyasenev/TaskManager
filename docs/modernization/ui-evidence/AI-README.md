@@ -28,7 +28,10 @@ Rendered review found raw internal explanation codes, duplicate landmark names
 and an overflowing confirmation badge. The final run verified human Ukrainian
 explanations, distinct table naming and scoped badge wrapping. English copy is
 prepared; a full English rendered workflow was not run. Expiry, conflict,
-validation, deletion and draft resume remain in the component-test scope.
+validation, generic HTTP 400 fresh-directory review, deletion and draft resume
+remain in the component-test scope. The added 400 case requires explicit draft
+and team refresh, preserves edits/selection, removes a departed member and uses
+a new key after the person's explicit corrected choice.
 The earlier [step 24 report](report.json) records its separate shared-interface
 contrast, touch-target and reduced-motion checks; this AI subset did not repeat
 those measurements.
