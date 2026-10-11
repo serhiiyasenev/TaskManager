@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using WebAPI.Services;
+using BLL.Services.Notifications;
 using Xunit;
 using OutboxMessage = DAL.Entities.NotificationOutboxMessage;
 using OutboxStatus = DAL.Entities.NotificationOutboxStatus;
@@ -281,6 +282,8 @@ public class NotificationOutboxTests
             var services = new ServiceCollection();
             services.AddScoped(_ => h.CreateContext());
             services.AddSingleton<IQueueService>(h.Queue);
+            services.AddScoped<ITaskNotificationDispatcher>(provider => new TaskNotificationDispatcher(
+                provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<TaskNotificationDispatcher>.Instance, h.Clock));
             h._provider = services.BuildServiceProvider();
             return h;
         }

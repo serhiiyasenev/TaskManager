@@ -155,6 +155,7 @@ public sealed class NotifierSecurityApplicationFactory : WebApplicationFactory<N
         }));
         builder.ConfigureServices(services =>
         {
+            services.RemoveAll<IHostedService>();
             services.AddDataProtection().UseEphemeralDataProtectionProvider();
             services.RemoveAll<TaskContext>();
             services.RemoveAll<Microsoft.EntityFrameworkCore.DbContext>();

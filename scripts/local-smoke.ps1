@@ -9,6 +9,9 @@ foreach ($path in @('/health/live', '/health/ready')) {
     if ($response.StatusCode -ne 200) { throw "API $path did not return HTTP 200." }
     Write-Host "PASS API $path HTTP 200"
 }
-$response = Invoke-WebRequest -Uri ($NotifierOrigin.TrimEnd('/') + '/') -UseBasicParsing -TimeoutSec 10
-if ($response.StatusCode -ne 200) { throw 'Notifier root did not return HTTP 200.' }
-Write-Host 'PASS Notifier root HTTP 200. Hub is at /chathub; this does not verify durable delivery or authorization.'
+foreach ($path in @('/health/live', '/health/ready')) {
+    $response = Invoke-WebRequest -Uri ($NotifierOrigin.TrimEnd('/') + $path) -UseBasicParsing -TimeoutSec 10
+    if ($response.StatusCode -ne 200) { throw "Notifier $path did not return HTTP 200." }
+    Write-Host "PASS Notifier $path HTTP 200"
+}
+Write-Host 'SQL and broker readiness passed. Durable delivery and authenticated hub workflows have separate tests.'

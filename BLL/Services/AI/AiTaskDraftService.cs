@@ -37,7 +37,6 @@ public sealed class AiTaskDraftService(
     private readonly ReminderOptions _reminders = reminderOptions.Value;
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private const int MaximumReminderMinutes = 7 * 24 * 60;
-    private const int CleanupBatchSize = 100;
     private static readonly Meter Meter = new("TaskManager.AI", "1.0.0");
     private static readonly Counter<long> ExtractionCount = Meter.CreateCounter<long>("ai.extractions");
     private static readonly Counter<long> FailureCount = Meter.CreateCounter<long>("ai.failures");
@@ -305,32 +304,7 @@ public sealed class AiTaskDraftService(
         return result.IsSuccess ? Result.Success() : result.Error;
     }
 
-    public async Task<int> CleanupExpiredAsync(CancellationToken ct = default)
-    {
-        var result = await InTransactionAsync<int>(async () =>
-        {
-            var now = clock.GetUtcNow().UtcDateTime;
-            var drafts = await db.Set<AiTaskDraft>().Include(value => value.Items)
-                .Where(value => value.RetainUntilUtc <= now || (value.ExpiresAtUtc <= now && value.NotesText != null))
-                .OrderBy(value => value.ExpiresAtUtc).Take(CleanupBatchSize).ToListAsync(ct);
-            foreach (var draft in drafts)
-            {
-                if (draft.RetainUntilUtc <= now) db.Set<AiTaskDraft>().Remove(draft);
-                else Redact(draft, now, _options.ReceiptLifetimeDays);
-            }
-            var receipts = await db.Set<AiTaskCommitReceipt>().Where(value => value.ReplayExpiresAtUtc <= now)
-                .OrderBy(value => value.ReplayExpiresAtUtc).Take(CleanupBatchSize).ToListAsync(ct);
-            db.Set<AiTaskCommitReceipt>().RemoveRange(receipts);
-            var cutoff = DateOnly.FromDateTime(now).AddDays(-7);
-            var ledger = await db.Set<AiDailyUsage>().Where(value => value.DayUtc < cutoff)
-                .OrderBy(value => value.DayUtc).Take(CleanupBatchSize).ToListAsync(ct);
-            db.Set<AiDailyUsage>().RemoveRange(ledger);
-            await db.SaveChangesAsync(ct);
-            return Result<int>.Success(drafts.Count + receipts.Count + ledger.Count);
-        }, ct);
-        if (result.IsFailure) throw new InvalidOperationException("AI retention cleanup could not complete.");
-        return result.Value;
-    }
+    public Task<int> CleanupExpiredAsync(CancellationToken ct = default) => new AiDraftRetentionService(db, clock).CleanupExpiredAsync(ct);
 
     private async Task<Result<bool>> ReserveBudgetAsync(int projectId, int ownerId, int tokens, CancellationToken ct) =>
         await InTransactionAsync<bool>(async () =>

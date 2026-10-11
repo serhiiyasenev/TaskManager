@@ -161,8 +161,7 @@ services:
         condition: service_healthy
     environment:
       <<: [*api-environment, *rabbit-environment]
-      Reminders__Enabled: "true"
-      Reminders__PollIntervalMinutes: "1"
+      Reminders__Enabled: "false"
     ports:
       - "127.0.0.1:${API_PORT:-8080}:8080"
     volumes:
@@ -186,6 +185,8 @@ services:
       <<: *app-build
       target: notifier
     depends_on:
+      migrations:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
     environment:
@@ -193,6 +194,8 @@ services:
       DOTNET_ENVIRONMENT: Development
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
+      Reminders__Enabled: "true"
+      Reminders__PollIntervalMinutes: "1"
     ports:
       - "127.0.0.1:${NOTIFIER_PORT:-8081}:8080"
     volumes:
@@ -200,7 +203,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET / HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; read -r -t 4 status <&3; [[ \"$$status\" == *\" 200 \"* ]]'"
+        - "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; read -r -t 4 status <&3; [[ \"$$status\" == *\" 200 \"* ]]'"
       interval: 10s
       timeout: 5s
       retries: 15

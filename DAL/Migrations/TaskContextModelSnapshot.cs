@@ -212,6 +212,9 @@ namespace DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("NotificationMessageId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("TaskId")
                         .HasColumnType("int");
 
@@ -220,6 +223,10 @@ namespace DAL.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("NotificationMessageId")
+                        .IsUnique()
+                        .HasFilter("[NotificationMessageId] IS NOT NULL");
 
                     b.ToTable("ExecutedTasks");
                 });
@@ -243,6 +250,7 @@ namespace DAL.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("LockedUntilUtc")
+                        .IsConcurrencyToken()
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Payload")
@@ -271,6 +279,32 @@ namespace DAL.Migrations
                     b.HasIndex("Status", "LockedUntilUtc", "CreatedAtUtc");
 
                     b.ToTable("NotificationOutbox", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Entities.NotificationProcessingMarker", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CanonicalPayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("Disposition")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ProcessedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("ProcessedAtUtc");
+
+                    b.ToTable("NotificationProcessingMarkers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_NotificationProcessingMarkers_Disposition", "[Disposition] IN (0, 1)");
+                        });
                 });
 
             modelBuilder.Entity("DAL.Entities.Project", b =>
@@ -579,6 +613,51 @@ namespace DAL.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("DAL.Entities.UserNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProjectName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TaskName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "ReadAtUtc");
+
+                    b.HasIndex("OwnerId", "OccurredAtUtc", "Id");
+
+                    b.ToTable("UserNotifications", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_UserNotifications_Kind", "[Kind] IN (0, 1, 2, 3)");
+                        });
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>
                 {
                     b.Property<int>("Id")
@@ -854,6 +933,23 @@ namespace DAL.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("DAL.Entities.UserNotification", b =>
+                {
+                    b.HasOne("DAL.Entities.NotificationProcessingMarker", null)
+                        .WithMany()
+                        .HasForeignKey("Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>

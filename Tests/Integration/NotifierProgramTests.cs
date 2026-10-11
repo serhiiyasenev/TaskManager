@@ -31,6 +31,23 @@ public class NotifierProgramTests : IClassFixture<NotifierWebApplicationFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("SignalR - ChatHub is working now", content);
     }
+
+    [Fact]
+    public async Task DevelopmentHostValidatesWorkerDependenciesWithoutHttpInboxAuthority()
+    {
+        using var factory = new DevelopmentNotifierFactory();
+        using var client = factory.CreateClient();
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health/live")).StatusCode);
+    }
+
+    private sealed class DevelopmentNotifierFactory : NotifierWebApplicationFactory
+    {
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            base.ConfigureWebHost(builder);
+            builder.UseEnvironment("Development");
+        }
+    }
 }
 
 public class NotifierWebApplicationFactory : WebApplicationFactory<NotifierLib::Notifier.Program>
@@ -47,6 +64,9 @@ public class NotifierWebApplicationFactory : WebApplicationFactory<NotifierLib::
         }));
         builder.ConfigureServices(services =>
         {
+            // Endpoint-only host fixture intentionally starts no network/SQL
+            // worker. Worker behavior has dedicated durable integration cases.
+            Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.RemoveAll<IHostedService>(services);
             var descriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(IHostedService) &&
                      d.ImplementationType == typeof(NotifierLib::Notifier.RabbitMqListenerService));

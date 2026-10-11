@@ -101,7 +101,7 @@ public class WebApiControllersTests
     public async Task TasksController_AllEndpoints_ReturnExpectedResults()
     {
         var tasksService = new Mock<ITasksService>();
-        var queueService = new Mock<IQueueService>();
+        var dispatcher = new Mock<ITaskNotificationDispatcher>();
 
         tasksService.Setup(x => x.GetTasksAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TaskDetailDto>>.Success([]));
@@ -116,13 +116,13 @@ public class WebApiControllersTests
         tasksService.Setup(x => x.DeleteTaskByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
-        var executed = new ExecutedTaskEntity { Id = 7, TaskId = 4, TaskName = "x", CreatedAt = DateTime.UtcNow };
+        var executed = new ExecutedTaskEntity { Id = 7, TaskId = 4, TaskName = "x", CreatedAt = DateTime.UtcNow, NotificationMessageId = Guid.NewGuid() };
         tasksService.Setup(x => x.AddExecutedTaskAsync(It.IsAny<ExecutedTaskEntity>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ExecutedTaskEntity>.Success(executed));
-        queueService.Setup(x => x.PostValue(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        dispatcher.Setup(x => x.TryDispatchAsync(executed.NotificationMessageId.Value, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var controller = new TasksController(tasksService.Object, queueService.Object);
+        var controller = new TasksController(tasksService.Object, dispatcher.Object);
 
         Assert.IsType<OkObjectResult>((await controller.GetAll(CancellationToken.None)).Result);
         Assert.IsType<OkObjectResult>((await controller.GetById(1, CancellationToken.None)).Result);
@@ -140,12 +140,12 @@ public class WebApiControllersTests
     public async Task TasksController_AddExecutedTask_Failure_Returns500()
     {
         var tasksService = new Mock<ITasksService>();
-        var queueService = new Mock<IQueueService>();
+        var dispatcher = new Mock<ITaskNotificationDispatcher>();
 
         tasksService.Setup(x => x.AddExecutedTaskAsync(It.IsAny<ExecutedTaskEntity>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ExecutedTaskEntity>.Failure(Error.UnexpectedError));
 
-        var controller = new TasksController(tasksService.Object, queueService.Object);
+        var controller = new TasksController(tasksService.Object, dispatcher.Object);
 
         var result = await controller.AddExecutedTask(new ExecutedTaskEntity(), CancellationToken.None);
         var objectResult = Assert.IsType<ObjectResult>(result.Result);

@@ -93,3 +93,54 @@ fail there (including task-deleted). No test skips, gates or analyzers disabled.
 Ignored diagnostics: TestResults/notifications-red/notifications-red.trx and
 notifications-corrected-red.trx. New implementation follows this checkpoint;
 this intermediate RED commit is local until a working integration is verified.
+
+## Integration checkpoints and audit
+
+Additive migration `20261011232451_AddDurableNotificationInbox` inspected:
+two inbox/marker tables, nullable internal execution intent reference, unique
+filtered execution ID, bounded names/hash, owner-only cascade and marker Restrict.
+Old migration files were not edited. New provider/host/private routing and legacy
+commit batch:21PASS;3expected missing behaviors (independent escalation flag,
+notification retention worker), plus2 test-fixture errors corrected (standalone
+SDK options require IConfiguration; legacy request requires TaskName). The
+corrected rollback request was executed against66d8dc2's old service and failed
+expected500/actual200; current GREEN source was restored automatically in finally.
+
+Read-only agent audit reproduced4additional RED cases: normal Development
+Notifier DI failed resolving API-only IUserAccess, and3post-commit reassignment/
+deleted-task/moved-project cases still emitted hints. Worker storage registration
+now omits the HTTP inbox service; API keeps mandatory caller authority. Realtime
+publisher queries current own task/project/membership and verifies its scope
+group remains current before sending minimal hints. No SQL bypass or client
+group selection was introduced. Existing Status concurrency guard was verified;
+the distinct failed-confirm/deadline stale-claim case is being tested separately.
+
+The deterministic stale-before-claim / winner-failed-confirm case reachedRED:
+expected1broker invocation, actual2. Its original Pending/null snapshot bypassed
+the winner's new future backoff. LockedUntilUtc now participates in EF compare-
+and-swap alongside Status/LockId. This uses the existing SQL column; only the
+new step26 designer/current model snapshot gained concurrency metadata. The
+same batch verified17other audit/host/legacy/escalation/cleanup casesPASS. A
+broader notification/reminder/auth/AI regression batch is running next; real
+SQL/broker cases explicitly skip locally until disposable CI services exist.
+
+## Local backend verification — current working sources
+
+Full Release suite with unchanged `.runsettings`: **760PASS /0FAIL /9explicit
+SQL/broker SKIP /769total**,42s. Coverage **88.99% lines(4882/5486),73.64%
+branches(2378/3229)**. Locked solution restore with NU1901–NU1904 as errors PASS.
+Canonical notification generator `--check` PASS. Full TRX/coverage are ignored
+under TestResults/notification-full; this is local evidence, not actual SQL or
+Azure verification. Both migrated legacy execution fixture failures were repaired
+by seeding the matching execution ID/time/Done state; production guards and test
+assertions stayed intact. The stale failed-confirm claim case nowPASS.
+
+CI backend now provisions disposable SQL Server and RabbitMQ4.3.6. New actual
+broker→migrated SQL test covers tracked application publisher confirms, a lost
+ACK/channel close and broker redelivery, single durable inbox/marker/hint, an
+explicit processing fault transferred through real quorum TTL, stable retry ID/
+body, and three failed invocations quarantined in the durable dead queue. The
+fault injection is controlled test behavior, not a claimed real SQL outage.
+Its queue cleanup is limited to freshly generated loopback test queue names.
+Two independent-connection SQL duplicate/read concurrency cases use the shared
+strictly named migrated disposable DB helper. Their runtime results await CI.

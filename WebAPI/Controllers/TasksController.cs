@@ -14,7 +14,7 @@ namespace WebAPI.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/[controller]")]
-public class TasksController(ITasksService tasksService, IQueueService queueService) : ControllerBase
+public class TasksController(ITasksService tasksService, ITaskNotificationDispatcher dispatcher) : ControllerBase
 {
     [HttpGet("page")]
     [ProducesResponseType(typeof(TaskPageResult), StatusCodes.Status200OK)]
@@ -68,17 +68,10 @@ public class TasksController(ITasksService tasksService, IQueueService queueServ
         if (result.IsFailure)
             return Result<ExecutedTaskResult>.Failure(result.Error).ToActionResult();
 
-        var envelope = new TaskNotificationEnvelope
-        {
-            Type = NotificationEventType.ExecutedTaskCompleted,
-            ExecutedTask = new ExecutedTaskNotification(
-                result.Value!.TaskId,
-                result.Value!.TaskName,
-                result.Value!.CreatedAt),
-            CorrelationId = Guid.NewGuid().ToString("N")
-        };
-
-        var postedMessageToQueue = await queueService.PostValue(JsonSerializer.Serialize(envelope), null, ct);
+        // SQL owns the stable intent. The shared dispatcher confirms outside
+        // the transaction; broker unavailability leaves the worker's pending row.
+        var postedMessageToQueue = result.Value!.NotificationMessageId is { } messageId
+            && await dispatcher.TryDispatchAsync(messageId, ct);
         var executedTaskResult = new ExecutedTaskResult
         {
             Task = result.Value!,

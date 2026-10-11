@@ -195,6 +195,22 @@ public sealed class NotificationInboxTests
     }
 
     [Fact]
+    public async Task EscalationOnlyLegacyConfiguration_ProducesEscalationNotification()
+    {
+        using var factory = await CreateFactoryAsync();
+        var id = await SeedEventAsync(factory, 2);
+        await factory.WithDatabaseAsync(async db =>
+        {
+            (await db.Tasks.SingleAsync(value => value.Id == 101)).ReminderEnabled = false;
+            await db.SaveChangesAsync();
+        });
+        var result = await ProcessAsync(factory, id);
+        Assert.True(result.Created);
+        Assert.False(result.Suppressed);
+        await factory.WithDatabaseAsync(async db => Assert.Equal(2, (await db.UserNotifications.SingleAsync()).Kind));
+    }
+
+    [Fact]
     public async Task NotificationInsertFailure_RollsBackMarkerAndAllowsDeliveryRetry()
     {
         var fault = new InboxWriteFault();

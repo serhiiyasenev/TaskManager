@@ -26,9 +26,24 @@ requires explicit live opt-in and token/cost limits; fixture tests are not model
 quality measurements.
 
 The authoritative implementation status is [AI/plan.md](AI/plan.md), with exact
-verification results in [AI/traces](AI/traces). Durable notification inbox,
-worker delivery, Azure provisioning and full-stack acceptance follow the active
-roadmap; pending created-task messages are not yet an inbox delivery guarantee.
+verification results in [AI/traces](AI/traces). The durable notification inbox and
+worker adapters are undergoing step26 acceptance. Azure provisioning and the
+full-stack acceptance gate follow the active roadmap.
+
+## Private notification history
+
+Open **Сповіщення** to read your current task notifications, filter unread items
+and mark them as read. Counts come from the scoped server inbox. Refresh and
+reconnect retrieve the saved history; logging out clears the browser snapshot
+and stops its realtime connection.
+
+The Notifier runtime owns reminder scans, outbox dispatch and retention cleanup.
+It commits a notification and its unique processing marker before broker ACK.
+SignalR carries only a private change hint; the SQL inbox is the history source.
+Local delivery uses RabbitMQ; deployed Azure delivery explicitly selects the
+managed identity Service Bus and Azure SignalR adapters. See
+[delivery guarantees and configuration](docs/notifications.md) for retry/DLQ,
+retention, compatibility and verification boundaries.
 
 ---
 
@@ -82,16 +97,27 @@ roadmap; pending created-task messages are not yet an inbox delivery guarantee.
 sequenceDiagram
     participant Client as Console Client/Postman/WebUI
     participant WebAPI as WebAPI
-    participant Notifier as Notifier Service
-    participant Rabbit as RabbitMQ
-    participant SignalR as SignalR Hub
+    participant SQL as TaskManager SQL
+    participant Worker as Notifier worker
+    participant Queue as RabbitMQ / Service Bus
+    participant Consumer as Notifier consumer
+    participant SignalR as Private SignalR hub
 
-    Client->>WebAPI: Request data or create task
-    WebAPI-->>Client: Response with task/project info
-    WebAPI->>Rabbit: Publish message about task update
-    Rabbit->>Notifier: Deliver task update message
-    Notifier->>SignalR: Send "ReceiveMessage" event
-    SignalR->>Client: Display notification in real time
+    Client->>WebAPI: Confirm selected reviewed drafts
+    WebAPI->>SQL: Commit tasks, receipt and stable outbox intents
+    WebAPI-->>Client: Saved task receipt
+    Worker->>SQL: Claim pending intent with expiring lease
+    Worker->>Queue: Publish immutable body and stable ID
+    Queue-->>Worker: Publisher confirmation
+    Worker->>SQL: Mark intent published
+    Queue->>Consumer: Deliver stable message
+    Consumer->>SQL: Commit inbox row and processing marker
+    Consumer->>Queue: Acknowledge durable processing
+    Consumer->>SignalR: Optional private InboxChanged hint
+    SignalR-->>Client: Notification ID
+    Client->>WebAPI: Fetch current scoped inbox
+    WebAPI->>SQL: Query own currently accessible history
+    WebAPI-->>Client: Notification history and unread count
 ```
 
 ## 📦 Project Structure

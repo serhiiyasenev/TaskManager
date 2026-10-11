@@ -21,6 +21,7 @@ public sealed class PrivateNotificationScopeTests
         var scope = new DatabaseNotificationRecipientScope(db, TimeProvider.System);
         var original = await scope.GetGroupAsync(user.Id);
         Assert.NotNull(original);
+        Assert.Null(await scope.GetGroupAsync(user.Id, expectedSecurityStamp: "stale-negotiation-stamp"));
         Assert.DoesNotContain(user.SecurityStamp!, original);
         Assert.Equal(original, await scope.GetGroupAsync(user.Id));
         user.TeamId = 2;

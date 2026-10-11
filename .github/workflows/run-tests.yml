@@ -38,8 +38,20 @@ jobs:
         options: >-
           --health-cmd="/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P TaskManager_CI_Disposable_Aa9! -C -Q 'SELECT 1' -b -o /dev/null"
           --health-interval=10s --health-timeout=5s --health-retries=30
+      rabbitmq:
+        image: rabbitmq:4.3.6-management
+        env:
+          # Disposable loopback CI broker; no application/deploy credentials.
+          RABBITMQ_DEFAULT_USER: taskmanager-ci
+          RABBITMQ_DEFAULT_PASS: TaskManager_CI_Rabbit_Disposable
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd="rabbitmq-diagnostics -q ping"
+          --health-interval=5s --health-timeout=5s --health-retries=30
     env:
       TASKMANAGER_TEST_SQL_SERVER: 'Server=localhost,1433;Database=master;User Id=sa;Password=TaskManager_CI_Disposable_Aa9!;Encrypt=True;TrustServerCertificate=True'
+      TASKMANAGER_TEST_RABBITMQ: 'true'
       GIST_SECRET: ${{ secrets.GIST_SECRET }}
       GIST_ID: ${{ secrets.GIST_ID }}
 

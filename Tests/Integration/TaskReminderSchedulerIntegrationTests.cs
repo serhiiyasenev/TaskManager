@@ -3,6 +3,7 @@ using BLL.Configuration;
 using BLL.Interfaces;
 using BLL.Models.Messaging;
 using BLL.Services;
+using BLL.Services.Notifications;
 using DAL.Context;
 using DAL.Enum;
 using DAL.Repositories.Implementation;
@@ -39,6 +40,8 @@ public class TaskReminderSchedulerIntegrationTests(DatabaseFixture fixture) : IC
         services.AddScoped(typeof(IRepository<>), typeof(EfCoreRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IQueueService>(queue);
+        services.AddScoped<ITaskNotificationDispatcher>(provider => new TaskNotificationDispatcher(
+            provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<TaskNotificationDispatcher>.Instance));
         services.AddLogging();
         services.Configure<RabbitMqOptions>(opt =>
         {

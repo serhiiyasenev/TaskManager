@@ -13,6 +13,7 @@ using User = DAL.Entities.User;
 using DAL.Enum;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -137,6 +138,56 @@ public sealed class TaskNotificationWorkerTests
         Assert.True(await first);
     }
 
+    [Fact]
+    public async Task StalePreClaimReaderCannotBypassWinningFailedPublishBackoff()
+    {
+        await using var h = await Harness.CreateAsync();
+        var id = await h.AddAsync(NotificationOutboxKind.TaskCreated);
+        h.Queue.Accept = false;
+        h.Gate.Enabled = true;
+        var stale = h.Dispatcher.TryDispatchAsync(id);
+        DateTime? winningDeadline = null;
+        try
+        {
+            await h.Gate.Entered.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            Assert.False(await h.Dispatcher.TryDispatchAsync(id));
+            await using var afterWinner = h.Context();
+            var winning = await afterWinner.NotificationOutbox.SingleAsync();
+            Assert.Equal(NotificationOutboxStatus.Pending, winning.Status);
+            Assert.Null(winning.LockId);
+            winningDeadline = winning.LockedUntilUtc;
+            Assert.True(winningDeadline > h.Clock.GetUtcNow().UtcDateTime);
+        }
+        finally { h.Gate.Release.TrySetResult(); }
+        Assert.False(await stale);
+        Assert.Single(h.Queue.Bodies);
+        await using var final = h.Context();
+        var message = await final.NotificationOutbox.SingleAsync();
+        Assert.Equal(winningDeadline, message.LockedUntilUtc);
+        Assert.Null(message.LockId);
+        Assert.Equal(NotificationOutboxStatus.Pending, message.Status);
+    }
+
+    private sealed class ClaimPause : SaveChangesInterceptor
+    {
+        private int _paused;
+        public bool Enabled { get; set; }
+        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData data,
+            InterceptionResult<int> result, CancellationToken ct = default)
+        {
+            if (Enabled && data.Context!.ChangeTracker.Entries<NotificationOutboxMessage>().Any(entry =>
+                    entry.State == EntityState.Modified && entry.Entity.Status == NotificationOutboxStatus.Pending && entry.Entity.LockId.HasValue)
+                && Interlocked.CompareExchange(ref _paused, 1, 0) == 0)
+            {
+                Entered.TrySetResult();
+                await Release.Task.WaitAsync(ct);
+            }
+            return result;
+        }
+    }
+
     private sealed class Clock : TimeProvider
     {
         private DateTimeOffset _now = new(2026, 10, 12, 10, 0, 0, TimeSpan.Zero);
@@ -158,9 +209,10 @@ public sealed class TaskNotificationWorkerTests
         private ServiceProvider _provider = null!;
         public Clock Clock { get; } = new();
         public Queue Queue { get; } = new();
+        public ClaimPause Gate { get; } = new();
         public IServiceScopeFactory Scopes => _provider.GetRequiredService<IServiceScopeFactory>();
         public TaskNotificationDispatcher Dispatcher => new(Scopes, NullLogger<TaskNotificationDispatcher>.Instance, Clock);
-        public TaskContext Context() => new(new DbContextOptionsBuilder<TaskContext>().UseSqlite(_connection).Options);
+        public TaskContext Context() => new(new DbContextOptionsBuilder<TaskContext>().UseSqlite(_connection).AddInterceptors(Gate).Options);
         public static async Task<Harness> CreateAsync()
         {
             var h = new Harness(); await h._connection.OpenAsync();

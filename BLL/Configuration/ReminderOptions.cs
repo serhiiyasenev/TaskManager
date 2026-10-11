@@ -5,7 +5,8 @@ public class ReminderOptions
     public const string SectionName = "Reminders";
 
     /// <summary>
-    /// Master switch for the scheduler. When false, the hosted service exits immediately.
+    /// Enables reminder occurrence scans. Created/completed outbox intents
+    /// continue to dispatch when reminder generation is disabled.
     /// </summary>
     public bool Enabled { get; set; } = true;
 

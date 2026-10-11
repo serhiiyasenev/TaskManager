@@ -72,7 +72,7 @@ public sealed class ExecutedTaskOutboxTests
         });
         failure.Enabled = true;
         using var client = factory.CreateUserClient(101);
-        using var response = await client.PostAsJsonAsync("/api/tasks/AddExecutedTask", new { taskId = 101 });
+        using var response = await client.PostAsJsonAsync("/api/tasks/AddExecutedTask", new { taskId = 101, taskName = "Untrusted client title" });
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.Null(dispatcher.MessageId);
         await factory.WithDatabaseAsync(async db =>

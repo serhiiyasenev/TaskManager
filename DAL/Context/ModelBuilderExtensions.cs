@@ -124,12 +124,15 @@ namespace DAL.Context
                 outbox.Property(m => m.Payload).IsRequired();
                 outbox.Property(m => m.LockId).IsConcurrencyToken();
                 outbox.Property(m => m.Status).IsConcurrencyToken();
+                outbox.Property(m => m.LockedUntilUtc).IsConcurrencyToken();
                 outbox.HasIndex(m => new { m.Status, m.LockedUntilUtc, m.CreatedAtUtc });
                 outbox.HasOne<Task>().WithMany().HasForeignKey(m => m.TaskId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<ExecutedTask>().HasKey(e => e.Id);
+            modelBuilder.Entity<ExecutedTask>().HasIndex(value => value.NotificationMessageId)
+                .IsUnique().HasFilter("[NotificationMessageId] IS NOT NULL");
             modelBuilder.ConfigureAiDrafts();
             modelBuilder.ConfigureNotificationInbox();
         }

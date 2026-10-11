@@ -40,11 +40,9 @@ builder.Host.UseSerilog((ctx, services, lc) =>
         .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", Serilog.Events.LogEventLevel.Warning));
 
 // Configure Options Pattern
-builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection(RabbitMqOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<PaginationOptions>(builder.Configuration.GetSection(PaginationOptions.SectionName));
 builder.Services.Configure<BootstrapAdminOptions>(builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
-builder.Services.Configure<ReminderOptions>(builder.Configuration.GetSection(ReminderOptions.SectionName));
 
 // Add AutoMapper
 builder.Services.AddSingleton<IMapper>(_ =>
@@ -90,11 +88,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
 builder.Services.AddScoped<IUserAccess, DatabaseUserAccess>();
 builder.Services.AddTaskExtraction(builder.Configuration);
-builder.Services.AddScoped<INotificationInboxService, NotificationInboxService>();
-builder.Services.AddScoped<INotificationMessageProcessor, NotificationMessageProcessor>();
-builder.Services.AddScoped<IAiDraftRetentionService, AiDraftRetentionService>();
-builder.Services.AddScoped<INotificationRetentionService, NotificationRetentionService>();
-builder.Services.AddSingleton<ITaskNotificationDispatcher, TaskNotificationDispatcher>();
+builder.Services.AddNotificationStorage().AddNotificationTransport(builder.Configuration);
 
 // Direct legacy service tests keep their constructors; production always
 // requires the caller scope and cannot silently use the unscoped test path.
@@ -108,11 +102,9 @@ builder.Services.AddScoped<ITasksService>(sp => ActivatorUtilities.CreateInstanc
 builder.Services.AddScoped<ITeamManagementService, TeamManagementService>();
 builder.Services.AddScoped<ITeamsService>(sp => ActivatorUtilities.CreateInstance<TeamsService>(sp, sp.GetRequiredService<IUserAccess>(), sp.GetRequiredService<ITeamManagementService>()));
 builder.Services.AddScoped<IUsersService>(sp => ActivatorUtilities.CreateInstance<UsersService>(sp, sp.GetRequiredService<IUserAccess>()));
-builder.Services.AddSingleton<IQueueService, RabbitMqService>();
 
 builder.Services.AddScoped<IAuthService>(sp => ActivatorUtilities.CreateInstance<AuthService>(sp, sp.GetRequiredService<IAccountEmailSender>()));
 builder.Services.AddHostedService<BootstrapAdminHostedService>();
-builder.Services.AddHostedService<TaskReminderScheduler>();
 
 // Add API Versioning
 builder.Services.AddApiVersioning(options =>

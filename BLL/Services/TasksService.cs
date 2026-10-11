@@ -1,10 +1,12 @@
-﻿#nullable enable annotations
+#nullable enable annotations
 using System.Data;
 using AutoMapper;
 using BLL.Authorization;
 using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Tasks;
+using BLL.Models.Messaging;
+using System.Text.Json;
 using BLL.Configuration;
 using DAL.Entities;
 using DAL.Context;
@@ -28,7 +30,8 @@ public class TasksService(
     ILogger<TasksService> logger,
     IOptions<ReminderOptions>? reminderOptions = null,
     IUserAccess? access = null,
-    TaskContext? context = null)
+    TaskContext? context = null,
+    IOptions<RabbitMqOptions>? rabbitOptions = null)
     : ITasksService
 {
     private readonly ReminderOptions _reminderOptions = reminderOptions?.Value ?? new ReminderOptions();
@@ -202,6 +205,38 @@ public class TasksService(
 
     public async Task<Result<ExecutedTask>> AddExecutedTaskAsync(ExecutedTask executedTask, CancellationToken ct = default)
     {
+        if (access is not null)
+        {
+            ExecutedTask? committed = null;
+            var result = await InTaskWriteAsync(async () =>
+            {
+                var scope = await access.GetScopeAsync(ct);
+                if (scope is null) return Error.Unauthorized;
+                var task = await tasks.GetByIdAsync(executedTask.TaskId, ct);
+                if (task is null || !await CanAccessTaskAsync(task, scope, ct)) return Error.NotFound("Task", executedTask.TaskId);
+                if (task.State != TaskState.Done) return Error.Validation("TaskId", "Only a completed task can be recorded as executed.");
+                var project = await projects.Query().VisibleProjects(scope).SingleOrDefaultAsync(value => value.Id == task.ProjectId, ct);
+                if (project is null) return Error.NotFound("Task", task.Id);
+                var id = Guid.NewGuid();
+                var now = DateTime.UtcNow;
+                committed = new ExecutedTask { TaskId = task.Id, TaskName = task.Name, CreatedAt = now, NotificationMessageId = id };
+                var envelope = new TaskNotificationEnvelope
+                {
+                    Type = NotificationEventType.ExecutedTaskCompleted, CorrelationId = id.ToString("N"),
+                    ExecutedTask = new(task.Id, task.Name, now, task.PerformerId, task.ProjectId, project.Name)
+                };
+                context!.NotificationOutbox.Add(new NotificationOutboxMessage
+                {
+                    Id = id, TaskId = task.Id, Kind = NotificationOutboxKind.ExecutedTaskCompleted,
+                    QueueName = rabbitOptions?.Value.QueueName ?? "TestQueue", CreatedAtUtc = now,
+                    Status = NotificationOutboxStatus.Pending, Payload = JsonSerializer.Serialize(envelope)
+                });
+                await executedTasks.AddAsync(committed, ct);
+                await uow.SaveChangesAsync(ct);
+                return Result<DAL.Entities.Task>.Success(task);
+            }, checkAssignee: true, ct);
+            return result.IsFailure ? Result<ExecutedTask>.Failure(result.Error) : Result<ExecutedTask>.Success(committed!);
+        }
         try
         {
             var scope = access is null ? null : await access.GetScopeAsync(ct);
