@@ -11,6 +11,17 @@ namespace Tests.Unit;
 public class ResultExtensionsAndModelsTests
 {
     [Fact]
+    public void BusinessFailure_ReturnsProblemDetailsWithStableCodeAndSafeDetail()
+    {
+        var response = Assert.IsType<NotFoundObjectResult>(Result<string>.Failure(Error.NotFound("Task", 12)).ToActionResult().Result);
+        var problem = Assert.IsType<ProblemDetails>(response.Value);
+        Assert.Equal(404, problem.Status);
+        Assert.Equal("Error.NotFound", problem.Extensions["code"]);
+        var unknown = Assert.IsType<ObjectResult>(Result.Failure(Error.Custom("internal", "private SQL diagnostics")).ToActionResult());
+        Assert.DoesNotContain("private SQL diagnostics", Assert.IsType<ProblemDetails>(unknown.Value).Detail ?? "");
+    }
+
+    [Fact]
     public void ResultExtensions_ToActionResultT_MapsAllErrorTypes()
     {
         Assert.IsType<NotFoundObjectResult>(Result<string>.Failure(Error.NotFound("Entity", 1)).ToActionResult().Result);
