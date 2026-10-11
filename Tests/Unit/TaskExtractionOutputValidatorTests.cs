@@ -170,6 +170,24 @@ public class TaskExtractionOutputValidatorTests
         Assert.Contains("description_interpretation", item.Interpretations);
     }
 
+    [Fact]
+    public void ConflictingDueAlternatives_CannotBeResolvedByModelChoosingOnlyOneSubstring()
+    {
+        var input = Input("Alice will check API tomorrow or Friday.");
+        var item = Assert.Single(Validate(input, Candidate(input, "Alice", "tomorrow")).Value!);
+        Assert.Null(item.ProposedDueAtUtc);
+        Assert.Contains("due_date_unresolved", item.ClarificationReasons);
+    }
+
+    [Fact]
+    public void AlternativePerformers_CannotBeResolvedByModelChoosingOneAllowedName()
+    {
+        var input = Input("Олена або Сергій завтра перевірить API.");
+        var item = Assert.Single(Validate(input, Candidate(input, "Олена", "завтра", 11)).Value!);
+        Assert.Null(item.ProposedAssigneeId);
+        Assert.Contains("assignee_ambiguous", item.ClarificationReasons);
+    }
+
     internal static TaskExtractionProviderInput Input(string notes, string zone = "Europe/Kyiv") => new(notes, 7,
         new DateOnly(2026, 10, 12), zone, "uk", [new(11, "Олена Коваль"), new(12, "Alice Brown")]);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
