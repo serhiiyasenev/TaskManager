@@ -22,7 +22,7 @@ export const TaskSchema = z.object({
   reminderEnabled: z.boolean(), reminderOffsetMinutes: z.number().int().nullable(),
   escalationEnabled: z.boolean(), escalationDelayMinutes: z.number().int().nullable(),
   reminderSentAt: z.string().nullable(), escalationSentAt: z.string().nullable(),
-  performer: UserSchema.optional(), version: z.string().uuid().optional()
+  performer: UserSchema.optional(), version: z.string().uuid().refine(value => value !== '00000000-0000-0000-0000-000000000000')
 });
 export type TaskRecord = z.infer<typeof TaskSchema>;
 export const ProjectSchema = z.object({

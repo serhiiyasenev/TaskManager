@@ -55,7 +55,7 @@ async function send(path: string, options: RequestInit): Promise<unknown> {
     if (details.errors && typeof details.errors === 'object') {
       for (const [field, errors] of Object.entries(details.errors)) if (Array.isArray(errors) && errors.every(item => typeof item === 'string')) fieldErrors[field] = errors;
     }
-    if (response.status === 401 && !/^\/api\/auth\/(login|register|csrf|confirm-email|resend-confirmation|forgot-password|reset-password)(?:\?|$)/.test(path)) window.dispatchEvent(new Event(sessionExpiredEvent));
+    if (response.status === 401 && !/^\/api\/auth\/(me|login|register|csrf|confirm-email|resend-confirmation|forgot-password|reset-password)(?:\?|$)/.test(path)) window.dispatchEvent(new Event(sessionExpiredEvent));
     throw new ApiError(response.status, response.headers.get('X-Correlation-ID') ?? (typeof details.traceId === 'string' ? details.traceId : undefined), fieldErrors);
   }
   return body;

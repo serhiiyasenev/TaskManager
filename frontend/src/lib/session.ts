@@ -4,6 +4,7 @@ import type { SessionProfile } from './contracts';
 export interface SessionContextValue {
   user: SessionProfile | null;
   status: 'loading' | 'authenticated' | 'anonymous' | 'error';
+  expired?: boolean;
   refresh: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
