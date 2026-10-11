@@ -96,6 +96,13 @@ public class LegacyAccountMigrationTests
             Assert.Equal(userCount + 1, await db.Users.CountAsync());
             Assert.All(await db.Teams.AsNoTracking().ToListAsync(), team => Assert.Null(team.OwnerId));
             Assert.Empty(await db.Set<DAL.Entities.TeamInvitation>().ToListAsync());
+
+            await migrator.MigrateAsync("20261011193014_AddTaskBrowserVersion");
+            db.ChangeTracker.Clear();
+            var versionedTasks = await db.Tasks.AsNoTracking().ToListAsync();
+            Assert.Equal(taskCount, versionedTasks.Count);
+            Assert.All(versionedTasks, task => Assert.NotEqual(Guid.Empty, task.Version));
+            Assert.Equal(taskCount, versionedTasks.Select(task => task.Version).Distinct().Count());
         }
         finally
         {

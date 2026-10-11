@@ -202,11 +202,15 @@ namespace DAL.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("int");
 
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("PerformerId");
+                    b.HasIndex("PerformerId", "DueDate", "Id");
 
-                    b.HasIndex("ProjectId");
+                    b.HasIndex("ProjectId", "CreatedAt", "Id");
 
                     b.ToTable("Tasks");
                 });

@@ -100,6 +100,9 @@ namespace DAL.Context
 
             // A scan must fail if another scan or an API update changes the
             // occurrence while it is creating or completing an outbox entry.
+            modelBuilder.Entity<Task>().Property(t => t.Version).IsConcurrencyToken().ValueGeneratedNever();
+            modelBuilder.Entity<Task>().HasIndex(t => new { t.ProjectId, t.CreatedAt, t.Id });
+            modelBuilder.Entity<Task>().HasIndex(t => new { t.PerformerId, t.DueDate, t.Id });
             modelBuilder.Entity<Task>().Property(t => t.DueDate).IsConcurrencyToken();
             modelBuilder.Entity<Task>().Property(t => t.State).IsConcurrencyToken();
             modelBuilder.Entity<Task>().Property(t => t.PerformerId).IsConcurrencyToken();

@@ -1,3 +1,4 @@
+using System.Globalization;
 using BLL.Interfaces;
 using DAL.Entities;
 using Microsoft.AspNetCore.Antiforgery;
@@ -55,7 +56,11 @@ public sealed class AuthController(
     [AllowAnonymous]
     public async Task<IActionResult> ConfirmEmail(ConfirmEmailRequest request)
     {
-        var user = await users.FindByIdAsync(request.UserId);
+        if (!int.TryParse(request.UserId, NumberStyles.None, CultureInfo.InvariantCulture, out var userId) || userId <= 0)
+        {
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Invalid confirmation link.");
+        }
+        var user = await users.FindByIdAsync(userId.ToString(CultureInfo.InvariantCulture));
         var token = DecodeToken(request.Token);
         if (user is null || token is null)
         {

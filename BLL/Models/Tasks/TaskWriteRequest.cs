@@ -23,6 +23,7 @@ public sealed class TaskWriteRequest
     public bool EscalationEnabled { get; set; }
     [Range(1, 43200)]
     public int? EscalationDelayMinutes { get; set; }
+    public Guid? ExpectedVersion { get; set; }
 
     public TaskEntity ToEntity() => new()
     {
@@ -41,9 +42,9 @@ public sealed class TaskWriteRequest
 
 public sealed record TaskWriteResponse(int Id, int ProjectId, int PerformerId, string Name, string Description, TaskState State,
     DateTime CreatedAt, DateTime? FinishedAt, DateTime? DueDate, bool ReminderEnabled, int? ReminderOffsetMinutes,
-    DateTime? ReminderSentAt, bool EscalationEnabled, int? EscalationDelayMinutes, DateTime? EscalationSentAt)
+    DateTime? ReminderSentAt, bool EscalationEnabled, int? EscalationDelayMinutes, DateTime? EscalationSentAt, Guid Version = default)
 {
     public static TaskWriteResponse FromEntity(TaskEntity task) => new(task.Id, task.ProjectId, task.PerformerId, task.Name, task.Description,
         task.State, task.CreatedAt, task.FinishedAt, task.DueDate, task.ReminderEnabled, task.ReminderOffsetMinutes,
-        task.ReminderSentAt, task.EscalationEnabled, task.EscalationDelayMinutes, task.EscalationSentAt);
+        task.ReminderSentAt, task.EscalationEnabled, task.EscalationDelayMinutes, task.EscalationSentAt, task.Version);
 }

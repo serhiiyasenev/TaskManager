@@ -18,4 +18,5 @@ public record TaskDetailDto(
     bool EscalationEnabled,
     int? EscalationDelayMinutes,
     DateTime? EscalationSentAt,
-    UserBasicDto Performer);
+    UserBasicDto Performer,
+    Guid Version = default);
