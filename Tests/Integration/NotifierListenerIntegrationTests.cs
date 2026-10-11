@@ -20,7 +20,7 @@ public class NotifierListenerIntegrationTests
             .Returns(Task.CompletedTask);
 
         var clients = new Mock<IHubClients>();
-        clients.Setup(c => c.All).Returns(clientProxy.Object);
+        clients.Setup(c => c.User(It.IsAny<string>())).Returns(clientProxy.Object);
 
         var hubContext = new Mock<IHubContext<ChatHub>>();
         hubContext.Setup(c => c.Clients).Returns(clients.Object);
@@ -66,7 +66,7 @@ public class NotifierListenerIntegrationTests
     }
 
     [Fact]
-    public async Task HandleMessageAsync_LogsEmailForOverdueAndBroadcasts()
+    public async Task HandleMessageAsync_LogsEmailForOverdueAndRoutesPrivately()
     {
         var sentMessages = new List<(string user, string message)>();
         var (listener, hubContextMock, loggerMock, clientProxy) = CreateListener();
@@ -98,7 +98,7 @@ public class NotifierListenerIntegrationTests
     }
 
     [Fact]
-    public async Task HandleMessageAsync_PublishesDefaultMessage_WhenPlainString()
+    public async Task HandleMessageAsync_RejectsPlainStringWithoutRecipient()
     {
         var sentMessages = new List<(string user, string message)>();
         var (listener, hubContextMock, _, clientProxy) = CreateListener();
@@ -106,11 +106,7 @@ public class NotifierListenerIntegrationTests
             .Callback<string, object?[], CancellationToken>((_, args, _) => sentMessages.Add(((string)args[0]!, (string)args[1]!)))
             .Returns(Task.CompletedTask);
 
-        await listener.HandleMessageAsyncForTests("TestQueue", "Task 123 done", CancellationToken.None);
-
-        Assert.Single(sentMessages);
-        var (user, message) = sentMessages.Single();
-        Assert.Equal("RabbitMQ Default User", user);
-        Assert.Contains("Task \"Task 123 done\" was marked as Done", message);
+        await Assert.ThrowsAsync<InvalidDataException>(() => listener.HandleMessageAsyncForTests("TestQueue", "Task 123 done", CancellationToken.None));
+        Assert.Empty(sentMessages);
     }
 }

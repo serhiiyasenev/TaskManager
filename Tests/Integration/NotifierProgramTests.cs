@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 using NotifierLib::Notifier;
 using Xunit;
 
@@ -36,6 +37,14 @@ public class NotifierWebApplicationFactory : WebApplicationFactory<NotifierLib::
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Testing");
+        builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Jwt:Key"] = "NotifierProgramSyntheticTestConfiguration",
+            ["Jwt:Issuer"] = "TaskManager",
+            ["Jwt:Audience"] = "TaskManagerClients",
+            ["ConnectionStrings:DbConnection"] = "Server=localhost;Database=NotifierTests;Integrated Security=True;TrustServerCertificate=True"
+        }));
         builder.ConfigureServices(services =>
         {
             var descriptor = services.SingleOrDefault(

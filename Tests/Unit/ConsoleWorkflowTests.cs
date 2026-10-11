@@ -80,7 +80,7 @@ public class ConsoleWorkflowTests
             ? (HttpStatusCode.OK, TaskBody("Review API", "ToDo", true))
             : (HttpStatusCode.OK, new { id = 42 }), "42\n\nn\n\nn\n\n");
         await flow.Menu.Actions[12]();
-        var request = Assert.Single(flow.Requests.Where(request => request.Method == HttpMethod.Put));
+        var request = Assert.Single(flow.Requests, request => request.Method == HttpMethod.Put);
         using var body = JsonDocument.Parse(request.Body!);
         Assert.Equal(DueDate, body.RootElement.GetProperty("dueDate").GetString());
     }
@@ -110,7 +110,7 @@ public class ConsoleWorkflowTests
         Assert.Equal("/api/Analytics/GetTaskStatusByProject/1", Assert.Single(flow.Requests).Path);
         var report = flow.Output.Split('\n').Single(line => line.StartsWith("| Release"));
         Assert.Equal(new[] { "Release", "1", "2", "3", "4", "10" },
-            report.Split('|', StringSplitOptions.RemoveEmptyEntries).Select(cell => cell.Trim()).ToArray());
+            report.TrimEnd().Split('|', StringSplitOptions.RemoveEmptyEntries).Select(cell => cell.Trim()).ToArray());
         Assert.Contains("InProgress", flow.Output);
         Assert.Contains("Canceled", flow.Output);
     }

@@ -2,6 +2,9 @@ extern alias NotifierLib;
 using System.Text;
 using System.Text.Json;
 using BLL.Models.Messaging;
+using DAL.Context;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -16,7 +19,7 @@ namespace Tests.Integration;
 public class RabbitMqListenerExecuteTests
 {
     [Fact]
-    public async Task ExecuteAsync_ConsumesMessagesAndBroadcastsNotifications()
+    public async Task ExecuteAsync_ConsumesMessagesAndRoutesNotificationsToTaskPerformer()
     {
         var sentMessages = new List<(string user, string message)>();
         var consumerReady = new TaskCompletionSource<AsyncEventingBasicConsumer>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -82,10 +85,32 @@ public class RabbitMqListenerExecuteTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         var run = listener.RunExecuteAsync(cts.Token);
         var consumer = await ready.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var envelope = new TaskNotificationEnvelope
+        {
+            Type = NotificationEventType.TaskReminder,
+            Reminder = new TaskReminderNotification(99, "Private reminder", 7, 1, "Project", DateTime.UtcNow, 10, 30)
+        };
         await consumer.HandleBasicDeliverAsync("tag", 7, false, "", "TestQueue", new BasicProperties(),
-            Encoding.UTF8.GetBytes("Legacy message"), CancellationToken.None);
+            Encoding.UTF8.GetBytes(JsonSerializer.Serialize(envelope)), CancellationToken.None);
         channel.Verify(c => c.BasicAckAsync(It.IsAny<ulong>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         channel.Verify(c => c.BasicNackAsync(7, false, true, It.IsAny<CancellationToken>()), Times.Once);
+        cts.Cancel();
+        await run.WaitAsync(TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_RejectsUnrouteableLegacyDeliveryWithoutRetryOrAck()
+    {
+        var ready = new TaskCompletionSource<AsyncEventingBasicConsumer>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (listener, _, _, _, channel) = CreateListener(new List<(string, string)>(), ready);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var run = listener.RunExecuteAsync(cts.Token);
+        var consumer = await ready.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await consumer.HandleBasicDeliverAsync("tag", 8, false, "", "TestQueue", new BasicProperties(),
+            Encoding.UTF8.GetBytes("Legacy message without recipient"), CancellationToken.None);
+        channel.Verify(c => c.BasicNackAsync(8, false, false, It.IsAny<CancellationToken>()), Times.Once);
+        channel.Verify(c => c.BasicAckAsync(It.IsAny<ulong>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        channel.Verify(c => c.BasicNackAsync(8, false, true, It.IsAny<CancellationToken>()), Times.Never);
         cts.Cancel();
         await run.WaitAsync(TimeSpan.FromSeconds(2));
     }
@@ -100,7 +125,7 @@ public class RabbitMqListenerExecuteTests
             .Returns(Task.CompletedTask);
 
         var clients = new Mock<IHubClients>();
-        clients.Setup(c => c.All).Returns(clientProxy.Object);
+        clients.Setup(c => c.User(It.IsAny<string>())).Returns(clientProxy.Object);
 
         var hubContext = new Mock<IHubContext<ChatHub>>();
         hubContext.Setup(c => c.Clients).Returns(clients.Object);
@@ -156,7 +181,21 @@ public class RabbitMqListenerExecuteTests
             })
             .Build();
 
-        var listener = new TestableRabbitMqListenerService(hubContext.Object, logger.Object, config, factory.Object);
+        var services = new ServiceCollection();
+        var databaseName = Guid.NewGuid().ToString();
+        services.AddDbContext<TaskContext>(options => options.UseInMemoryDatabase(databaseName));
+        var provider = services.BuildServiceProvider();
+        using (var scope = provider.CreateScope())
+        {
+            var database = scope.ServiceProvider.GetRequiredService<TaskContext>();
+            database.Teams.Add(new DAL.Entities.Team { Id = 1, Name = "Synthetic team", CreatedAt = DateTime.UtcNow });
+            database.Users.Add(new DAL.Entities.User("recipient", "Synthetic", "Member", "recipient@example.test") { Id = 7, TeamId = 1 });
+            database.Projects.Add(new DAL.Entities.Project { Id = 1, AuthorId = 7, TeamId = 1, Name = "Synthetic project", Description = "Synthetic test", CreatedAt = DateTime.UtcNow, Deadline = DateTime.UtcNow.AddDays(1) });
+            database.Tasks.Add(new DAL.Entities.Task { Id = 99, ProjectId = 1, PerformerId = 7, Name = "Integration Task", Description = "Synthetic test", CreatedAt = DateTime.UtcNow });
+            database.SaveChanges();
+        }
+        var listener = new TestableRabbitMqListenerService(hubContext.Object, logger.Object, config, factory.Object,
+            provider.GetRequiredService<IServiceScopeFactory>());
         return (listener, clientProxy, logger, factory, channel);
     }
 
@@ -166,8 +205,9 @@ public class RabbitMqListenerExecuteTests
             IHubContext<ChatHub> hubContext,
             ILogger<RabbitMqListenerService> logger,
             IConfiguration configuration,
-            IConnectionFactory connectionFactory)
-            : base(hubContext, logger, configuration, connectionFactory)
+            IConnectionFactory connectionFactory,
+            IServiceScopeFactory scopeFactory)
+            : base(hubContext, logger, configuration, connectionFactory, scopeFactory)
         {
         }
 

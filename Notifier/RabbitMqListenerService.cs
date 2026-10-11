@@ -5,6 +5,9 @@ using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 using BLL.Models.Messaging;
+using DAL.Context;
+using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace Notifier
 {
@@ -14,6 +17,7 @@ namespace Notifier
         private readonly ILogger<RabbitMqListenerService> _logger;
         private readonly IConfiguration _configuration;
         private readonly IConnectionFactory? _connectionFactory;
+        private readonly IServiceScopeFactory? _scopeFactory;
         private readonly IAsyncPolicy _retryPolicy;
         private readonly HashSet<string> _queueNames;
         private readonly JsonSerializerOptions _serializerOptions = new()
@@ -25,12 +29,14 @@ namespace Notifier
             IHubContext<ChatHub> hubContext,
             ILogger<RabbitMqListenerService> logger,
             IConfiguration configuration,
-            IConnectionFactory? connectionFactory = null)
+            IConnectionFactory? connectionFactory = null,
+            IServiceScopeFactory? scopeFactory = null)
         {
             _hubContext = hubContext;
             _logger = logger;
             _configuration = configuration;
             _connectionFactory = connectionFactory;
+            _scopeFactory = scopeFactory;
             
             // Create retry policy for connection
             _retryPolicy = Policy
@@ -101,6 +107,12 @@ namespace Notifier
                             {
                                 // Closing the channel requeues this unacknowledged delivery.
                             }
+                            catch (InvalidDataException)
+                            {
+                                _logger.LogWarning("Rejecting unrouteable notification delivery {DeliveryTag}", ea.DeliveryTag);
+                                // Permanent invalid payloads go to a configured DLX, not an infinite retry loop.
+                                await channel.BasicNackAsync(ea.DeliveryTag, false, false, stoppingToken);
+                            }
                             catch (Exception ex)
                             {
                                 _logger.LogWarning(ex, "Requeueing failed delivery {DeliveryTag}", ea.DeliveryTag);
@@ -152,37 +164,54 @@ namespace Notifier
             try
             {
                 var message = Encoding.UTF8.GetString(ea.Body.Span);
-                _logger.LogInformation("Received message from queue {QueueName}: {Message}", queueName, message);
+                _logger.LogInformation("Received notification from queue {QueueName}", queueName);
 
                 var envelope = DeserializeEnvelope(message);
                 if (envelope is not null)
                 {
+                    var recipientId = await ResolveRecipientAsync(envelope, stoppingToken);
                     var (user, text) = BuildNotification(envelope);
                     if (envelope.Type is NotificationEventType.TaskReminder or NotificationEventType.TaskOverdueEscalation)
                     {
                         _logger.LogInformation("Simulated email notification to performer {PerformerId}", envelope.Reminder?.PerformerId);
                     }
-                    await _hubContext.Clients.All.SendAsync(
+                    await _hubContext.Clients.User(recipientId.ToString(CultureInfo.InvariantCulture)).SendAsync(
                         "ReceiveMessage",
                         user,
                         text,
                         cancellationToken: stoppingToken);
 
-                    _logger.LogInformation("Notification broadcasted via SignalR for {Type}", envelope.Type);
+                    _logger.LogInformation("SignalR send completed for {Type}", envelope.Type);
                     return;
                 }
 
-                await _hubContext.Clients.All.SendAsync(
-                    "ReceiveMessage",
-                    "RabbitMQ Default User",
-                    $"Task \"{message}\" was marked as Done. Great job!",
-                    cancellationToken: stoppingToken);
+                throw new InvalidDataException("A structured notification with a resolvable recipient is required.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing message from RabbitMQ queue {QueueName}", queueName);
                 throw;
             }
+        }
+
+        private async Task<int> ResolveRecipientAsync(TaskNotificationEnvelope envelope, CancellationToken token)
+        {
+            if (envelope.Type is NotificationEventType.TaskReminder or NotificationEventType.TaskOverdueEscalation)
+            {
+                if (envelope.Reminder is { PerformerId: > 0 } reminder) return reminder.PerformerId;
+                throw new InvalidDataException("A reminder requires a positive performer ID.");
+            }
+            if (envelope.Type == NotificationEventType.ExecutedTaskCompleted && envelope.ExecutedTask is { TaskId: > 0 } executed)
+            {
+                if (_scopeFactory is null) throw new InvalidDataException("Task recipient lookup is unavailable.");
+                using var scope = _scopeFactory.CreateScope();
+                var database = scope.ServiceProvider.GetRequiredService<TaskContext>();
+                var recipient = await database.Tasks.AsNoTracking().Where(t => t.Id == executed.TaskId)
+                    .Select(t => t.PerformerId).FirstOrDefaultAsync(token);
+                if (recipient > 0) return recipient;
+                throw new InvalidDataException("The task has no resolvable notification recipient.");
+            }
+            throw new InvalidDataException("The notification type or payload is unsupported.");
         }
 
         private TaskNotificationEnvelope? DeserializeEnvelope(string message)
