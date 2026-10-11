@@ -3,8 +3,8 @@
   "targetViewports": ["1440x900", "390x844"],
   "scope": "Actual built React App in disposable installed Chrome contexts with explicitly synthetic intercepted API responses. These checks do not prove Azure inference, server authorization, Identity cookies or SQL transactions.",
   "run": {
-    "startTimeUtc": "2026-10-11T22:08:10.729Z",
-    "durationMs": 35291.002,
+    "startTimeUtc": "2026-10-11T22:39:09.103Z",
+    "durationMs": 32501.153,
     "passed": 14, "failed": 0, "skipped": 0, "flaky": 0,
     "browserChannel": "chrome", "timeZone": "Europe/Kyiv",
     "command": "node node_modules/@playwright/test/cli.js test ui-ai.spec.ts",
@@ -31,6 +31,7 @@
     "Outer review and inner scrolling table now have distinct accessible names.",
     "The narrow selection column and unwrapped confirmation badge no longer overlap adjacent fields."
   ],
+  "testConditionCorrection": "Linux CI exposed that a row becomes disabled while a fresh CSRF request and commit are still pending. The partial-batch case now waits for the returned task links for both receipts and polls the actual recorded commit count before asserting payload, version and key. Timeouts and retries are unchanged; production code was unchanged by this test correction.",
   "limits": [
     "All API responses are synthetic fixtures; production AI availability and output quality are not verified by this run.",
     "Backend authorization, CSRF validation, persistence, receipt lifetime and concurrency require the separate HTTP/SQL tests and step 28 full-stack E2E.",

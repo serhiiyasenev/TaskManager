@@ -135,6 +135,21 @@ Focused allAI/nativeSDK/schema/modelgate125PASS,3SQLskip,0fail/128total24s.
 Publishthisfix andinspectnewactualSQLCI, especiallytwo unchanged parallelcommit
 cases. Only afterallrequiredgatesPASS accept25.
 
+At7bc3c720dc2d6c64d895b001d575c0d2dfc5e3ba actual SQL/backendrun38181003828
+job114593354241 PASS:629PASS,0fail,0skip,26s, including unchanged parallel
+same-key/different-key tests, productquota and previous-schema upgrade. Complete
+TRX publisher/annotations and diagnosticartifact nowPASS; no ignoredruns.
+Five-image container run38181003810/job114593353928 alsoPASS.
+
+Frontendrun38181003803/job114593353960 failedone desktoppartialbatch assertion
+(37othersPASS). The test observed a disabled row during pending/freshCSRF before
+the second request was captured, then asserted the count immediately. Corrected
+to wait for each returned materialized task link plus recordedcount, preserving
+version/newkey and strengthening secondpayloadchecks. No productchange, timeout
+increase or retries. Local actualChrome14PASS32.501s; updatedscopedreport and
+11syntheticimages, ECCcheckerexit0. Push this precise testfix, await corrected
+current-head38browser/629SQL/five-imagePASS, then accept25 and start26.
+
 Latest local full gate is GREEN:620PASS,6realSQLskip,0fail/626total,40s,
 line89.27%(4280/4794),branch72.53%(1920/2647). Two preceding full runs aborted
 with nofailedcases; owned Windows .NET Runtime events proved an unhandled

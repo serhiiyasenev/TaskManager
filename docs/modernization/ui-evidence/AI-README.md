@@ -36,6 +36,13 @@ The earlier [step 24 report](report.json) records its separate shared-interface
 contrast, touch-target and reduced-motion checks; this AI subset did not repeat
 those measurements.
 
+Linux CI exposed a test synchronization flaw in the second partial batch:
+disabled rows already indicate a pending fresh CSRF/commit request. The case now
+waits for each returned task link and polls recorded commit count before checking
+both payloads, version and key. The final 14-case run uses those receipt
+conditions; timeouts and retries are unchanged. This correction changed the test
+conditions without changing production code.
+
 ## Reproduce
 
 After the normal frontend build, from `frontend`:

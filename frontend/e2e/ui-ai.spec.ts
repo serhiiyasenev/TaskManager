@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import type { Page, TestInfo } from '@playwright/test';
 import { syntheticApi } from './syntheticApi';
-import { syntheticAiApi, syntheticAiNotes, syntheticAiQuote, syntheticDraftId, syntheticItemOne, syntheticReceiptVersion } from './syntheticAiApi';
+import { syntheticAiApi, syntheticAiNotes, syntheticAiQuote, syntheticDraftId, syntheticItemOne, syntheticItemTwo, syntheticReceiptVersion } from './syntheticAiApi';
 
 const evidenceDirectory = resolve(process.cwd(), '../docs/modernization/ui-evidence/ai-screenshots');
 async function capture(page: Page, info: TestInfo, state: string) {
@@ -51,9 +51,12 @@ test('AI review requires explicit selection, preserves source and supports a lat
   await page.getByLabel('Вибрати пропозицію 1').check();
   await page.getByLabel('Назва пропозиції 1').fill('Перевірка, підтверджена людиною');
   await page.getByRole('button', { name: 'Зберегти вибрані завдання' }).click();
+  // Pending also disables rows. Only a returned task link proves that the
+  // materialization receipt has been applied to this batch.
+  await expect(page.getByRole('link', { name: 'Відкрити створене завдання' }).first()).toHaveAttribute('href', '/tasks/501');
+  await expect.poll(() => api.captured.filter(call => call.path.endsWith('/commit')).length).toBe(1);
   await expect(page.getByLabel('Вибрати пропозицію 1')).toBeDisabled();
   await expect(page.getByLabel('Вибрати пропозицію 2')).toBeEnabled(); await expect(page.getByLabel('Вибрати пропозицію 2')).not.toBeChecked();
-  await expect(page.getByRole('link', { name: 'Відкрити створене завдання' }).first()).toHaveAttribute('href', '/tasks/501');
   const first = api.captured.find(call => call.path.endsWith('/commit'))!;
   expect(first.body?.items).toEqual([expect.objectContaining({ draftItemId: syntheticItemOne, title: 'Перевірка, підтверджена людиною', reminderEnabled: false })]);
   expect(first.key).toMatch(/^[0-9a-f-]{36}$/i); expect(first.csrf).toBeTruthy();
@@ -61,9 +64,12 @@ test('AI review requires explicit selection, preserves source and supports a lat
   await capture(page, info, 'partial-saved'); await layoutAndLabels(page);
   await page.getByLabel('Вибрати пропозицію 2').check(); await page.getByLabel('Виконавець пропозиції 2').selectOption('43');
   await page.getByRole('button', { name: 'Зберегти вибрані завдання' }).click();
+  await expect(page.getByRole('link', { name: 'Відкрити створене завдання' }).nth(1)).toHaveAttribute('href', '/tasks/502');
+  await expect.poll(() => api.captured.filter(call => call.path.endsWith('/commit')).length).toBe(2);
   await expect(page.getByLabel('Вибрати пропозицію 2')).toBeDisabled();
   const commits = api.captured.filter(call => call.path.endsWith('/commit'));
   expect(commits).toHaveLength(2); expect(commits[1].body?.expectedVersion).toBe(syntheticReceiptVersion); expect(commits[1].key).not.toBe(first.key);
+  expect(commits[1].body?.items).toEqual([expect.objectContaining({ draftItemId: syntheticItemTwo, assigneeId: 43 })]);
   expect(new URL(page.url()).searchParams.has('draftId')).toBe(true); expect(page.url()).not.toContain('перевірить');
   expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
 });
