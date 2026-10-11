@@ -9,6 +9,7 @@ public static class ExceptionFilterExtensions
     {
         return exception switch
         {
+            UnauthorizedAccessException _ => HttpStatusCode.Unauthorized,
             NotFoundException _ => HttpStatusCode.NotFound,
             CanNotDeleteException _ => HttpStatusCode.Conflict,
             _ => HttpStatusCode.InternalServerError

@@ -18,7 +18,8 @@ public class AuthService(
     UserManager<User> userManager,
     SignInManager<User> signInManager,
     IOptions<JwtOptions> jwtOptions,
-    ILogger<AuthService> logger)
+    ILogger<AuthService> logger,
+    IAccountEmailSender? accountEmail = null)
     : IAuthService
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
@@ -38,6 +39,11 @@ public class AuthService(
             return errors;
         }
 
+        if (accountEmail is not null)
+        {
+            var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+            await accountEmail.SendConfirmationAsync(user.Email!, user.Id.ToString(), token, ct);
+        }
         logger.LogInformation("User registered successfully: {Email}", model.Email);
         return "User registered successfully.";
     }
@@ -48,7 +54,7 @@ public class AuthService(
         if (user == null)
         {
             logger.LogWarning("Login attempt for non-existent user: {Email}", model.Email);
-            throw new NotFoundException("No user found. Please register.");
+            throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
         var signIn = await signInManager.CheckPasswordSignInAsync(user, model.Password, true);
@@ -56,19 +62,19 @@ public class AuthService(
         if (signIn.IsLockedOut)
         {
             logger.LogWarning("Login attempt for locked out user: {Email}", model.Email);
-            throw new NotFoundException("Account is locked. Try again later.");
+            throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
         if (signIn.IsNotAllowed)
         {
             logger.LogWarning("Login not allowed for user: {Email}", model.Email);
-            throw new NotFoundException("Sign-in is not allowed for this account.");
+            throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
         if (!signIn.Succeeded)
         {
             logger.LogError("Incorrect password for user {Email}", model.Email);
-            throw new NotFoundException("Incorrect password, please try again.");
+            throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
         var roles = await userManager.GetRolesAsync(user);
