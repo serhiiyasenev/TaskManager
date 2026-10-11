@@ -42,3 +42,28 @@ Scope authorized by the repository owner: fix reminder failure/reprocessing beha
 | 18 | ✅ Acknowledge consumption after processing | SignalR failures leave the message available for redelivery |
 | 19 | ✅ Validate recovery and document guarantees | Relational rollback/concurrency, restart, failure and acknowledgment tests; at-least-once boundary documented |
 | 20 | ✅ Present the flagship application | README contains the problem, runnable local setup, demo sequence, architecture rationale and explicit limitations |
+
+## Product modernization — authorized 2026-10-11
+
+### GOAL
+
+Deliver the owner's accepted TaskManager implementation brief (2026-10-11): secure team task management, Ukrainian React UI, notes-to-draft-to-commit AI, durable private notifications and reproducible separate Azure web/API/notifier deployment.
+
+The owner explicitly requested implementation of the supplied brief and use of agents/ECC in the current chat. This authorizes the following plan and additive API/UI/configuration work, superseding the earlier reminder-only scope constraints. Preserve existing JWT console routes, integer entity keys, existing users/password hashes, SQL data, old migration files and outbox guarantees. Do not merge PRs automatically. Accepted `research.md`/`decisions.md` remain unchanged; current findings are in `docs/modernization/baseline.md`, proposed new decisions in `AI/adr/003-product-modernization.proposed.md`.
+
+### Active step
+
+22 — reproducible .NET 10 runtime and meaningful readiness. Complete and trace each step before advancing. Parallel agents may inspect or implement disjoint parts of the same active step; only the coordinating agent stages/commits and runs the shared backend suite.
+
+| # | Step | Acceptance criteria |
+|---|------|---------------------|
+| 21 | ✅ Baseline and compatibility audit | SHA/default branch/status, auth/data/endpoints/tools, real restore/build/tests/coverage and external blockers recorded |
+| 22 | Reproducible .NET 10 runtime | Stable SDK/packages pinned, Release build/tests/audit, multi-stage non-root images/Compose, SQL-aware readiness regression checks; container execution reported honestly |
+| 23 | Authentication and data isolation | Existing Identity plus cookie/JWT schemes, confirmation/recovery/password/logout/me, antiforgery/rate limits/key ring/email; caller-scoped project/team/task/assignee and user/hub authorization tested |
+| 24 | Web host and Ukrainian React workflows | Same-origin YARP, responsive accessible auth/dashboard/projects/teams/task list/board/forms, real API operations, loading/empty/error/session/concurrency states, typed validated API and pinned npm lockfile |
+| 25 | AI drafts and transactional commit | Official configured Azure SDK, unavailable/fake separation, structured source-backed drafts, reference-date/timezone resolution, restricted assignees, expiry/version/revalidation, idempotency/unique constraints/atomic task+outbox commit; failure tests and 30 UA/EN evaluation cases |
+| 26 | Durable notifications and worker transports | SQL inbox/dedup before broker ack, private authenticated realtime/reconnect, bounded retry/DLQ, RabbitMQ+Service Bus adapters, scheduler moved out of API, stable IDs/leases/confirms preserved |
+| 27 | Azure infrastructure and delivery gates | Bicep web/API/notifier/SQL/Service Bus/SignalR/AI/key ring/email/monitoring/budget, managed identity and SQL grants, OIDC CI/deploy, single-run migrations, what-if/smoke/traffic/rollback scripts and runbook |
+| 28 | End-to-end and live verification | Meaningful backend/SQL/frontend/Playwright/audit/container checks, local demo/README/examples; opt-in real AI evaluation and Azure deploy/live checks when credentials/parameters/budget available; exact limitations recorded |
+
+Implementation evidence and restart instructions belong in `AI/traces/`. This is the sole roadmap; modernization documents link here rather than maintaining a parallel plan. Legacy reminder/DLX work is incorporated into step 26; production observation/approval rows 9–10 require actual production evidence.
