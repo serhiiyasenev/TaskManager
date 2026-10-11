@@ -22,10 +22,12 @@ using WebAPI.Middleware;
 using WebAPI.Services;
 using WebAPI.Authentication;
 using BLL.Authorization;
+using TaskManager.Hosting;
 
 Serilog.Debugging.SelfLog.Enable(msg => File.AppendAllText("serilog-selflog.txt", msg + Environment.NewLine));
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddTrustedProxyForwarding(builder.Configuration);
 
 builder.Host.UseSerilog((ctx, services, lc) =>
     lc.ReadFrom.Configuration(ctx.Configuration)
@@ -92,7 +94,7 @@ builder.Services.AddScoped<ITeamAnalyticsService>(sp => ActivatorUtilities.Creat
 builder.Services.AddScoped<IUserAnalyticsService>(sp => ActivatorUtilities.CreateInstance<UserAnalyticsService>(sp, sp.GetRequiredService<IUserAccess>()));
 
 builder.Services.AddScoped<IProjectsService>(sp => ActivatorUtilities.CreateInstance<ProjectsService>(sp, sp.GetRequiredService<IUserAccess>()));
-builder.Services.AddScoped<ITasksService>(sp => ActivatorUtilities.CreateInstance<TasksService>(sp, sp.GetRequiredService<IUserAccess>()));
+builder.Services.AddScoped<ITasksService>(sp => ActivatorUtilities.CreateInstance<TasksService>(sp, sp.GetRequiredService<IUserAccess>(), sp.GetRequiredService<DAL.Context.TaskContext>()));
 builder.Services.AddScoped<ITeamManagementService, TeamManagementService>();
 builder.Services.AddScoped<ITeamsService>(sp => ActivatorUtilities.CreateInstance<TeamsService>(sp, sp.GetRequiredService<IUserAccess>(), sp.GetRequiredService<ITeamManagementService>()));
 builder.Services.AddScoped<IUsersService>(sp => ActivatorUtilities.CreateInstance<UsersService>(sp, sp.GetRequiredService<IUserAccess>()));
@@ -155,6 +157,7 @@ builder.Services.AddSwaggerGen(options =>
 Serilog.Debugging.SelfLog.Enable(Console.Error);
 
 var app = builder.Build();
+app.UseTrustedProxyForwarding();
 
 app.Use(async (context, next) =>
 {
