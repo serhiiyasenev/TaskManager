@@ -36,10 +36,13 @@ jobs:
     - name: Set up .NET 10
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.x'
+        global-json-file: global.json
+
+    - name: Restore pinned .NET tools
+      run: dotnet tool restore
 
     - name: Restore dependencies
-      run: dotnet restore TaskManager.sln -warnaserror:NU1901,NU1902,NU1903,NU1904
+      run: dotnet restore TaskManager.sln --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
 
     - name: Build solution
       run: dotnet build TaskManager.sln --configuration Release --no-restore -warnaserror:NU1901,NU1902,NU1903,NU1904
@@ -63,12 +66,9 @@ jobs:
         files: '**/TestResults/**/test_results.trx'
         check_name: 'Test Results'
 
-    - name: Install ReportGenerator
-      run: dotnet tool install -g dotnet-reportgenerator-globaltool
-
     - name: Merge and generate coverage report
       run: |
-        reportgenerator \
+        dotnet tool run reportgenerator \
           -reports:"./TestResults/**/coverage.cobertura.xml" \
           -targetdir:"CoverageReport" \
           -reporttypes:"HtmlInline_AzurePipelines;JsonSummary;Badges;Cobertura"

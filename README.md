@@ -124,7 +124,27 @@ graph TD
     G ---|queries/visualizes| LS
 ```
 
-⚙️ Local Setup Instructions
+## Local Docker setup
+
+Use Docker with Compose v2 and Linux x86-64 containers. From PowerShell in the
+repository root:
+
+```powershell
+./scripts/local-init.ps1
+./scripts/local-up.ps1
+./scripts/local-smoke.ps1
+```
+
+The init script generates private local credentials in ignored `.env`. Compose
+builds non-root .NET 10 application images, applies a migration bundle before API
+startup, and exposes the API at `http://localhost:8080` and the Notifier hub at
+`http://localhost:8081/chathub`. Bootstrap admin is disabled by default.
+`./scripts/local-down.ps1` stops services and retains data volumes. See
+[local development](docs/local-development.md) for the optional console profile,
+configuration and upgrade notes. Container execution was not verified in the
+implementation environment because Docker was unavailable.
+
+## Run from the .NET SDK
 
 Install SQL Server and RabbitMQ (or run them via Docker)
 

@@ -116,3 +116,12 @@ src/.vs/config/applicationhost.config
 
 # Repository-local .NET tools used by the README
 .tools/
+
+# Local configuration, secrets and authentication key rings
+.env
+.env.*
+!.env.example
+.local/
+*.pfx
+*.pem
+CoverageReport/

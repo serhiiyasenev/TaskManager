@@ -36,6 +36,7 @@ Windows PowerShell; .NET SDK `10.0.401`, .NET/ASP.NET runtime `10.0.12`, Node `2
 - `dotnet restore TaskManager.sln -warnaserror:NU1901,NU1902,NU1903,NU1904`: PASS. Initial sandbox invocation exited 1 without output; standard approved execution restored all six projects with audit enabled.
 - `dotnet build TaskManager.sln --configuration Release --no-restore -warnaserror:NU1901,NU1902,NU1903,NU1904`: PASS, 0 errors, 31 warnings (existing nullable and two xUnit assertions).
 - `dotnet test TaskManager.sln --settings .runsettings --results-directory ./TestResults/baseline --logger "trx;LogFileName=baseline.trx" --no-build --configuration Release`: PASS, 260 passed, 0 failed, 0 skipped; runner duration 4 seconds. TRX and Cobertura stored under ignored `TestResults/baseline/`.
+- Cobertura baseline: 2014/2104 lines covered (95.72%), 326/390 branches (83.58%). These are collected backend coverage values with the existing migration/generated-code exclusions; they do not cover an absent frontend or real infrastructure.
 
 The 260 tests in the previous #49 trace are historical. Current tests use mocks/InMemory and SQLite; do not claim SQL Server, broker, container, real-AI or Azure verification from these results. Existing coverage exclusions/gates must not be weakened.
 

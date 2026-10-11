@@ -1,0 +1,33 @@
+# Allow only the inputs needed by the application image build.
+*
+!global.json
+!.config/
+!.config/dotnet-tools.json
+!DAL/
+!DAL/**
+!BLL/
+!BLL/**
+!WebAPI/
+!WebAPI/**
+!Notifier/
+!Notifier/**
+!Client/
+!Client/**
+
+# Configuration and credentials must not enter build context or image layers.
+**/appsettings*.json
+**/.env
+**/.env.*
+**/secrets.json
+**/*.pfx
+**/*.p12
+**/*.pem
+**/*.key
+**/bin
+**/obj
+**/.vs
+**/.tools
+**/node_modules
+**/*.user
+**/*.suo
+**/*.log

@@ -53,12 +53,12 @@ The owner explicitly requested implementation of the supplied brief and use of a
 
 ### Active step
 
-22 — reproducible .NET 10 runtime and meaningful readiness. Complete and trace each step before advancing. Parallel agents may inspect or implement disjoint parts of the same active step; only the coordinating agent stages/commits and runs the shared backend suite.
+23 — authentication and data isolation. Step 22 code/local .NET checks pass; actual container/SQL execution awaits an external Docker-capable runner. Complete and trace each step before advancing. Parallel agents may inspect or implement disjoint parts of the same active step; only the coordinating agent stages/commits and runs the shared backend suite.
 
 | # | Step | Acceptance criteria |
 |---|------|---------------------|
 | 21 | ✅ Baseline and compatibility audit | SHA/default branch/status, auth/data/endpoints/tools, real restore/build/tests/coverage and external blockers recorded |
-| 22 | Reproducible .NET 10 runtime | Stable SDK/packages pinned, Release build/tests/audit, multi-stage non-root images/Compose, SQL-aware readiness regression checks; container execution reported honestly |
+| 22 | Local PASS; container execution pending externally — reproducible .NET 10 runtime | Stable SDK/packages pinned, Release build/tests/audit, multi-stage non-root images/Compose, SQL-aware readiness regression checks; container execution reported honestly |
 | 23 | Authentication and data isolation | Existing Identity plus cookie/JWT schemes, confirmation/recovery/password/logout/me, antiforgery/rate limits/key ring/email; caller-scoped project/team/task/assignee and user/hub authorization tested |
 | 24 | Web host and Ukrainian React workflows | Same-origin YARP, responsive accessible auth/dashboard/projects/teams/task list/board/forms, real API operations, loading/empty/error/session/concurrency states, typed validated API and pinned npm lockfile |
 | 25 | AI drafts and transactional commit | Official configured Azure SDK, unavailable/fake separation, structured source-backed drafts, reference-date/timezone resolution, restricted assignees, expiry/version/revalidation, idempotency/unique constraints/atomic task+outbox commit; failure tests and 30 UA/EN evaluation cases |
