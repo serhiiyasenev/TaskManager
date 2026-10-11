@@ -10,6 +10,21 @@ namespace Tests.Unit;
 
 public class ResultExtensionsAndModelsTests
 {
+    [Theory]
+    [InlineData("Error.Gone", 410)]
+    [InlineData("Error.PreconditionRequired", 428)]
+    [InlineData("Error.ServiceUnavailable", 503)]
+    [InlineData("Error.TooManyRequests", 429)]
+    public void DraftAndQuotaFailures_UseRecoverableHttpStatuses(string code, int status)
+    {
+        var error = Error.Custom(code, "A safe recovery explanation.");
+        var typed = Assert.IsType<ObjectResult>(Result<string>.Failure(error).ToActionResult().Result);
+        var empty = Assert.IsType<ObjectResult>(Result.Failure(error).ToActionResult());
+        Assert.Equal(status, typed.StatusCode);
+        Assert.Equal(status, empty.StatusCode);
+        Assert.Equal(code, Assert.IsType<ProblemDetails>(typed.Value).Extensions["code"]);
+    }
+
     [Fact]
     public void BusinessFailure_ReturnsProblemDetailsWithStableCodeAndSafeDetail()
     {
