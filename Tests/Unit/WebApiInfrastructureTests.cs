@@ -56,9 +56,9 @@ public class WebApiInfrastructureTests
 
         filter.OnException(context);
 
-        Assert.Equal("application/json", httpContext.Response.ContentType);
+        Assert.Equal("application/problem+json", httpContext.Response.ContentType);
         Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
-        Assert.IsType<JsonResult>(context.Result);
+        Assert.IsType<ObjectResult>(context.Result);
     }
 
     [Fact]
