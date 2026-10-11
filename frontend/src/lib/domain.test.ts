@@ -10,4 +10,8 @@ describe('task form validation', () => {
   it('accepts a UTC deadline and trims the confirmed title', () => {
     expect(TaskInputSchema.parse({ ...task, name: '  Перевірити API  ', reminderEnabled: true, dueDate: '2026-10-12T14:00:00Z', reminderOffsetMinutes: 60 }).name).toBe('Перевірити API');
   });
+  it('keeps notification offsets within the existing seven-day scheduler limit', () => {
+    expect(TaskInputSchema.safeParse({ ...task, dueDate: '2030-10-12T14:00:00Z', reminderEnabled: true, reminderOffsetMinutes: 10081 }).success).toBe(false);
+    expect(TaskInputSchema.safeParse({ ...task, dueDate: '2030-10-12T14:00:00Z', escalationEnabled: true, escalationDelayMinutes: 10081 }).success).toBe(false);
+  });
 });
