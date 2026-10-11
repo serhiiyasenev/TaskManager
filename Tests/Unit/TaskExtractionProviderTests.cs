@@ -81,6 +81,29 @@ public class TaskExtractionProviderTests
     }
 
     [Fact]
+    public async Task AllowedNamesLimit_PreventsInferenceWithoutSilentlyTruncatingTeam()
+    {
+        var options = AzureOptions(); options.MaxAllowedAssignees = 1;
+        var transport = new RecordingTransport();
+        var input = Input() with { AllowedAssignees = [new(12, "Alice Brown"), new(13, "Bob Smith")] };
+        var error = await Assert.ThrowsAsync<TaskExtractionProviderException>(() => Provider(options, transport).ExtractAsync(input));
+        Assert.Equal("Ai.InputLimit", error.SafeCode);
+        Assert.Equal(0, transport.Calls);
+    }
+
+    [Fact]
+    public async Task FullPromptByteLimit_PreventsReservationAndInference()
+    {
+        var options = AzureOptions(); options.MaxPromptUtf8Bytes = 4096;
+        var transport = new RecordingTransport();
+        var provider = Provider(options, transport);
+        var input = Input() with { NotesText = new string('ї', 3000) };
+        Assert.Equal("Ai.InputLimit", Assert.Throws<TaskExtractionProviderException>(() => provider.CalculateReservationTokens(input)).SafeCode);
+        Assert.Equal("Ai.InputLimit", (await Assert.ThrowsAsync<TaskExtractionProviderException>(() => provider.ExtractAsync(input))).SafeCode);
+        Assert.Equal(0, transport.Calls);
+    }
+
+    [Fact]
     public async Task Cancellation_PropagatesWithoutRetry()
     {
         using var cancellation = new CancellationTokenSource(); cancellation.Cancel();
@@ -131,6 +154,17 @@ public class TaskExtractionProviderTests
         Assert.Equal("", result.RawJson);
         Assert.Equal(100, result.InputTokens);
         Assert.Equal(20, result.OutputTokens);
+    }
+
+    [Fact]
+    public async Task ZeroInputUsage_IsUntrustworthyAndCannotReleaseTokenOrCostReservation()
+    {
+        var transport = new RecordingTransport { Handler = _ => Task.FromResult(new TaskExtractionProviderResult("{\"items\":[]}", InputTokens: 0, OutputTokens: 20)) };
+        var provider = Provider(AzureOptions(), transport);
+        Assert.True(provider.CalculateReservationTokens(Input()) > 20);
+        var result = await provider.ExtractAsync(Input());
+        Assert.Null(result.InputTokens);
+        Assert.Null(result.OutputTokens);
     }
 
     private static TaskExtractionProviderInput Input() => new("Alice will check API tomorrow.", 7, new(2026, 10, 12), "Europe/Kyiv", "en", [new(12, "Alice Brown")]);
