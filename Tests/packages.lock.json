@@ -1212,6 +1212,19 @@
           "RabbitMQ.Client": "[7.2.0, )"
         }
       },
+      "client": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.SignalR.Client": "[10.0.12, )",
+          "Microsoft.AspNetCore.SignalR.Client.Core": "[10.0.12, )",
+          "Microsoft.Extensions.Configuration": "[10.0.12, )",
+          "Microsoft.Extensions.Configuration.CommandLine": "[10.0.12, )",
+          "Microsoft.Extensions.Configuration.Json": "[10.0.12, )",
+          "Microsoft.Extensions.DependencyInjection": "[10.0.12, )",
+          "Microsoft.Extensions.Hosting": "[10.0.12, )",
+          "RabbitMQ.Client": "[7.2.0, )"
+        }
+      },
       "dal": {
         "type": "Project",
         "dependencies": {
