@@ -107,6 +107,8 @@ services:
       <<: *app-build
       target: webapi
     depends_on:
+      mailpit:
+        condition: service_started
       migrations:
         condition: service_completed_successfully
       rabbitmq:

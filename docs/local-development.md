@@ -93,6 +93,10 @@ container proves end-to-end notification delivery.
 
 ## Verification status
 
+The [container verification gate](container-verification.md) builds and smokes a
+disposable Compose stack on GitHub-hosted Linux runners. Its passing run URL and
+commit SHA are required as container runtime evidence.
+
 On 2026-10-11, Docker was absent from the implementation environment. Image pulls,
 container builds, bundle execution, SQL upgrade and the above HTTP smoke were not
 run there. Static configuration review is preparation; successful deployment must

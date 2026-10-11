@@ -54,11 +54,32 @@ schema data/human admin preservation and additive ownership migration.
 ## Open checkpoint and next action
 
 Security review after GREEN found an inviter-rights/rename race between permission
-read and commit, including the already-member acceptance path. Agents are adding
-deterministic regression tests before transaction hardening. Root must run and
-checkpoint RED, authorize the fix, rerun affected checks/full gate, then mark step
-23 complete and advance to step 24. Do not treat the current GREEN as proof of
-this new race. Step 22 container execution remains external until CI smoke runs.
+read and commit, including the already-member acceptance path. Runtime RED: all
+three injected revocations incorrectly returned 200, checkpoint `87f233a`.
+Serializable transactions, conditional receiver/consume writes and guarded rename
+now close it; deadlock retries are limited to two attempts. Affected 63 tests PASS.
+Final full run (`TestResults/step23-final`): **396 passed, 0 failed, 1 skipped,
+397 total, 39 seconds**; **89.52% lines (3018/3371), 73.37% branches (995/1356)**.
+New nullable annotations have their own enabled context; analyzers stay enabled.
+
+Real Linux/SQL Server CI at `e0d14c1de827edaecbd04b2129055ee0679a4d31`:
+[run 160](https://github.com/serhiiyasenev/TaskManager/actions/runs/38165790980)
+**394 passed, 0 failed, 0 skipped, 14 seconds**, including upgrade from prior
+outbox schema through both new migrations/data/human credential preservation.
+This run predates race hardening and proves schema upgrade, not SQL locking races.
+A disposable real-SQL business lifecycle gate is being added to prove current
+conditional UPDATE translation/rollback. Prepared container smoke builds four
+non-root targets and runs migration/SQL/HTTP/SMTP/console checks; real execution
+still requires its CI result. Do not equate preparation with successful images.
+
+The owner's remote `fff5efa` removed only Consensia workflow. Auto-review initially
+blocked merging a CI deletion; the owner explicitly confirmed preserving it.
+Root merged without rewriting history and pushed `e0d14c1`. Never restore it.
+
+Next action: include real-SQL lifecycle test and CI smoke, run local focused gate,
+commit/push, inspect runner result, then advance to React/YARP step 24. Keep
+remaining runtime gates explicit. UI design contract and verified registry
+versions are prepared; no frontend runtime is delivered yet.
 
 Draft PR #51 targets main from feature/ai-step-21-modernization. Preserve its
 single branch/dependency chain; no auto-merge. Restart from this trace, plan and

@@ -303,21 +303,31 @@ public class DataIsolationTests
 
 internal sealed class DataIsolationFactory : WebApplicationFactory<Program>
 {
-    private readonly SqliteConnection _connection = new("Data Source=:memory:");
+    private readonly SqliteConnection? _connection;
     private readonly IInterceptor? _interceptor;
+    private readonly string? _sqlConnection;
 
-    private DataIsolationFactory(IInterceptor? interceptor = null)
+    private DataIsolationFactory(IInterceptor? interceptor = null, string? sqlConnection = null)
     {
         _interceptor = interceptor;
-        _connection.Open();
+        _sqlConnection = sqlConnection;
+        if (sqlConnection is null)
+        {
+            _connection = new SqliteConnection("Data Source=:memory:");
+            _connection.Open();
+        }
     }
 
-    public static async Task<DataIsolationFactory> CreateAsync(IInterceptor? interceptor = null)
+    public static async Task<DataIsolationFactory> CreateAsync(IInterceptor? interceptor = null, string? sqlConnection = null)
     {
-        var factory = new DataIsolationFactory(interceptor);
+        var factory = new DataIsolationFactory(interceptor, sqlConnection);
         await factory.WithDatabaseAsync(async db =>
         {
             await db.Database.EnsureCreatedAsync();
+            // The SQL Server lifecycle owns a disposable empty database and
+            // creates actors using generated identity keys. SQLite fixtures retain
+            // their deterministic IDs for resource authorization scenarios.
+            if (sqlConnection is not null) return;
             db.Roles.Add(new IdentityRole<int> { Id = 101, Name = "admin", NormalizedName = "ADMIN", ConcurrencyStamp = Guid.NewGuid().ToString() });
             db.Teams.AddRange(new Team { Id = 101, Name = "Isolation team A" }, new Team { Id = 102, Name = "Isolation team B" });
             db.Users.AddRange(Enumerable.Range(101, 5).Select(id => new User
@@ -368,7 +378,7 @@ internal sealed class DataIsolationFactory : WebApplicationFactory<Program>
         builder.UseEnvironment("Testing");
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["BootstrapAdmin:Enabled"] = "false", ["Reminders:Enabled"] = "false", ["ConnectionStrings:DbConnection"] = "Server=metadata-only;Database=unused",
+            ["BootstrapAdmin:Enabled"] = "false", ["Reminders:Enabled"] = "false", ["ConnectionStrings:DbConnection"] = _sqlConnection ?? "Server=metadata-only;Database=unused",
             ["Jwt:Key"] = "isolation-test-key-with-at-least-thirty-two-characters"
         }));
         builder.ConfigureServices(services =>
@@ -379,7 +389,8 @@ internal sealed class DataIsolationFactory : WebApplicationFactory<Program>
             services.RemoveAll<IDbContextOptionsConfiguration<TaskContext>>();
             services.AddDbContext<TaskContext>(options =>
             {
-                options.UseSqlite(_connection);
+                if (_sqlConnection is null) options.UseSqlite(_connection!);
+                else options.UseSqlServer(_sqlConnection);
                 if (_interceptor is not null) options.AddInterceptors(_interceptor);
             });
             services.RemoveAll<IQueueService>();
@@ -397,7 +408,7 @@ internal sealed class DataIsolationFactory : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing) _connection.Dispose();
+        if (disposing) _connection?.Dispose();
     }
 
     private sealed class IsolationQueue : IQueueService
