@@ -1,4 +1,5 @@
-﻿using BLL.Interfaces.Analytics;
+﻿#nullable enable annotations
+using BLL.Interfaces.Analytics;
 using BLL.Models.Projects;
 using BLL.Authorization;
 using BLL.Models.Tasks;

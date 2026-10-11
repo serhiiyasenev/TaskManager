@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿#nullable enable annotations
+using AutoMapper;
 using BLL.Authorization;
 using BLL.Common;
 using BLL.Interfaces;

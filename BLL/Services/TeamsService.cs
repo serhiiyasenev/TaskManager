@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿#nullable enable annotations
 using AutoMapper;
 using BLL.Authorization;
 using BLL.Common;
@@ -101,20 +101,13 @@ public class TeamsService(
         {
             var scope = access is null ? null : await access.GetScopeAsync(ct);
             if (access is not null && scope is null) return Error.Unauthorized;
+            if (access is not null)
+                return management is null ? Error.UnexpectedError : await management.UpdateTeamAsync(id, teamDto.Name, ct);
             var entity = await teams.GetByIdAsync(id, ct);
-            if (entity == null || (scope is { IsAdmin: false } && scope.TeamId != id))
+            if (entity == null)
             {
                 logger.LogWarning("Team with ID {TeamId} was not found for update", id);
                 return Error.NotFound("Team", id);
-            }
-
-            if (scope is { IsAdmin: false } && entity.OwnerId != scope.UserId) return Error.Forbidden;
-            if (access is not null)
-            {
-                var current = await access.GetScopeAsync(ct);
-                if (current is null) return Error.Unauthorized;
-                if (!current.IsAdmin && current.TeamId != id) return Error.NotFound("Team", id);
-                if (!current.IsAdmin && entity.OwnerId != current.UserId) return Error.Forbidden;
             }
 
             entity.Name = teamDto.Name;

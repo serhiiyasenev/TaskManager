@@ -7,6 +7,7 @@ namespace BLL.Interfaces;
 public interface ITeamManagementService
 {
     Task<Result<Team>> CreateTeamAsync(string name, CancellationToken ct = default);
+    Task<Result<Team>> UpdateTeamAsync(int teamId, string name, CancellationToken ct = default);
     Task<Result> DeleteTeamAsync(int teamId, CancellationToken ct = default);
     Task<Result<CreatedTeamInvitation>> CreateInvitationAsync(int teamId, string email, CancellationToken ct = default);
     Task<Result<List<TeamInvitationDetail>>> GetInvitationsAsync(int teamId, CancellationToken ct = default);

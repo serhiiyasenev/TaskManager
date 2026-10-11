@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Security.Claims;
 using DAL.Context;
 using DAL.Entities;

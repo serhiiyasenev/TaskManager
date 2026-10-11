@@ -1,3 +1,5 @@
+#nullable enable annotations
+using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 using BLL.Authorization;
@@ -6,6 +8,7 @@ using BLL.Interfaces;
 using BLL.Models.Teams;
 using DAL.Context;
 using DAL.Entities;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -64,6 +67,34 @@ public sealed class TeamManagementService(TaskContext db, IUserAccess access, Ti
                 .SetProperty(user => user.ConcurrencyStamp, stamp), ct);
             db.Teams.Remove(allowed.Value!);
             return Result.Success();
+        }, ct);
+    }
+
+    public async Task<Result<Team>> UpdateTeamAsync(int teamId, string name, CancellationToken ct = default)
+    {
+        var allowed = await ManageTeamAsync(teamId, ct);
+        if (allowed.IsFailure) return allowed.Error;
+        return await InTransactionAsync<Team>(async () =>
+        {
+            allowed = await ManageTeamAsync(teamId, ct);
+            if (allowed.IsFailure) return allowed.Error;
+            if (!await LockManagerAsync(teamId, ct)) return Error.Conflict("Your team access changed; refresh and retry.");
+            if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > 100)
+                return Error.Validation("Name", "A team name of at most 100 characters is required.");
+            name = name.Trim();
+            if (await db.Teams.AnyAsync(team => team.Id != teamId && team.Name == name, ct))
+                return Error.Conflict("A team with this name already exists.");
+            var caller = await access.GetScopeAsync(ct);
+            if (caller is null) return Error.Unauthorized;
+            // Repeat owner membership or current administrator rights in the
+            // final write; the serializable transaction holds those rights.
+            var updated = await db.Teams.Where(team => team.Id == teamId && team.OwnerId == allowed.Value!.OwnerId
+                && db.Users.Any(user => user.Id == caller.UserId && user.EmailConfirmed
+                    && ((caller.IsAdmin && AdministratorIds.Contains(user.Id))
+                        || (team.OwnerId == user.Id && user.TeamId == team.Id))))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(team => team.Name, name), ct);
+            if (updated != 1) return Error.Conflict("Your team access changed; refresh and retry.");
+            return Result<Team>.Success(await db.Teams.AsNoTracking().SingleAsync(team => team.Id == teamId, ct));
         }, ct);
     }
 
@@ -156,24 +187,32 @@ public sealed class TeamManagementService(TaskContext db, IUserAccess access, Ti
                     ? Result<AcceptedTeamInvitation>.Success(new(invitation.TeamId)) : Gone;
             if (user.TeamId.HasValue && user.TeamId != invitation.TeamId)
                 return Error.Conflict("Leave your current team before accepting this invitation.");
-            if (user.TeamId is null)
-            {
-                // The SQL update repeats issuer rights and invitation validity at
-                // the membership write, and compares the receiver's current stamp.
-                var stamp = Guid.NewGuid().ToString();
-                var authorizedIssuer = AuthorizedIssuerQuery(invitation);
-                var updated = await db.Users.Where(member => member.Id == user.Id && member.TeamId == null
-                    && member.ConcurrencyStamp == user.ConcurrencyStamp && member.EmailConfirmed
-                    && member.NormalizedEmail == invitation.NormalizedEmail && authorizedIssuer.Any()
-                    && Invitations.Any(value => value.Id == invitation.Id && value.Version == invitation.Version
-                        && value.RevokedAtUtc == null && value.AcceptedAtUtc == null && value.ExpiresAtUtc > now))
-                    .ExecuteUpdateAsync(setters => setters.SetProperty(member => member.TeamId, (int?)invitation.TeamId)
-                        .SetProperty(member => member.ConcurrencyStamp, stamp), ct);
-                if (updated != 1) return Error.Conflict("Your membership or invitation changed; refresh and retry.");
-            }
-            invitation.AcceptedAtUtc = now;
-            invitation.AcceptedByUserId = user.Id;
-            invitation.Version = Guid.NewGuid();
+            // Both new and existing members take the same conditional write.
+            // The receiver stamp prevents a concurrent leave or profile change.
+            var stamp = Guid.NewGuid().ToString();
+            var authorizedIssuer = AuthorizedIssuerQuery(invitation);
+            var updated = await db.Users.Where(member => member.Id == user.Id && member.TeamId == user.TeamId
+                && member.ConcurrencyStamp == user.ConcurrencyStamp && member.EmailConfirmed
+                && member.NormalizedEmail == invitation.NormalizedEmail && authorizedIssuer.Any()
+                && Invitations.Any(value => value.Id == invitation.Id && value.Version == invitation.Version
+                    && value.RevokedAtUtc == null && value.AcceptedAtUtc == null && value.ExpiresAtUtc > now))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(member => member.TeamId, (int?)invitation.TeamId)
+                    .SetProperty(member => member.ConcurrencyStamp, stamp), ct);
+            if (updated != 1) return Error.Conflict("Your membership or invitation changed; refresh and retry.");
+
+            // Consumption is conditional too: issuer rights, verified recipient
+            // membership and the unexpired invitation must hold at the last write.
+            now = clock.GetUtcNow().UtcDateTime;
+            var version = Guid.NewGuid();
+            var consumed = await Invitations.Where(value => value.Id == invitation.Id && value.Version == invitation.Version
+                && value.RevokedAtUtc == null && value.AcceptedAtUtc == null && value.ExpiresAtUtc > now
+                && authorizedIssuer.Any() && db.Users.Any(member => member.Id == user.Id
+                    && member.TeamId == invitation.TeamId && member.ConcurrencyStamp == stamp && member.EmailConfirmed
+                    && member.NormalizedEmail == invitation.NormalizedEmail))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(value => value.AcceptedAtUtc, (DateTime?)now)
+                    .SetProperty(value => value.AcceptedByUserId, (int?)user.Id)
+                    .SetProperty(value => value.Version, version), ct);
+            if (consumed != 1) return Error.Conflict("Your membership or invitation changed; refresh and retry.");
             return Result<AcceptedTeamInvitation>.Success(new(invitation.TeamId));
         }, ct);
     }
@@ -268,35 +307,57 @@ public sealed class TeamManagementService(TaskContext db, IUserAccess access, Ti
 
     private async Task<Result<T>> InTransactionAsync<T>(Func<Task<Result<T>>> action, CancellationToken ct)
     {
-        try
+        const int attempts = 2;
+        for (var attempt = 0; attempt < attempts; attempt++)
         {
-            await using var transaction = await db.Database.BeginTransactionAsync(ct);
-            var result = await action();
-            if (result.IsFailure)
+            try
             {
-                await transaction.RollbackAsync(CancellationToken.None);
+                // SQL Server keeps membership/role reads locked through commit.
+                // This closes the gap between authorization and later SQL writes.
+                await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+                var result = await action();
+                if (result.IsFailure)
+                {
+                    await transaction.RollbackAsync(CancellationToken.None);
+                    db.ChangeTracker.Clear();
+                    return result;
+                }
+                await db.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
                 db.ChangeTracker.Clear();
                 return result;
             }
-            await db.SaveChangesAsync(ct);
-            await transaction.CommitAsync(ct);
-            db.ChangeTracker.Clear();
-            return result;
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+            catch (Exception exception) when (IsDeadlock(exception))
+            {
+                db.ChangeTracker.Clear();
+                logger.LogWarning("A team membership command encountered a deadlock (attempt {Attempt}).", attempt + 1);
+                if (attempt + 1 == attempts) return Error.Conflict("The team or membership changed; refresh and retry.");
+            }
+            catch (DbUpdateException)
+            {
+                db.ChangeTracker.Clear();
+                logger.LogWarning("A team membership command conflicted with another update.");
+                return Error.Conflict("The team or membership changed; refresh and retry.");
+            }
+            catch (SqlException exception) when (exception.Number is 1222 or 3960)
+            {
+                db.ChangeTracker.Clear();
+                logger.LogWarning("A team membership command conflicted with another transaction.");
+                return Error.Conflict("The team or membership changed; refresh and retry.");
+            }
+            catch (Exception exception)
+            {
+                db.ChangeTracker.Clear();
+                logger.LogError("A team membership command failed ({ErrorType}).", exception.GetType().Name);
+                return Error.UnexpectedError;
+            }
         }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
-        catch (DbUpdateException)
-        {
-            db.ChangeTracker.Clear();
-            logger.LogWarning("A team membership command conflicted with another update.");
-            return Error.Conflict("The team or membership changed; refresh and retry.");
-        }
-        catch (Exception exception)
-        {
-            db.ChangeTracker.Clear();
-            logger.LogError("A team membership command failed ({ErrorType}).", exception.GetType().Name);
-            return Error.UnexpectedError;
-        }
+        return Error.Conflict("The team or membership changed; refresh and retry.");
     }
+
+    private static bool IsDeadlock(Exception exception) => exception is SqlException { Number: 1205 }
+        or DbUpdateException { InnerException: SqlException { Number: 1205 } };
 
     private async Task<Result> InTransactionAsync(Func<Task<Result>> action, CancellationToken ct)
     {

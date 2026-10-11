@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿#nullable enable annotations
+using System.Diagnostics.CodeAnalysis;
 using BLL.Interfaces.Analytics;
 using BLL.Authorization;
 using BLL.Models;
