@@ -144,3 +144,66 @@ fault injection is controlled test behavior, not a claimed real SQL outage.
 Its queue cleanup is limited to freshly generated loopback test queue names.
 Two independent-connection SQL duplicate/read concurrency cases use the shared
 strictly named migrated disposable DB helper. Their runtime results await CI.
+
+## Real backend/container CI and native Windows SQL — 2026-10-12 UTC
+
+At `4c4b036107366eab75a22746fa4b1fcbb34a9f39`, backend run
+38185880610/job114607973105 passed **769/769, zero skipped**, including actual
+SQL Server and RabbitMQ delivery/TTL/DLQ cases. Container run38185880615/
+job114607973166 passed all five built images, migrations and HTTPS/private
+API/hub/SMTP/readiness checks; these images were tested, not published.
+Frontend run38185880597 passed audit/contract generation/lint/types/69unit/build,
+but failed both existing desktop/mobile reduced-motion checks (5 running
+animations); stronger animation diagnostics are being collected. This is not
+an accepted final frontend gate.
+
+The owner confirmed the machine has SQL Server and authorized an independent
+database. Windows integrated authentication to `tcp:127.0.0.1,1433` succeeded
+as the current user; no SA password was needed. Created and retained only
+`TaskManager_Codex_20261012`; `dotnet ef database update --project DAL
+--startup-project DAL --configuration Release --no-build` applied all8migrations.
+Ignored `.local/native-sql.json` records its connection for local full-stack work.
+Existing databases were not targeted. Real SQL tests create/remove their own
+strictly named disposable databases: **10PASS/0FAIL/0SKIP,26s**, including
+migrations, task/team lifecycle, AI commit and notification races. Command:
+`TASKMANAGER_TEST_SQL_SERVER='Server=tcp:127.0.0.1,1433;Database=master;
+Integrated Security=True;Encrypt=True;TrustServerCertificate=True;Connect Timeout=5'`
+then `dotnet test Tests/Tests.csproj --configuration Release --no-build
+--no-restore --filter 'FullyQualifiedName~SqlServer|FullyQualifiedName~LegacyAccountMigrationTests'
+--logger 'trx;LogFileName=native-sql.trx' --results-directory TestResults/native-sql`.
+Actual TRX is ignored under that directory. This native gate does not claim a
+local RabbitMQ or cloud deployment.
+
+## Frontend implementation and local verification
+
+Generated strict Zod contracts drive the Ukrainian inbox and current visible
+unread badge. Server paging/filter/read state, fresh CSRF bodyless PUT, actual
+SignalR SDK with bounded start/reconnect, GUID hint dedup and canonical refetch
+are implemented. Scope generations erase private rows/counts and ignore late
+HTTP/socket results after logout, identity/team/role changes or revocation.
+Cached503/offline/empty/current permission states remain distinct.
+
+Rendered review reproduced insufficient connected-status contrast4.499802056:1;
+darkened its scoped muted text with unchanged4.5:1 threshold. The post403 enabled
+reconnect action initially made no canonical HTTP request; valid unitRED reached
+expected4/actual3 GETs. HTTP-first current-generation access verification now
+keeps hints blocked until a valid current response;18focusedcases and the actual
+browser denied/pending/recovered phases PASS. Workflows unit fixture explicitly
+mocks the new browser SDK and canonical empty inbox; original assertions remain.
+
+Root final local gates: **87unitPASS/9files**, coverage **92.57% lines773/835,
+75.5% branches1002/1327**, full lint/types/build and canonical generatorPASS.
+All **52Chrome desktop/mobile casesPASS/0skip/0flaky**,79.406s,start
+2026-10-12T07:41:02.584Z; prior focused14run is recorded in inbox-report.json.
+Tests use real rendered production assets/SDK but synthetic HTTP/WS fixtures,
+not full-stack Identity/SQL/broker/cloud evidence. Source diagnostics now report
+animation targets/timing/keyframes on any remaining real CI reduced-motion
+failure; duration/count thresholds and timeouts/retries stay unchanged.
+Production assets index-sWunKlXE.css/index-6hFWS4eX.js. Vite's existing500KB
+chunk-size warning is nonblocking and not suppressed.11new reviewed screenshots
+and ECC evidence-check result are in ui-evidence/INBOX-README.md/inbox-report.json;
+previous accepted screenshot sets are preserved as historical evidence.
+
+Next: push this frontend checkpoint and require final-head backend/frontend/
+container CI before accepting26. Then implement27 and actualfull-stack28;
+native SQL availability now removes the previous local SQL blocker.

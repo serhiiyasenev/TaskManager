@@ -64,9 +64,14 @@ test('long-content dashboard, visible keyboard focus, responsive layout and redu
     const durations = Array.from(document.querySelectorAll('*')).flatMap(element => {
       const style = getComputedStyle(element); return [...seconds(style.animationDuration), ...seconds(style.transitionDuration)];
     });
-    return { maximumSeconds: Math.max(...durations), running: document.getAnimations().filter(animation => animation.playState === 'running').length };
+    const running = document.getAnimations().filter(animation => animation.playState === 'running');
+    return { maximumSeconds: Math.max(...durations), running: running.length, animations: running.map(animation => {
+      const effect = animation.effect as KeyframeEffect | null;
+      return { type: animation.constructor.name, currentTime: animation.currentTime,
+        target: effect?.target?.outerHTML.slice(0, 240), timing: effect?.getComputedTiming(), keyframes: effect?.getKeyframes() };
+    }) };
   });
-  expect(motion.maximumSeconds).toBeLessThanOrEqual(.01); expect(motion.running).toBe(0);
+  expect(motion.maximumSeconds).toBeLessThanOrEqual(.01); expect(motion.running, JSON.stringify(motion.animations)).toBe(0);
   await noDocumentOverflow(page); await statusContrast(page);
 });
 

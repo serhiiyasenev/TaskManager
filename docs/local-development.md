@@ -93,11 +93,42 @@ then copies only `dist` into the ASP.NET gateway. Node and npm are not in the we
 runtime image. Its build runs locked `npm ci --ignore-scripts`, audit and the real
 TypeScript/Vite build; environment files/certificates remain excluded.
 
-The local database uses `sa` for development. Production must use separate runtime
-and migration identities with scoped SQL permissions. Notifier's current root
-probe verifies HTTP availability; authenticated hub routing, durable inbox and
-separate dependency readiness are later product steps. Neither probe nor a green
-container proves end-to-end notification delivery.
+The container database uses `sa` for development. Production must use separate
+runtime and migration identities with scoped SQL permissions. Notifier's
+`/health/ready` checks SQL and its configured broker; `/health/live` checks the
+process. Neither probe nor a green container proves end-to-end notification
+delivery. See [durable inbox and delivery](notifications.md).
+
+## Existing Windows SQL Server
+
+An existing local SQL Server can be used without the SQL container. Create a
+separate database for this product and run migrations only against that database.
+For example, with Windows authentication on a loopback server:
+
+```powershell
+$env:ConnectionStrings__DbConnection = 'Server=tcp:127.0.0.1,1433;Database=TaskManager_Local;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;Connect Timeout=5'
+dotnet ef database update --project DAL --startup-project DAL --configuration Release
+```
+
+Use a database name you own; EF creates that database if the Windows account has
+permission. `TrustServerCertificate=True` is for this local development server.
+Keep connection configuration in ignored `.local/` files or process environment.
+The HTTPS gateway, email sink and broker are still separate requirements for a
+complete browser demo.
+
+Real SQL regression tests create and delete only fresh databases with guarded
+test prefixes; they never borrow the product database:
+
+```powershell
+$env:TASKMANAGER_TEST_SQL_SERVER = 'Server=tcp:127.0.0.1,1433;Database=master;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;Connect Timeout=5'
+dotnet test Tests/Tests.csproj --configuration Release --filter 'FullyQualifiedName~SqlServer|FullyQualifiedName~LegacyAccountMigrationTests' --logger 'trx;LogFileName=native-sql.trx' --results-directory TestResults/native-sql
+```
+
+This requires create/drop permission for those disposable test databases. It does
+not enable the opt-in real RabbitMQ test. On 2026-10-12 the owner-authorized
+`TaskManager_Codex_20261012` database received all eight migrations, and the above
+native Windows SQL gate passed 10 tests with zero skips. The product database is
+retained; temporary test databases are removed by their fixtures.
 
 ## Verification status
 

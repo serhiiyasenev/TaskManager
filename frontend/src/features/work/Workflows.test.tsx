@@ -8,8 +8,20 @@ import { TaskDetailPage, TaskFormPage, TasksPage } from './TasksPages';
 import { ProjectDetailPage, ProjectFormPage, ProjectsPage } from './ProjectsPages';
 import { DashboardPage } from './DashboardPage';
 import { App } from '../../App';
+import { NotificationInboxPageSchema } from '../../lib/generated/notifications';
 
 vi.mock('../../lib/api', async original => ({ ...await original<typeof import('../../lib/api')>(), request: vi.fn() }));
+// This workflow suite checks the actual App shell; its isolated DOM has no
+// SignalR server. Protocol/reconnect behavior is covered by the inbox suites.
+vi.mock('@microsoft/signalr', () => ({
+  LogLevel: { None: 6 },
+  HubConnectionBuilder: class {
+    withUrl() { return this; }
+    withAutomaticReconnect() { return this; }
+    configureLogging() { return this; }
+    build() { return { start: async () => {}, stop: async () => {}, on() {}, off() {}, onreconnecting() {}, onreconnected() {}, onclose() {} }; }
+  },
+}));
 const member = { id: 1, userName: 'olena', email: 'olena@example.test', teamId: 1, firstName: 'Олена', lastName: 'Коваль', birthDay: '1990-01-01T00:00:00Z', registeredAt: '2026-10-01T00:00:00Z' };
 const session = { user: { ...member, emailConfirmed: true, roles: [] }, status: 'authenticated', refresh: vi.fn(), login: vi.fn(), logout: vi.fn() };
 vi.mock('../../lib/session', () => ({ useSession: () => session }));
@@ -25,6 +37,7 @@ beforeEach(() => {
   vi.mocked(request).mockReset(); session.user = { ...member, emailConfirmed: true, roles: [] }; session.status = 'authenticated';
   vi.mocked(request).mockImplementation(async (path, _schema, options) => {
     if (options?.method === 'DELETE') return undefined;
+    if (path.startsWith('/api/notifications?')) return NotificationInboxPageSchema.parse({ items: [], page: 1, pageSize: 20, totalCount: 0, unreadCount: 0 });
     if (path === '/api/projects') return options?.method ? project : [project];
     if (path.startsWith('/api/projects/')) return project;
     if (path === '/api/teams') return [team];

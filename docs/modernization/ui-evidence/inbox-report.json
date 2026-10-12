@@ -1,0 +1,53 @@
+{
+  "contract": "Roadmap step 26, docs/modernization/ui-contract.md and contracts/notifications.openapi.json: private canonical inbox, global visible counts, explicit read action and authenticated ID-only realtime hints.",
+  "targetViewports": ["1440x900", "390x844"],
+  "scope": "Actual production-built React App and Microsoft SignalR browser SDK in disposable installed Chrome contexts. HTTP, negotiation and WebSocket server responses are explicitly synthetic fixtures. This is rendered client evidence, not real API, Identity, SQL, broker or Azure E2E.",
+  "run": {
+    "startTimeUtc": "2026-10-12T07:38:12.409Z",
+    "durationMs": 40414.854,
+    "passed": 14, "failed": 0, "skipped": 0, "flaky": 0,
+    "browserChannel": "chrome", "timeZone": "Europe/Kyiv",
+    "command": "node node_modules/@playwright/test/cli.js test ui-inbox.spec.ts",
+    "workingDirectory": "frontend",
+    "builtAssets": ["index-sWunKlXE.css", "index-6hFWS4eX.js"]
+  },
+  "accessibility": {
+    "status": "pass",
+    "evidence": "Rendered form controls had accessible labels; measured visible button/control targets, including checkbox labels, met the 24px minimum. Keyboard Shift+Tab reached refresh with a solid outline of at least 2px; Enter performed the action. Measured kind badges, connection text and alert text met the unchanged 4.5:1 contrast threshold. This is scoped label, keyboard and status-text evidence, not a formal WCAG or assistive-technology audit."
+  },
+  "responsive": {
+    "status": "pass",
+    "evidence": "Both CSS viewports rendered long Ukrainian task and profile names. Measured document width stayed within viewport width. Screenshot inspection showed wrapping names/badges, desktop rows with separate read controls, and stacked mobile rows with visible filter and pagination controls."
+  },
+  "contentStates": {
+    "loading": { "status": "pass", "evidence": "A held canonical response displayed progress, unknown counts and disabled reload/filter controls without inventing empty results. Successful release rendered the actual fixture response." },
+    "empty": { "status": "pass", "evidence": "Canonical zero counts displayed an honest empty inbox, a task link and an independent connected state. No connection failure was presented as empty content." },
+    "error": { "status": "pass", "evidence": "Controlled HTTP 503 displayed safe Ukrainian text and a synthetic correlation identifier; explicit retry recovered. Four failed initial negotiations exhausted bounded start attempts; advancing the test clock did not create unbounded retries, and explicit reconnect succeeded." },
+    "partial": { "status": "pass", "evidence": "HTTP 503 after a successful load preserved earlier rows with a cache explanation and unknown current counts. A connected SDK remained distinguishable from an unavailable canonical HTTP response." },
+    "success": { "status": "pass", "evidence": "All four product kinds and canonical task/project links rendered. Double click produced one bodyless read PUT with a fresh CSRF request token, followed by canonical count refresh; unread paging used the global unread count. The actual SDK handled the synthetic protocol handshake, rejected invalid hint payloads, deduplicated repeated IDs and refetched missed rows after reconnect. Browser localStorage and sessionStorage stayed empty." },
+    "permission": { "status": "pass", "evidence": "Controlled HTTP 403 cleared private rows/counts, stopped the socket and refreshed identity. Clicking reconnect while still denied performed a fresh canonical request and did not start another connection. A held successful permission check kept rows hidden and reconnect disabled; only its valid current response allowed SDK restart and current rows. Logout cleared rows and closed the socket before the sign-in view." }
+  },
+  "renderedFindingsFixed": [
+    "Connected-state text measured 4.499802056:1 against its page background. The scoped muted connection color was darkened; the unchanged 4.5:1 assertion now passes.",
+    "After HTTP 403, the enabled reconnect action silently returned while live hints were blocked. A valid component RED reproduced the missing canonical request; the action now verifies current HTTP access before starting the SDK and keeps failure visible. The focused notification suite passed 18 cases, including pending and denied access verification."
+  ],
+  "limits": [
+    "Synthetic server responses do not prove authorization, CSRF validation, SQL persistence, idempotent server timestamps, RabbitMQ or Service Bus delivery, or Azure SignalR behavior. Those use separate backend/infrastructure gates and the later full-stack E2E stage.",
+    "Logout and 403 were exercised in this browser subset. Identity/team/role changes, ignored late HTTP/callbacks, HTTP 401 and read 404 are additionally covered by focused component tests.",
+    "The reduced-motion media preference was active in these contexts. This inbox subset did not assert that every animation had stopped; the shared baseline browser suite owns that stronger motion check.",
+    "Only installed Chrome and Ukrainian UI were exercised. English copy is prepared; English rendering and assistive-technology interaction were not audited."
+  ],
+  "renderedEvidence": [
+    { "viewport": "1440x900", "artifact": "inbox-screenshots/desktop-1440x900-inbox-keyboard-focus.png", "observation": "Visible keyboard focus on refresh; long title wraps within its row, beside an independent read control." },
+    { "viewport": "1440x900", "artifact": "inbox-screenshots/desktop-1440x900-inbox-read-filtered.png", "observation": "Unread page two retains global available/unread counts and the current navigation badge." },
+    { "viewport": "390x844", "artifact": "inbox-screenshots/mobile-390x844-inbox-long-list.png", "observation": "Long synthetic task and profile names wrap within a narrow page; rows and read actions stack vertically." },
+    { "viewport": "390x844", "artifact": "inbox-screenshots/mobile-390x844-inbox-loading.png", "observation": "Held canonical request displays loading and unknown counts without an invented empty list." },
+    { "viewport": "390x844", "artifact": "inbox-screenshots/mobile-390x844-inbox-empty.png", "observation": "Honest empty inbox remains distinct from the live connection status." },
+    { "viewport": "390x844", "artifact": "inbox-screenshots/mobile-390x844-inbox-partial-error.png", "observation": "A safe outage message and cache explanation accompany an earlier successful row; current counts are unknown." },
+    { "viewport": "390x844", "artifact": "inbox-screenshots/mobile-390x844-inbox-permission.png", "observation": "Revoked access clears private rows and unread badge while presenting a safe retry path." },
+    { "viewport": "390x844", "artifact": "inbox-screenshots/mobile-390x844-inbox-permission-recovered.png", "observation": "Successful canonical permission verification restores current rows and the live connection." },
+    { "viewport": "390x844", "artifact": "inbox-screenshots/mobile-390x844-inbox-reconnected.png", "observation": "A missed synthetic notification is visible after an actual SDK reconnection and canonical refetch." },
+    { "viewport": "390x844", "artifact": "inbox-screenshots/mobile-390x844-inbox-offline.png", "observation": "Exhausted initial live-connection attempts leave the HTTP inbox usable with an explicit reconnect action." },
+    { "viewport": "390x844", "artifact": "inbox-screenshots/mobile-390x844-inbox-logout.png", "observation": "Sign-in view replaces the private workspace after logout." }
+  ]
+}

@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test';
+import { NotificationInboxPageSchema } from '../src/lib/generated/notifications';
 
 // Rendered UI evidence only: these are deliberately invented actors/data.
 // This fixture does not validate SQL, server authorization or Identity cookies.
@@ -54,6 +55,9 @@ export async function syntheticApi(page: Page, options: SyntheticOptions = {}) {
     if (path === '/api/auth/logout') { authenticated = false; return route.fulfill({ status: 204 }); }
     if (path.startsWith('/api/auth/')) return json(route, { message: 'Synthetic account action completed.' }, 202);
     if (!authenticated) return problem(route, 401);
+    if (path === '/api/notifications' && method === 'GET') return json(route, NotificationInboxPageSchema.parse({
+      items: [], page: Number(url.searchParams.get('page') ?? 1), pageSize: Number(url.searchParams.get('pageSize') ?? 20), totalCount: 0, unreadCount: 0,
+    }));
     if (path === '/api/users/42') return json(route, member);
     if (path === '/api/tasks/page') {
       if (settings.holdTasks) await taskGate;
@@ -102,6 +106,22 @@ export async function syntheticApi(page: Page, options: SyntheticOptions = {}) {
     if (path === '/api/team-invitations/preview') return json(route, { teamName: team.name, expired: false });
     if (path === '/api/team-invitations/accept') return json(route, { teamId: 17 });
     return problem(route, 501, 'unhandled-synthetic-route');
+  });
+  // Quiet canonical baseline for screens whose assertions do not exercise the
+  // inbox. Inbox-specific fixtures registered later override these routes.
+  await page.route('**/chathub/negotiate**', route => authenticated ? json(route, {
+    negotiateVersion: 1, connectionId: 'synthetic-baseline', connectionToken: 'synthetic-baseline',
+    availableTransports: [{ transport: 'WebSockets', transferFormats: ['Text'] }],
+  }) : problem(route, 401));
+  await page.routeWebSocket(url => url.pathname === '/chathub', socket => {
+    socket.onMessage(message => {
+      const text = typeof message === 'string' ? message : message.toString('utf8');
+      for (const raw of text.split('\u001e').filter(Boolean)) {
+        const frame = JSON.parse(raw) as { protocol?: string; type?: number };
+        if (frame.protocol === 'json') socket.send('{}\u001e');
+        else if (frame.type === 6) socket.send('{"type":6}\u001e');
+      }
+    });
   });
   return { settings, captured, user, releaseTasks: () => { settings.holdTasks = false; releaseTasks(); } };
 }
