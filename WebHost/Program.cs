@@ -1,4 +1,5 @@
 using TaskManager.Hosting;
+using TaskManager.Hosting.Cloud;
 using Microsoft.AspNetCore.HostFiltering;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Yarp.ReverseProxy.Configuration;
@@ -11,6 +12,8 @@ public partial class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        builder.Logging.AddPrivateFrameworkLogging();
+        builder.Services.AddTaskManagerTelemetry(builder.Configuration);
         // Recovery/invitation query tokens must never enter request URL logs.
         builder.Logging.AddFilter("Microsoft.AspNetCore.Hosting", LogLevel.Warning);
         builder.Logging.AddFilter("Yarp.ReverseProxy", LogLevel.Warning);
@@ -19,7 +22,7 @@ public partial class Program
             services.GetRequiredService<IConfiguration>(), services.GetRequiredService<IHostEnvironment>()));
         builder.Services.AddTrustedProxyForwarding(builder.Configuration);
         builder.Services.AddOptions<HostFilteringOptions>().Configure<GatewayConfiguration>((options, gateway) =>
-            options.AllowedHosts = [gateway.PublicOrigin.IdnHost]);
+            options.AllowedHosts = gateway.AllowedOrigins.Select(origin => origin.IdnHost).ToArray());
         builder.Services.AddOptions<HttpsRedirectionOptions>().Configure<GatewayConfiguration>((options, gateway) =>
             options.HttpsPort = gateway.PublicOrigin.Port);
         builder.Services.AddReverseProxy();

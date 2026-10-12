@@ -2,6 +2,7 @@ using Notifier;
 
 using Notifier.Authentication;
 using TaskManager.Hosting;
+using TaskManager.Hosting.Cloud;
 using BLL.Configuration;
 using BLL.Interfaces;
 using BLL.Services.Notifications;
@@ -10,6 +11,8 @@ using Microsoft.Extensions.Options;
 using Notifier.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddPrivateFrameworkLogging();
+builder.Services.AddTaskManagerTelemetry(builder.Configuration);
 builder.Services.AddTrustedProxyForwarding(builder.Configuration);
 // HTTP request-start logs include query strings; keep credentials out of them.
 builder.Logging.AddFilter("Microsoft.AspNetCore.Hosting", LogLevel.Warning);

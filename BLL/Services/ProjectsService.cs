@@ -35,7 +35,7 @@ public class ProjectsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving projects");
+            logger.LogError("Error retrieving projects ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -60,7 +60,7 @@ public class ProjectsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving project {ProjectId}", id);
+            logger.LogError("Error retrieving project {ProjectId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -97,12 +97,12 @@ public class ProjectsService(
             await projects.AddAsync(project, ct);
             await uow.SaveChangesAsync(ct);
             
-            logger.LogInformation("Project created: {ProjectId} - {ProjectName}", project.Id, project.Name);
+            logger.LogInformation("Project created: {ProjectId}", project.Id);
             return Result<Project>.Success(project);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error creating project {ProjectName}", project.Name);
+            logger.LogError("Error creating project ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -152,12 +152,12 @@ public class ProjectsService(
             projects.Update(entity);
             await uow.SaveChangesAsync(ct);
             
-            logger.LogInformation("Project updated: {ProjectId} - {ProjectName}", id, entity.Name);
+            logger.LogInformation("Project updated: {ProjectId}", id);
             return Result<Project>.Success(entity);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating project {ProjectId}", id);
+            logger.LogError("Error updating project {ProjectId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -185,7 +185,7 @@ public class ProjectsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deleting project {ProjectId}", id);
+            logger.LogError("Error deleting project {ProjectId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }

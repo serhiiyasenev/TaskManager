@@ -1,0 +1,14 @@
+{
+  "description": "Discovery worksheet only. Replace every marker with a current exact Retail API meter and measured or explicitly assumed monthly quantities. Include all 13 service categories documented in the runbook; incomplete estimates fail.",
+  "lines": [
+    {
+      "service": "ContainerApps",
+      "armRegionName": "REQUIRED_ACTUAL_METER_REGION",
+      "meterId": "REQUIRED_ACTUAL_RETAIL_METER_GUID",
+      "expectedUnitOfMeasure": "REQUIRED_ACTUAL_METER_UNIT",
+      "quantity": 0,
+      "quantityFormula": "REQUIRED_EXPLICIT_FORMULA_IN_ACTUAL_METER_UNITS",
+      "sharedResource": false
+    }
+  ]
+}

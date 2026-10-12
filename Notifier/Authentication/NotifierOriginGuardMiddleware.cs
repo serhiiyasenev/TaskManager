@@ -3,7 +3,7 @@ namespace Notifier.Authentication;
 public sealed class NotifierOriginGuardMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly Uri _publicOrigin;
+    private readonly IReadOnlyList<Uri> _allowedOrigins;
 
     public NotifierOriginGuardMiddleware(RequestDelegate next, IConfiguration configuration, IHostEnvironment environment)
     {
@@ -17,7 +17,7 @@ public sealed class NotifierOriginGuardMiddleware
             !string.IsNullOrEmpty(origin.Fragment) || origin.AbsolutePath != "/" ||
             (origin.Scheme != Uri.UriSchemeHttps && !(development && origin.Scheme == Uri.UriSchemeHttp && origin.IsLoopback)))
             throw new InvalidOperationException("Notifier BrowserAuth:PublicOrigin must be an HTTPS origin without path, credentials, query or fragment.");
-        _publicOrigin = origin;
+        _allowedOrigins = TaskManager.Hosting.AllowedBrowserOrigins.Read(configuration, development);
     }
 
     public Task InvokeAsync(HttpContext context)
@@ -29,7 +29,7 @@ public sealed class NotifierOriginGuardMiddleware
             if (values.Count != 1 || !Uri.TryCreate(values[0], UriKind.Absolute, out var origin) ||
                 !string.IsNullOrEmpty(origin.UserInfo) || !string.IsNullOrEmpty(origin.Query) ||
                 !string.IsNullOrEmpty(origin.Fragment) || origin.AbsolutePath != "/" ||
-                !string.Equals(origin.GetLeftPart(UriPartial.Authority), _publicOrigin.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase))
+                !_allowedOrigins.Any(allowed => string.Equals(origin.GetLeftPart(UriPartial.Authority), allowed.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase)))
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 return Task.CompletedTask;

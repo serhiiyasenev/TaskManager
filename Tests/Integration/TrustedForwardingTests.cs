@@ -66,6 +66,34 @@ public class TrustedForwardingTests
     }
 
     [Fact]
+    public async Task AzureInternalIngress_ConsumesGatewayThenCanonicalClient_WithSingleProtoAndHost()
+    {
+        using var server = CreateServer("10.77.25.42", configuration => configuration["ProxyTrust:ForwardLimit"] = "2");
+        using var request = ForwardedRequest();
+        request.Headers.Remove("X-Forwarded-For");
+        // YARP replaced client-supplied forwarding data; internal ACA ingress
+        // appended the real gateway. ACA overwrites protocol to a single value.
+        request.Headers.Add("X-Forwarded-For", "203.0.113.19, 10.77.25.43");
+        using var response = await server.GetTestClient().SendAsync(request);
+        var observed = await response.Content.ReadFromJsonAsync<ObservedRequest>();
+        Assert.Equal("203.0.113.19", observed!.ClientAddress);
+        Assert.Equal("https", observed.Scheme);
+        Assert.Equal("taskmanager.example.test:7151", observed.Host);
+    }
+
+    [Fact]
+    public async Task TwoHopTrust_StopsAtUntrustedGatewayAndNeverConsumesForgedLeftmostAddress()
+    {
+        using var server = CreateServer("10.77.25.42", configuration => configuration["ProxyTrust:ForwardLimit"] = "2");
+        using var request = ForwardedRequest();
+        request.Headers.Remove("X-Forwarded-For");
+        request.Headers.Add("X-Forwarded-For", "198.51.100.88, 203.0.113.19");
+        using var response = await server.GetTestClient().SendAsync(request);
+        var observed = await response.Content.ReadFromJsonAsync<ObservedRequest>();
+        Assert.Equal("203.0.113.19", observed!.ClientAddress);
+    }
+
+    [Fact]
     public async Task LateConfigurationProvider_UpdatesProxyAndPublicHostBeforeStartup()
     {
         using var server = CreateServer("10.77.26.10", configuration =>
@@ -89,6 +117,10 @@ public class TrustedForwardingTests
     [InlineData("ProxyTrust:KnownNetworks:0", "10.77.24.0/33")]
     [InlineData("ProxyTrust:AllowedHosts:0", "*")]
     [InlineData("ProxyTrust:AllowedHosts:0", "https://attacker.example.test/")]
+    [InlineData("ProxyTrust:ForwardLimit", "0")]
+    [InlineData("ProxyTrust:ForwardLimit", "3")]
+    [InlineData("ProxyTrust:ForwardLimit", "-1")]
+    [InlineData("ProxyTrust:ForwardLimit", "unlimited")]
     public void InvalidOrUnboundedTrust_FailsDuringRegistration(string key, string value)
     {
         var settings = Settings();

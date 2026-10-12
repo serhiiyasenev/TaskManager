@@ -20,7 +20,10 @@ public static class TrustedProxyExtensions
         {
             var trust = ReadTrust(configuration);
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
-            options.ForwardLimit = 1;
+            options.ForwardLimit = trust.ForwardLimit;
+            // ACA appends XFF but overwrites XFP. Only known peers may supply
+            // these asymmetric lists; the configured one/two-hop limit applies.
+            options.RequireHeaderSymmetry = false;
             // Preserve framework loopback defaults. Empty trust collections accept every peer.
             foreach (var proxy in trust.Proxies) options.KnownProxies.Add(proxy);
             foreach (var network in trust.Networks) options.KnownIPNetworks.Add(network);
@@ -45,7 +48,13 @@ public static class TrustedProxyExtensions
                 throw new InvalidOperationException("ProxyTrust requires a valid BrowserAuth:PublicOrigin.");
             allowedHosts = [origin.HostNameType == UriHostNameType.IPv6 ? $"[{origin.IdnHost.Trim('[', ']')}]" : origin.IdnHost];
         }
-        return new TrustSettings(proxies, networks, allowedHosts);
+        var configuredLimit = configuration["ProxyTrust:ForwardLimit"];
+        var forwardLimit = 1;
+        if (configuredLimit is not null && (!int.TryParse(configuredLimit,
+            System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture,
+            out forwardLimit) || forwardLimit is < 1 or > 2))
+            throw new InvalidOperationException("ProxyTrust:ForwardLimit must be one or two explicitly trusted hops.");
+        return new TrustSettings(proxies, networks, allowedHosts, forwardLimit);
     }
 
     private static IPAddress ParseProxy(string? value)
@@ -72,5 +81,5 @@ public static class TrustedProxyExtensions
         return value;
     }
 
-    private sealed record TrustSettings(IPAddress[] Proxies, System.Net.IPNetwork[] Networks, string[] AllowedHosts);
+    private sealed record TrustSettings(IPAddress[] Proxies, System.Net.IPNetwork[] Networks, string[] AllowedHosts, int ForwardLimit);
 }

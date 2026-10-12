@@ -1,8 +1,8 @@
 using BLL;
 using DAL.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using TaskManager.Hosting.Cloud;
 
 namespace Notifier.Authentication;
 
@@ -14,11 +14,7 @@ public static class NotifierAuthenticationExtensions
     {
         services.AddRepositories(configuration);
         services.AddUserIdentityService(configuration);
-        var protection = services.AddDataProtection().SetApplicationName("TaskManager");
-        var keyRingPath = configuration["DataProtection:KeyRingPath"];
-        if (!string.IsNullOrWhiteSpace(keyRingPath)) protection.PersistKeysToFileSystem(new DirectoryInfo(keyRingPath));
-        else if (!environment.IsDevelopment() && !environment.IsEnvironment("Testing"))
-            throw new InvalidOperationException("Notifier requires a persistent DataProtection:KeyRingPath in production.");
+        services.AddTaskManagerDataProtection(configuration, environment);
         var authentication = services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = Scheme;

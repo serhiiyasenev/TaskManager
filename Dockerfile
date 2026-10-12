@@ -23,10 +23,12 @@ COPY Notifier/Notifier.csproj Notifier/packages.lock.json Notifier/
 COPY Client/Client.csproj Client/packages.lock.json Client/
 COPY Hosting/Hosting.csproj Hosting/packages.lock.json Hosting/
 COPY WebHost/WebHost.csproj WebHost/packages.lock.json WebHost/
+COPY tools/TaskManager.SqlBootstrap/TaskManager.SqlBootstrap.csproj tools/TaskManager.SqlBootstrap/packages.lock.json tools/TaskManager.SqlBootstrap/
 RUN dotnet restore WebAPI/WebAPI.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904 \
     && dotnet restore Notifier/Notifier.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904 \
     && dotnet restore Client/Client.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904 \
-    && dotnet restore WebHost/WebHost.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
+    && dotnet restore WebHost/WebHost.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904 \
+    && dotnet restore tools/TaskManager.SqlBootstrap/TaskManager.SqlBootstrap.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
 COPY DAL/ DAL/
 COPY BLL/ BLL/
 COPY WebAPI/ WebAPI/
@@ -34,6 +36,7 @@ COPY Notifier/ Notifier/
 COPY Client/ Client/
 COPY Hosting/ Hosting/
 COPY WebHost/ WebHost/
+COPY tools/TaskManager.SqlBootstrap/ tools/TaskManager.SqlBootstrap/
 
 FROM build AS publish-web
 RUN dotnet publish WebHost/WebHost.csproj --configuration Release --no-restore \
@@ -50,6 +53,10 @@ RUN dotnet publish Notifier/Notifier.csproj --configuration Release --no-restore
 FROM build AS publish-client
 RUN dotnet publish Client/Client.csproj --configuration Release --no-restore \
     --output /out/client -p:UseAppHost=false -warnaserror:NU1901,NU1902,NU1903,NU1904
+
+FROM build AS publish-sql-bootstrap
+RUN dotnet publish tools/TaskManager.SqlBootstrap/TaskManager.SqlBootstrap.csproj --configuration Release --no-restore \
+    --output /out/sql-bootstrap -p:UseAppHost=false -warnaserror:NU1901,NU1902,NU1903,NU1904
 
 FROM build AS publish-migrations
 RUN dotnet tool restore
@@ -90,6 +97,10 @@ ENTRYPOINT ["dotnet", "Notifier.dll"]
 FROM aspnet-base AS migrations
 COPY --from=publish-migrations --chown=app:app /out/efbundle ./efbundle
 ENTRYPOINT ["./efbundle"]
+
+FROM aspnet-base AS sql-bootstrap
+COPY --from=publish-sql-bootstrap --chown=app:app /out/sql-bootstrap/ ./
+ENTRYPOINT ["dotnet", "TaskManager.SqlBootstrap.dll"]
 
 FROM ${RUNTIME_IMAGE} AS client
 WORKDIR /app

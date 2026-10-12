@@ -100,6 +100,17 @@ try {
     foreach ($imageName in @('api', 'notifier', 'migrations', 'client', 'web')) {
         Assert-ContainerSmokeImage -Image "taskmanager-${imageName}:$imageTag"
     }
+    # The privileged Azure bootstrap tool is separate from application/migrator
+    # images. Verify its actual Linux artifact without granting any credentials.
+    & docker build --target sql-bootstrap --tag "taskmanager-sql-bootstrap:$imageTag" $repositoryPath
+    if ($LASTEXITCODE -ne 0) { throw 'SQL bootstrap image build failed.' }
+    Assert-ContainerSmokeImage -Image "taskmanager-sql-bootstrap:$imageTag"
+    $bootstrapFailure = & docker run --rm --read-only --network none --cap-drop ALL --security-opt no-new-privileges `
+        "taskmanager-sql-bootstrap:$imageTag" 2>&1
+    if ($LASTEXITCODE -ne 1 -or "$bootstrapFailure" -notmatch 'TaskManager SQL bootstrap failed; no success or principal rewrite is assumed.') {
+        throw 'Unconfigured SQL bootstrap must fail closed without network access.'
+    }
+    Write-Host 'PASS SQL bootstrap image fails closed without credentials/network'
 
     $composeStarted = $true
     # Mailpit is explicit because it is not a Compose dependency of the API.

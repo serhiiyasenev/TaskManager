@@ -64,9 +64,96 @@ revisions, actual smoke, traffic, explicit rollback/forward-repair/restore.
 SQL/keyring/provider content, auth/query/cookies/notes never enter telemetry.
 No fabricated free cost, model quota, AzureURL or deployed revision evidence.
 
+## Implementation checkpoints (2026-10-12)
+
+Three disjoint agents implemented infra, runtime SDK adapters, and release scripts.
+Root integrated dependency locks, origins/proxies/probes, SQL bootstrap and console
+privacy. Shared C# builds run only while all agent C# writes are frozen.
+
+- Compiled runtime/proxy/SQL RED: 81 tests, 62 failed / 19 passed, no skips.
+- First checkpoint: 116 tests, 109 passed / 7 failed. Six failures demonstrated
+  missing ACS/provider/origin integration; one RSA SDK fixture lifetime defect
+  was corrected without weakening production assertions.
+- Telemetry and application-log RED: 131 tests, 117 passed / 14 failed, no skips.
+  Twelve telemetry stubs and two private task-log regressions were demonstrated.
+- Latest checkpoint: 131 tests, 128 passed / 3 failed, no skips (17 seconds).
+  Native DP Blob/Key Vault round trips, ACS completed-send behavior, cookie/CSRF
+  candidate origins, strict Azure SQL/JWT configuration and real restricted SQL
+  migration/permissions passed. Deferred telemetry instrumentation registration
+  failed; two exporter fixtures inherited an unsampled ambient test parent.
+  Registration is now before provider creation; fixtures explicitly establish
+  sampling. The independent incoming-parent trace-budget assertion is unchanged.
+
+The SQL bootstrap tool prepares three contained principals without Graph lookup,
+then grants only migration DDL and per-table runtime permissions after all eight
+migrations. Native SQL tests execute all forward migrations as the restricted
+migrator and exercise real allowed/denied runtime writes. Disposable test DBs are
+distinct from preserved TaskManager_Codex_20261012. Current SQL CREATE USER docs
+specify the managed identity client ID for SID; older general guidance differs.
+Actual Azure managed-identity connection remains a live gate, not an offline claim.
+
+Root added a sixth non-root SQL-bootstrap image target and fail-closed smoke case
+to the existing container CI. Docker is absent locally; actual image verification
+is pending CI. Existing five deployment units remain web/API/notifier/migrations/
+sql-bootstrap; the legacy console image is local/compatibility only.
+
+All three Bicep entrypoints and modules compiled with zero diagnostics. Read-only
+review caught an incorrect Service Bus receiver role GUID despite valid Bicep;
+the delivery agent is correcting it against the official built-in role catalog.
+PowerShell boundary fixtures reached 18 passed; final release integration review
+is pending. Compilation/fixtures do not stand in for ARM validation or what-if.
+
+Business logs now omit task/project/team names, email addresses and raw provider
+exceptions. A remaining concrete EF Update / SqlClient automatic-console leak
+is being fixed in both ILogger and the separate native Serilog pipeline, with
+regressions asserting that safe application failure-type messages still survive.
+
+Candidate smoke uses the actual ARM latestRevisionFqdn, checked against the
+declared revision suffix/environment domain. Candidate labels map revisions;
+no label URL is fabricated. Preserve existing production traffic until smoke,
+deactivate candidate workers on rollback, preserve shared resources and old DP
+wrapping versions. No Azure calls, spending, model quality or live URLs claimed.
+
+Full native SQL checkpoint: 857 total, 854 passed / 2 failed / 1 explicit local
+RabbitMQ skip, 39 seconds. Telemetry now passes: the native Azure exporter caches
+transmitters by connection string, so independent SDK fixtures require distinct
+synthetic instrumentation keys. Original wire/privacy assertions are unchanged.
+The two remaining regressions are compatibility of the fixed bad-password log
+wording and native OptionsValidationException for an unsupported DP provider.
+Coverage at this checkpoint: 88.9% lines (5249/5904), 74.16% branches (2782/3751).
+Locked restore and full Release build passed with two existing xUnit bool-assert
+warnings; no new warnings, gates, coverage exclusions or analyzers were disabled.
+Offline Bicep compile/contract gate passed for foundation/jobs/apps. Release
+promotion now requires exact-revision authenticated evidence beyond anonymous
+guards; actual live SDK/SQL/mail/model evidence remains pending real inputs.
+
 ## Next action
 
-Root releases disjoint implementation after canonical infra/script inputs are
-agreed. Run valid runtime/proxy/SQLpermissions RED before behavior fixes, compile
-actual Bicep locally and in Linux CI, and keep cloud validation/what-if/live
-gates explicitly pending actual parameters. Continue full-stack28 on native SQL.
+Final native SQL backend gate: 856 passed / 0 failed / 1 explicit local RabbitMQ
+skip (857 total, 44 seconds). All eight forward migrations, restricted runtime
+SQL grants, privacy, native Azure SDK fixtures and existing compatibility tests
+passed. Full dependency audit found no vulnerable direct/transitive packages.
+Final local coverage: 88.91% lines (5252/5907), 74.08% branches (2782/3755).
+Final review then found two bootstrap gaps: certificate identity overrides and
+pre-existing excessive role permissions. Three direct regressions failed before
+the fix. Bootstrap now rejects certificate overrides and verifies effective
+database/object/column authority against the workload allowlists, including
+inherited db_datawriter rights; unexpected role ownership also fails closed.
+It does not revoke or rewrite existing principals. All 13 bootstrap tests passed
+on native SQL after repair, including narrow valid permissions/real migrations.
+An additional concrete native logging override regression failed, then both
+ILogger/Serilog privacy tests passed after final-options suppression was applied.
+
+Final offline delivery checks: 26 PowerShell behavior fixtures passed; native
+compiled role positive case plus four corrupted GUID/scope cases passed. The
+approved notification role fixture is now enforced by the actual Bicep CI gate.
+All PowerShell ASTs and both workflow YAML actionlint checks passed. Cost report
+freshness/completeness and exact-revision authenticated evidence are mandatory
+before foundation/traffic authority. No offline result grants live promotion.
+The only local skip requires an actual RabbitMQ instance; real broker CI remains
+mandatory. Unsupported providers now use native options validation; the old host
+exception contract and all malformed URI/client-ID assertions are preserved.
+
+Finish release-script review and actual CI, then continue full-stack28. Azure live
+validation/what-if/deployment/evaluation require real identity, approved resource
+parameters, sender, model/quota and budget after all unblocked work is ready.

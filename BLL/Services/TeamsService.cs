@@ -36,7 +36,7 @@ public class TeamsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving teams");
+            logger.LogError("Error retrieving teams ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -64,7 +64,7 @@ public class TeamsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving team {TeamId}", id);
+            logger.LogError("Error retrieving team {TeamId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -85,12 +85,12 @@ public class TeamsService(
             };
             await teams.AddAsync(team, ct);
             await uow.SaveChangesAsync(ct);
-            logger.LogInformation("Created team {TeamName} with ID {TeamId}", team.Name, team.Id);
+            logger.LogInformation("Created team {TeamId}", team.Id);
             return Result<Team>.Success(team);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error creating team {TeamName}", teamDto.Name);
+            logger.LogError("Error creating team ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -118,7 +118,7 @@ public class TeamsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating team {TeamId}", id);
+            logger.LogError("Error updating team {TeamId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -145,7 +145,7 @@ public class TeamsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deleting team {TeamId}", id);
+            logger.LogError("Error deleting team {TeamId} ({FailureType}).", id, ex.GetType().Name);
             return Error.BusinessRule("Cannot delete team due to existing dependencies");
         }
     }

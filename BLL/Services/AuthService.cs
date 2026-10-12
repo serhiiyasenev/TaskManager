@@ -35,7 +35,7 @@ public class AuthService(
         if (!result.Succeeded)
         {
             var errors = string.Join(" ", result.Errors.Select(e => e.Description));
-            logger.LogWarning("User registration failed for {Email}: {Errors}", model.Email, errors);
+            logger.LogWarning("User registration failed with {ErrorCount} validation errors.", result.Errors.Count());
             return errors;
         }
 
@@ -44,7 +44,7 @@ public class AuthService(
             var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
             await accountEmail.SendConfirmationAsync(user.Email!, user.Id.ToString(), token, ct);
         }
-        logger.LogInformation("User registered successfully: {Email}", model.Email);
+        logger.LogInformation("User registration completed.");
         return "User registered successfully.";
     }
 
@@ -53,7 +53,7 @@ public class AuthService(
         var user = await userManager.FindByEmailAsync(model.Email);
         if (user == null)
         {
-            logger.LogWarning("Login attempt for non-existent user: {Email}", model.Email);
+            logger.LogWarning("Login attempt could not resolve an account.");
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
@@ -61,26 +61,26 @@ public class AuthService(
 
         if (signIn.IsLockedOut)
         {
-            logger.LogWarning("Login attempt for locked out user: {Email}", model.Email);
+            logger.LogWarning("Login attempt rejected by lockout.");
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
         if (signIn.IsNotAllowed)
         {
-            logger.LogWarning("Login not allowed for user: {Email}", model.Email);
+            logger.LogWarning("Login attempt not allowed.");
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
         if (!signIn.Succeeded)
         {
-            logger.LogError("Incorrect password for user {Email}", model.Email);
+            logger.LogError("Incorrect password.");
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
         var roles = await userManager.GetRolesAsync(user);
         var token = GenerateJwtToken(user, roles);
 
-        logger.LogInformation("User logged in successfully: {Email}", model.Email);
+        logger.LogInformation("User login completed.");
         return new UserLoginInfoDto { Token = token, Id = user.Id };
     }
 
@@ -121,7 +121,7 @@ public class AuthService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error generating JWT token for user {UserId}", user.Id);
+            logger.LogError("JWT generation failed ({FailureType}).", ex.GetType().Name);
             throw;
         }
     }

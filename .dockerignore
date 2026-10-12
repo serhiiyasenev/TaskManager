@@ -17,6 +17,9 @@
 !Hosting/**
 !WebHost/
 !WebHost/**
+!tools/
+!tools/TaskManager.SqlBootstrap/
+!tools/TaskManager.SqlBootstrap/**
 !frontend/
 !frontend/**
 

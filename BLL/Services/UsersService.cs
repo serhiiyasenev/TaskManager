@@ -33,7 +33,7 @@ public class UsersService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving users");
+            logger.LogError("Error retrieving users ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -58,7 +58,7 @@ public class UsersService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving user {UserId}", id);
+            logger.LogError("Error retrieving user {UserId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -105,7 +105,7 @@ public class UsersService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating user {UserId}", id);
+            logger.LogError("Error updating user {UserId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -131,7 +131,7 @@ public class UsersService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deleting user {UserId}", id);
+            logger.LogError("Error deleting user {UserId} ({FailureType}).", id, ex.GetType().Name);
             return Error.BusinessRule("Cannot delete user due to existing dependencies");
         }
     }

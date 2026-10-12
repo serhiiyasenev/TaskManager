@@ -37,7 +37,8 @@ public static class DependencyInjection
             .AddJwtBearer(options =>
             {
                 var jwtKey = configuration["Jwt:Key"];
-                if (string.IsNullOrWhiteSpace(jwtKey))
+                if (string.IsNullOrWhiteSpace(jwtKey) ||
+                    jwtKey.TrimStart().StartsWith("@Microsoft.KeyVault", StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidOperationException("Jwt:Key must be configured through private configuration.");
                 }

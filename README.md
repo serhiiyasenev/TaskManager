@@ -31,6 +31,17 @@ worker adapters passed step26 at15aa4d3:769backend tests with real SQL/RabbitMQ,
 87frontend tests,52browser scenarios and five-image container verification.
 Azure provisioning and the full-stack acceptance gate follow the active roadmap.
 
+## Azure delivery
+
+The [Azure runbook](docs/azure-deployment.md) defines the three Bicep phases,
+five deployment identities, immutable images, SQL bootstrap/migration jobs,
+shared Blob/Key Vault cookie keys, provider permissions, protected GitHub OIDC,
+candidate smoke, explicit traffic promotion and worker-aware rollback.
+Scripts have offline Windows/Linux gates; actual validation, what-if, pricing
+and authenticated cloud verification require reviewed environment parameters.
+Local Windows SQL verification preserves `TaskManager_Codex_20261012` and creates
+separate disposable test databases. Azure has not been deployed from this chat.
+
 ## Private notification history
 
 Open **Сповіщення** to read your current task notifications, filter unread items

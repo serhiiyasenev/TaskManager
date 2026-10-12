@@ -1,10 +1,12 @@
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Forwarder;
+using TaskManager.Hosting;
 
 namespace TaskManager.WebHost;
 
 internal sealed record GatewayConfiguration(Uri PublicOrigin, Uri ApiDestination, IReadOnlyList<RouteConfig> Routes, IReadOnlyList<ClusterConfig> Clusters)
 {
+    public IReadOnlyList<Uri> AllowedOrigins { get; init; } = [];
     public static GatewayConfiguration Read(IConfiguration configuration, IHostEnvironment environment)
     {
         var api = ReadDestination(configuration, environment, "Gateway:ApiDestination");
@@ -18,7 +20,8 @@ internal sealed record GatewayConfiguration(Uri PublicOrigin, Uri ApiDestination
 
         return new GatewayConfiguration(origin, api,
             [Route("api", "/api/{**remainder}"), Route("notifier", "/chathub/{**remainder}")],
-            [Cluster("api", api), Cluster("notifier", notifier)]);
+            [Cluster("api", api), Cluster("notifier", notifier)])
+            { AllowedOrigins = AllowedBrowserOrigins.Read(configuration, development) };
     }
 
     private static Uri ReadDestination(IConfiguration configuration, IHostEnvironment environment, string key)

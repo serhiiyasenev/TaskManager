@@ -23,6 +23,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{07C2787E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskExtraction.Evaluation", "tools\TaskExtraction.Evaluation\TaskExtraction.Evaluation.csproj", "{A22451E7-1DA5-4DDE-BA9A-7727ED457B2C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskManager.SqlBootstrap", "tools\TaskManager.SqlBootstrap\TaskManager.SqlBootstrap.csproj", "{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -141,12 +143,25 @@ Global
 		{A22451E7-1DA5-4DDE-BA9A-7727ED457B2C}.Release|x64.Build.0 = Release|Any CPU
 		{A22451E7-1DA5-4DDE-BA9A-7727ED457B2C}.Release|x86.ActiveCfg = Release|Any CPU
 		{A22451E7-1DA5-4DDE-BA9A-7727ED457B2C}.Release|x86.Build.0 = Release|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Debug|x64.Build.0 = Debug|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Debug|x86.Build.0 = Debug|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Release|x64.ActiveCfg = Release|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Release|x64.Build.0 = Release|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Release|x86.ActiveCfg = Release|Any CPU
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A22451E7-1DA5-4DDE-BA9A-7727ED457B2C} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
+		{B19CE94F-33F1-41EF-ACA4-4002D95E79AF} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C5208920-339E-4B6E-9DEE-A224B64207C8}

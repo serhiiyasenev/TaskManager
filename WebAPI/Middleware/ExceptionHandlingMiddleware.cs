@@ -15,7 +15,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         {
             if (context.Response.HasStarted) throw;
 
-            logger.LogError(ex, $"Unhandled exception. TraceId={context.TraceIdentifier}");
+            logger.LogError("Unhandled request failure ({FailureType}); TraceId={TraceId}.", ex.GetType().Name, context.TraceIdentifier);
 
             var problem = new ProblemDetails
             {

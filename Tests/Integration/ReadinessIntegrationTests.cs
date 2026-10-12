@@ -10,6 +10,29 @@ namespace Tests.Integration;
 
 public class ReadinessIntegrationTests
 {
+    [Theory]
+    [InlineData("/health/live")]
+    [InlineData("/health/ready")]
+    public async Task AzurePrivateHttpProbe_DoesNotRedirectToHttps(string path)
+    {
+        await using var factory = new ReadinessFactory(HealthCheckResult.Healthy());
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+            { BaseAddress = new Uri("http://localhost"), AllowAutoRedirect = false });
+        using var response = await client.GetAsync(path);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Null(response.Headers.Location);
+    }
+
+    [Fact]
+    public async Task BrowserHttpRequest_StillRequiresHttps()
+    {
+        await using var factory = new ReadinessFactory(HealthCheckResult.Healthy());
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+            { BaseAddress = new Uri("http://localhost"), AllowAutoRedirect = false });
+        using var response = await client.GetAsync("/api/auth/csrf");
+        Assert.Equal(HttpStatusCode.TemporaryRedirect, response.StatusCode);
+        Assert.Equal("https", response.Headers.Location!.Scheme);
+    }
     [Fact]
     public async Task Readiness_WhenSqlUnavailable_Returns503AndRunsSqlCheck()
     {
@@ -56,6 +79,7 @@ public class ReadinessIntegrationTests
             base.ConfigureWebHost(builder);
             builder.ConfigureTestServices(services =>
             {
+                services.Configure<Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionOptions>(options => options.HttpsPort = 443);
                 services.PostConfigure<HealthCheckServiceOptions>(options =>
                 {
                     // Replace only the dependency: retain production registration tags.

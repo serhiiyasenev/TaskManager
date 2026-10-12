@@ -18,6 +18,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.OpenApi;
 using Serilog;
+using TaskManager.Hosting.Cloud;
 using System.Text.Json.Serialization;
 using WebAPI;
 using WebAPI.Middleware;
@@ -31,11 +32,16 @@ using TaskManager.Hosting;
 Serilog.Debugging.SelfLog.Enable(TextWriter.Synchronized(Console.Error));
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddPrivateFrameworkLogging();
+builder.Services.AddTaskManagerTelemetry(builder.Configuration);
 builder.Services.AddTrustedProxyForwarding(builder.Configuration);
 
 builder.Host.UseSerilog((ctx, services, lc) =>
     lc.ReadFrom.Configuration(ctx.Configuration)
         .ReadFrom.Services(services)
+        // Serilog has its own filtering pipeline; ILogger rules alone do not
+        // protect its configured console/Loki sinks from private SQL errors.
+        .Filter.With(new PrivateFrameworkLogFilter())
         // Framework request-start logging includes query strings (email/invite tokens).
         .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", Serilog.Events.LogEventLevel.Warning));
 
@@ -69,17 +75,6 @@ builder.Services
         o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("Frontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:4200", "https://localhost:7151")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
-    });
-});
 
 builder.Services.AddRepositories(builder.Configuration);
 builder.Services.AddUserIdentityService(builder.Configuration);
@@ -188,7 +183,10 @@ app.Use(async (ctx, next) =>
     }
 });
 
-app.UseHttpsRedirection();
+// ACA dependency probes reach the private HTTP listener directly. Browser
+// routes still require external HTTPS, restored only from trusted ingress.
+app.UseWhen(context => context.Request.Path != "/health/live" && context.Request.Path != "/health/ready",
+    branch => branch.UseHttpsRedirection());
 
 app.UseCors("Frontend");
 

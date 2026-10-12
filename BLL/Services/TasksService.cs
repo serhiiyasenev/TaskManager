@@ -101,7 +101,7 @@ public class TasksService(
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving a task page");
+            logger.LogError("Error retrieving a task page ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -123,7 +123,7 @@ public class TasksService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving tasks");
+            logger.LogError("Error retrieving tasks ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -151,7 +151,7 @@ public class TasksService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving task {TaskId}", id);
+            logger.LogError("Error retrieving task {TaskId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -192,13 +192,13 @@ public class TasksService(
             await tasks.AddAsync(task, ct);
             await uow.SaveChangesAsync(ct);
 
-            logger.LogInformation("Task created: {TaskId} - {TaskName}", task.Id, task.Name);
+            logger.LogInformation("Task created: {TaskId}", task.Id);
             return Result<DAL.Entities.Task>.Success(task);
         }
         catch (Exception exception) when (access is not null && IsDeadlock(exception)) { throw; }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error creating task {TaskName}", task.Name);
+            logger.LogError("Error creating task ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -259,7 +259,7 @@ public class TasksService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error creating executed task");
+            logger.LogError("Error creating executed task ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -360,7 +360,7 @@ public class TasksService(
             tasks.Update(entity);
             await uow.SaveChangesAsync(ct);
 
-            logger.LogInformation("Task updated: {TaskId} - {TaskName}", id, entity.Name);
+            logger.LogInformation("Task updated: {TaskId}", id);
             return Result<DAL.Entities.Task>.Success(entity);
         }
         catch (DbUpdateConcurrencyException)
@@ -370,7 +370,7 @@ public class TasksService(
         catch (Exception exception) when (access is not null && IsDeadlock(exception)) { throw; }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating task {TaskId}", id);
+            logger.LogError("Error updating task {TaskId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -451,7 +451,7 @@ public class TasksService(
         catch (Exception exception) when (access is not null && IsDeadlock(exception)) { throw; }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating reminders for task {TaskId}", id);
+            logger.LogError("Error updating reminders for task {TaskId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -506,7 +506,7 @@ public class TasksService(
         catch (Exception exception) when (access is not null && IsDeadlock(exception)) { throw; }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deleting task {TaskId}", id);
+            logger.LogError("Error deleting task {TaskId} ({FailureType}).", id, ex.GetType().Name);
             return Error.Custom("Error.CanNotDelete", $"Cannot delete Task with ID {id}. It may have dependencies.");
         }
     }

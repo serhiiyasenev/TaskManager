@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceNamePrefix": { "value": "taskmanager" },
+    "environmentName": { "value": "prod" },
+    "location": { "value": "REQUIRED_AZURE_REGION" },
+    "publicOrigin": { "value": "https://REQUIRED_PRODUCT_PUBLIC_HOST" },
+    "monthlyBudget": { "value": 100 },
+    "budgetContactEmails": { "value": ["REQUIRED_OPERATOR_EMAIL"] },
+    "existingRegistryResourceId": { "value": "/subscriptions/REQUIRED_SUBSCRIPTION/resourceGroups/REQUIRED_ACR_RG/providers/Microsoft.ContainerRegistry/registries/REQUIRED_SHARED_ACR" },
+    "existingRegistryRoleAssignmentMode": { "value": "RbacRegistryPermissions" },
+    "existingManagedEnvironmentResourceId": { "value": "/subscriptions/REQUIRED_SUBSCRIPTION/resourceGroups/REQUIRED_ENV_RG/providers/Microsoft.App/managedEnvironments/REQUIRED_SHARED_ENV" },
+    "existingVnetResourceId": { "value": "/subscriptions/REQUIRED_SUBSCRIPTION/resourceGroups/REQUIRED_NETWORK_RG/providers/Microsoft.Network/virtualNetworks/REQUIRED_VNET" },
+    "existingPrivateEndpointSubnetResourceId": { "value": "/subscriptions/REQUIRED_SUBSCRIPTION/resourceGroups/REQUIRED_NETWORK_RG/providers/Microsoft.Network/virtualNetworks/REQUIRED_VNET/subnets/REQUIRED_PRIVATE_ENDPOINT_SUBNET" },
+    "ingressSubnetCidr": { "value": "REQUIRED_ACTUAL_BOUNDED_ENVIRONMENT_SUBNET_CIDR" },
+    "existingSqlPrivateDnsZoneResourceId": { "value": "/subscriptions/REQUIRED_SUBSCRIPTION/resourceGroups/REQUIRED_DNS_RG/providers/Microsoft.Network/privateDnsZones/privatelink.database.windows.net" },
+    "existingSignalRPrivateDnsZoneResourceId": { "value": "/subscriptions/REQUIRED_SUBSCRIPTION/resourceGroups/REQUIRED_DNS_RG/providers/Microsoft.Network/privateDnsZones/privatelink.service.signalr.net" },
+    "existingOpenAiResourceId": { "value": "/subscriptions/REQUIRED_SUBSCRIPTION/resourceGroups/REQUIRED_AI_RG/providers/Microsoft.CognitiveServices/accounts/REQUIRED_SHARED_AI" },
+    "openAiDeploymentName": { "value": "REQUIRED_ACTUAL_DEPLOYMENT_NAME" },
+    "existingCommunicationServiceResourceId": { "value": "/subscriptions/REQUIRED_SUBSCRIPTION/resourceGroups/REQUIRED_EMAIL_RG/providers/Microsoft.Communication/communicationServices/REQUIRED_ACS" },
+    "emailDomainResourceId": { "value": "/subscriptions/REQUIRED_SUBSCRIPTION/resourceGroups/REQUIRED_DOMAIN_RG/providers/Microsoft.Communication/emailServices/REQUIRED_EMAIL_SERVICE/domains/REQUIRED_VERIFIED_DOMAIN" },
+    "emailDataLocation": { "value": "REQUIRED_EMAIL_DATA_GEOGRAPHY" },
+    "emailFromAddress": { "value": "REQUIRED_VERIFIED_LINKED_SENDER" },
+    "signalRPrivateEndpointConnectionNames": { "value": ["REQUIRED_ACTUAL_OWNED_ENDPOINT_CONNECTION_NAME"] }
+  }
+}
