@@ -200,3 +200,24 @@ linux/amd64 child/config independently verified, retained. Exact digest-addresse
 GET200 verified2026-10-12T16:22:47–48Z. Registry metadata/anonymous token only;
 no Azure deployment/account credential. No image pin, test or health gate removed.
 Native actionlint passed. Repeat actual CI after this concrete repair.
+
+## Acceptance — local phase, Azure deferred
+
+Code93b737c014a544cfbfc0018c34242fef61df9cec: all six actual PR workflows passed.
+Backend run38277195872/job114905451020:860 passed,0 failures/skips,30s.
+Frontend run38277195876/job114905450802:87 unit/52 browser passed (45.2s browser).
+Full-stack run38277195894: Windows/Linux9 runner+8 live-protocol fixtures passed;
+actual Linux SQL2022/Rabbit4.3.6 job114905610867 passed6 browser cases and cleanup.
+Artifact11759831763 SHA2563760711c8098808602c54cf48c21e6cece7460d90a0f9d7e0704e3085fc00b59
+downloaded/verified; only sanitized six-case summary retained in repository.
+Container run38277196051/job114905626518: all six UID1654 images, migration/latest
+SQL, API/Notifier ready, private401, HTTPS SPA/API/hub/CSRF/privacy, Mailpit,
+console and SQL-bootstrap fail-closed checks passed. Tested merge image tag
+76f242e6fa217e4595c106ab4ddfdf7e406f1221; images tested, not published.
+Azure offline run38277195878 Windows/Linux26 fixtures/native tooling passed;
+AI process run38277195888 passed. No actual Azure authentication/deployment.
+
+Native local860/87/52/6 and89.27% lines/75.11% branches stand independently of CI.
+Local phase accepted; owner-deferred cloud/native-provider/model checks remain
+explicitly pending. Final acceptance edits are documentation/sanitized evidence
+only; runtime/test source remains the exact fully verified93b737c tree.

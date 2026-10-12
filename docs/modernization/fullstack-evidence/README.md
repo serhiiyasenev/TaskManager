@@ -2,6 +2,11 @@
 
 ## Actual local RabbitMQ gate
 
+Linux CI also passed [all six actual SQL/Rabbit browser cases](linux-rabbit-summary.json)
+at code93b737c, [run38277195894](https://github.com/serhiiyasenev/TaskManager/actions/runs/38277195894).
+The downloaded sanitized artifact SHA256 was verified as
+`3760711c8098808602c54cf48c21e6cece7460d90a0f9d7e0704e3085fc00b59`.
+
 Final browser run `618291d04d7e41f59226a27fa8de2e4b`: six passed, zero failures/
 skips/retries with actual RabbitMQ4.3.6 and OTP28.5. The same session ran all
 860 backend tests with actual SQL/RabbitMQ: zero failures or skips. Coverage:
