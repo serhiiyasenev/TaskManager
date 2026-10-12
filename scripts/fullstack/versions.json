@@ -1,6 +1,6 @@
 {
   "verifiedAtUtc": "2026-10-12",
-  "sqlServer": { "version": "2022-CU27-ubuntu-22.04", "image": "mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04@sha256:190696778dca17a0862a3a5680068357cdd09dd0ced185b2ed918e4a0226695a", "source": "https://mcr.microsoft.com/v2/mssql/server/manifests/2022-CU27-ubuntu-22.04" },
+  "sqlServer": { "version": "2022-CU27-ubuntu-22.04", "image": "mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090", "source": "https://mcr.microsoft.com/v2/mssql/server/manifests/2022-CU27-ubuntu-22.04" },
   "rabbitMq": { "version": "4.3.6-management", "image": "rabbitmq:4.3.6-management@sha256:8dd6e3570ddaa2ef82a6c3a8950e79c1f73893adfbdddbc374fc1f1ac8a0f5dd", "source": "https://hub.docker.com/_/rabbitmq" },
   "setupDotnet": { "version": "6.0.0", "sha": "a98b56852c35b8e3190ac28c8c2271da59106c68", "source": "https://github.com/actions/setup-dotnet/releases/tag/v6.0.0" },
   "setupNode": { "version": "7.1.0", "sha": "949feb2413d6458794dcd2491c4babbbce0c15c1", "source": "https://github.com/actions/setup-node/releases/tag/v7.1.0" }

@@ -46,7 +46,7 @@ jobs:
     timeout-minutes: 25
     services:
       sqlserver:
-        image: mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04@sha256:190696778dca17a0862a3a5680068357cdd09dd0ced185b2ed918e4a0226695a
+        image: mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090
         env:
           ACCEPT_EULA: 'Y'
           MSSQL_PID: Developer

@@ -186,3 +186,17 @@ claimed. Native Windows setup/run/limits are documented; remaining gate is PR CI
 Overall4.0. Remaining improvement: finish actual current PR CI and record it;
 retain deferred Azure/live-model boundaries. The owner should agree that local
 verification is established without presenting fixtures as deployed evidence.
+
+## Current PR CI / image-pin repair
+
+Commit770c0e219804da055e394c166ad4f2fb317e59c0 pushed to existing draft PR51.
+Azure offline and AI process gates passed; full-stack Windows/Linux runner
+fixtures passed. New actual-local-stack run38276334526/job114902826185 failed
+before checkout/product tests: supplied SQL190696... digest is not in MCR.
+Corrected the pin to actual official tag/digest GET/header/raw-byte SHA256
+4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090.
+Independent config hash verifies linux/amd64. Rabbit8dd6... OCI index and
+linux/amd64 child/config independently verified, retained. Exact digest-addressed
+GET200 verified2026-10-12T16:22:47–48Z. Registry metadata/anonymous token only;
+no Azure deployment/account credential. No image pin, test or health gate removed.
+Native actionlint passed. Repeat actual CI after this concrete repair.
