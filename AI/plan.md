@@ -53,7 +53,7 @@ The owner explicitly requested implementation of the supplied brief and use of a
 
 ### Active step
 
-28 — End-to-end and live verification. Steps22–27 pass local and real CI gates (step27 at79b6e3d:860backend with SQL/RabbitMQ,87frontend,52browser,siximages,Windows/Linux Azure tooling). Native Windows SQL is available; the independent TaskManager_Codex_20261012 database is migrated and preserved. Full-stack tests use separate strictly named disposable SQL databases and explicit controlled email/AI adapters; cloud evidence requires real deployment inputs. Complete and trace each step before advancing. Parallel agents may inspect or implement disjoint parts of the same active step; only the coordinating agent stages/commits and runs the shared backend suite.
+28 — Local end-to-end verification. The owner explicitly deferred Azure deployment on2026-10-12 and requested local verification first. Steps22–27 pass local and real CI gates (step27 at79b6e3d:860backend with SQL/RabbitMQ,87frontend,52browser,siximages,Windows/Linux Azure tooling). Native Windows SQL is available; the independent TaskManager_Codex_20261012 database is migrated and preserved. Native Controlled full-stack passed6/6 with verified owned cleanup;859backend/1localRabbit skip,87unit and52UI passed. Next is actual local Rabbit verification; no cloud deployment is authorized in this phase. Complete and trace each step before advancing. Parallel agents may inspect or implement disjoint parts of the same active step; only the coordinating agent stages/commits and runs the shared backend suite.
 
 | # | Step | Acceptance criteria |
 |---|------|---------------------|

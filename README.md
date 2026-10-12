@@ -27,9 +27,12 @@ quality measurements.
 
 The authoritative implementation status is [AI/plan.md](AI/plan.md), with exact
 verification results in [AI/traces](AI/traces). The durable notification inbox and
-worker adapters passed step26 at15aa4d3:769backend tests with real SQL/RabbitMQ,
-87frontend tests,52browser scenarios and five-image container verification.
-Azure provisioning and the full-stack acceptance gate follow the active roadmap.
+worker adapters and Azure delivery code passed step27 at79b6e3d:860backend tests
+with real SQL/RabbitMQ,87frontend tests,52browser scenarios,six container images
+and Windows/Linux offline Azure tooling checks. The separate
+[full-stack gate](docs/fullstack-verification.md) exercises actual Identity, SQL,
+gateway and private realtime requests without browser API interception.
+Azure provisioning and live model verification remain external gates in step28.
 
 ## Azure delivery
 
@@ -41,6 +44,11 @@ Scripts have offline Windows/Linux gates; actual validation, what-if, pricing
 and authenticated cloud verification require reviewed environment parameters.
 Local Windows SQL verification preserves `TaskManager_Codex_20261012` and creates
 separate disposable test databases. Azure has not been deployed from this chat.
+See the [product architecture](docs/architecture.md) for component ownership,
+transaction boundaries and recovery behavior.
+For this Windows machine, [native SQL/Rabbit verification](docs/native-windows-verification.md)
+uses the existing SQL Server and verified portable tools inside the repository.
+Azure deployment is deferred while local verification is completed.
 
 ## Private notification history
 

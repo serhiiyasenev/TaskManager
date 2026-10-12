@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "kind": "controlled-full-stack-browser",
+  "runId": "b4e3a2e86d9a494eaebcaf5360424ddc",
+  "provider": "fake",
+  "transport": "controlled",
+  "total": 6,
+  "passed": 6,
+  "failed": 0,
+  "skipped": 0,
+  "flaky": 0,
+  "failedCases": []
+}
