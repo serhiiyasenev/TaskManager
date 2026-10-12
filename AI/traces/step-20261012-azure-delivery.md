@@ -157,3 +157,30 @@ exception contract and all malformed URI/client-ID assertions are preserved.
 Finish release-script review and actual CI, then continue full-stack28. Azure live
 validation/what-if/deployment/evaluation require real identity, approved resource
 parameters, sender, model/quota and budget after all unblocked work is ready.
+
+## Acceptance at79b6e3d77451ad4f2cebe2da61e2156d58ef6275
+
+All actual CI results and logs inspected:
+
+- Backend38231200270/job114750830814: 860 passed / 0 failed / 0 skipped,
+  34 seconds, real SQL2022 and RabbitMQ4.3.6, including the final bootstrap fixes.
+- Frontend38231200171/job114750830466:87unit and52browser passed (50.3s),
+  audit/contract/lint/type/build/coverage gates unchanged.
+- Container38231200045/job114750829683: all six UID1654 images, fail-closed
+  bootstrap executable, actual migration/latest-schema, SQL/broker readiness,
+  HTTPS/private-hub/CSRF/privacy/Mailpit/console checks passed. Event merge
+  SHA8a07178cd54491d6018b1f812e382fb954fe5d0b; images tested, not published.
+- Azure offline38231200112: Windows job114750829415 and Linux114750829792
+  both passed26behavior fixtures, native actionlint/Bicep/contract and the
+  compiled permission positive+four corruption regressions. No cloud credentials.
+- AI process38231199931 passed. Owner-approved Consensia deletion preserved.
+- Actual CI coverage artifact11738717094 SHA256
+  d8a85e965054db38c9640093ff5b8e3e9e8cc098f9be0d01c5822e7ff93fdf10:
+  89.2%lines (5317/5956),75.1%branches (2804/3729),95.1%methods.
+
+ECC self-evaluation for this scope: accuracy4/completeness4/clarity4/
+actionability4/conciseness4, average4.0. Evidence above supports code/tooling
+acceptance; actual Azure provisioning, cost total, Entra SQL, delivery/model
+quality and authenticated cloud smoke are not claimed. Step27 accepted;
+authoritative roadmap now activates28. Continue all unblocked full-stack work
+before requesting the missing live inputs. PR51 remains draft and unmerged.
