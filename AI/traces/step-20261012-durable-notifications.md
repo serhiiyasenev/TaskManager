@@ -2,6 +2,10 @@
 
 ## GOAL / current step
 
+**ACCEPTED** at `15aa4d3699b8f936087ba38cdaff54c2c0ea8a54`; current roadmap
+advances to27. This acceptance covers implementation/local/realCI scope below,
+not live Azure services or the full-stack browser verification required in28.
+
 Implement authorized roadmap26 after25 acceptedatd717ffc (629realSQL,69unit+
 38browser,five-image CI PASS). Keep acceptedADR0013attempts+Rabbitretry/DLX,
 stableIDs,leases/publisher-confirms and existing JWT/HTTP/console compatibility.
@@ -220,3 +224,30 @@ normal preference is unchanged. No threshold/polling/timeout/retry relaxation.
 Fresh production build and both original Chrome desktop/mobile motion casesPASS.
 New assets index-BQThKCVI.css/index-aiuH2eE7.js; focused inbox screenshots remain
 historical evidence of their recorded assets. Final-head CI follows this repair.
+
+## Acceptance and ECC self-evaluation
+
+Actual final-head jobs allPASS, inspected logs:
+- Backend run38219887070/job114713315684:769PASS/0FAIL/0SKIP,36s; real SQL/Rabbit.
+- Frontend run38219887075/job114713316065:87unit+52browserPASS; unchanged
+  audit/lint/type/coverage/contract/build gates. Reduced-motion checks nowPASS.
+- Container run38219887019/job114713316500:fiveUID1654images,latestmigration,
+  bothSQL/brokerready200,privateAPI/hub401,HTTPS/SPA/CSRF/privacy/SMTP/consolePASS.
+  EventmergeSHA8aa72dfa4e26006bc610daf5b15f206518feced0; images not published.
+- AI process run38219887055 PASS. DraftPR51 stays open/unmerged.
+
+Actual coverage artifact11734400351 Summary.json: **89.3% lines4902/5486,
+74.3% branches2372/3189**. Downloaded ignored ZIP SHA256
+e6218744dd33e7da7a38dcd370e65a73687306de44b8d3fa0006a908bc145ae6.
+This is CI coverage; local line88.99/branch73.64 remains separately recorded.
+
+Scoped step26 self-evaluation (1–5): accuracy4 (realSQL/Rabbit/Chrome/SDK
+evidence; liveServiceBus/SignalR pending28); completeness4 (all26code/behaviors
+delivered; full-stack production-host UI still28); clarity4 (canonical contract
+and runbook; historic trace sections are verbose); actionability4 (runnable
+nativeSQL/Compose+draftPR; cloud values still absent); conciseness3 (repeated
+checkpoints/long tool discovery slowed review). Average3.8. Improvements applied:
+added acceptance summary upfront; continue27/28 without claiming whole-goal
+completion; use exact discovered file paths and compact diagnostic outputs.
+Would the owner agree:26 has verified delivery/inbox scope; the original full
+modernization request remains active through Azure/full-stack/live gates.

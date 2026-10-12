@@ -27,8 +27,9 @@ quality measurements.
 
 The authoritative implementation status is [AI/plan.md](AI/plan.md), with exact
 verification results in [AI/traces](AI/traces). The durable notification inbox and
-worker adapters are undergoing step26 acceptance. Azure provisioning and the
-full-stack acceptance gate follow the active roadmap.
+worker adapters passed step26 at15aa4d3:769backend tests with real SQL/RabbitMQ,
+87frontend tests,52browser scenarios and five-image container verification.
+Azure provisioning and the full-stack acceptance gate follow the active roadmap.
 
 ## Private notification history
 
