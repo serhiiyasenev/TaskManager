@@ -22,11 +22,21 @@ dotnet run --project WebAPI
 dotnet run --project Notifier
 dotnet run --project Client
 
-# Docker (includes SQL Server, RabbitMQ, WebAPI, Notifier, Client)
-# NOTE: docker-compose.yml currently uses mcr.microsoft.com/dotnet/sdk:9.0 images.
-# For this .NET 10 solution, update those images to .NET 10-compatible tags before running:
-docker-compose up
+# Docker with Compose v2, Linux x86-64 containers (PowerShell)
+./scripts/local-init.ps1
+./scripts/local-up.ps1
+./scripts/local-smoke.ps1
+# Optional console profile
+./scripts/local-console.ps1
+# Stop services while retaining data volumes
+./scripts/local-down.ps1
 ```
+
+Docker builds use pinned .NET 10 images and run published application binaries as
+the non-root `app` user. Compose runs a migration bundle before WebAPI startup,
+keeps bootstrap admin disabled, and supplies credentials from ignored `.env`.
+See `docs/local-development.md` for ports, retained volumes and the precise
+verification status. Docker execution requires a Docker-capable host.
 
 ## Architecture
 

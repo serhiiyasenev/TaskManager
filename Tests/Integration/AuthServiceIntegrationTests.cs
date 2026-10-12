@@ -217,8 +217,8 @@ public class AuthServiceIntegrationTests : IDisposable
             Password: "Password123!");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<NotFoundException>(() => service.LoginAsync(loginDto));
-        Assert.Contains("No user found. Please register.", exception.Message);
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.LoginAsync(loginDto));
+        Assert.Equal("Invalid email or password.", exception.Message);
     }
 
     [Fact]
@@ -240,8 +240,8 @@ public class AuthServiceIntegrationTests : IDisposable
             Password: "WrongPassword123!");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<NotFoundException>(() => service.LoginAsync(loginDto));
-        Assert.Contains("Incorrect password", exception.Message);
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.LoginAsync(loginDto));
+        Assert.Equal("Invalid email or password.", exception.Message);
     }
 
     [Fact]

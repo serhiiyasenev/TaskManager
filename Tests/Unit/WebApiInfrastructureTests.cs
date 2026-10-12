@@ -19,6 +19,22 @@ namespace Tests.Unit;
 public class WebApiInfrastructureTests
 {
     [Fact]
+    public void UnexpectedControllerException_ReturnsProblemDetailsWithoutPrivateExceptionMessage()
+    {
+        var http = new DefaultHttpContext { TraceIdentifier = "failure-trace" };
+        var context = new ExceptionContext(new ActionContext(http, new RouteData(), new ActionDescriptor()), [])
+        {
+            Exception = new InvalidOperationException("private SQL diagnostics")
+        };
+        new CustomExceptionFilterAttribute().OnException(context);
+        var response = Assert.IsAssignableFrom<ObjectResult>(context.Result);
+        var problem = Assert.IsType<ProblemDetails>(response.Value);
+        Assert.Equal(500, problem.Status);
+        Assert.DoesNotContain("private SQL diagnostics", problem.Detail ?? "");
+        Assert.Equal("failure-trace", problem.Extensions["traceId"]);
+    }
+
+    [Fact]
     public void ParseException_MapsKnownAndUnknownExceptions()
     {
         Assert.Equal(HttpStatusCode.NotFound, new NotFoundException("x").ParseException());
@@ -40,9 +56,9 @@ public class WebApiInfrastructureTests
 
         filter.OnException(context);
 
-        Assert.Equal("application/json", httpContext.Response.ContentType);
+        Assert.Equal("application/problem+json", httpContext.Response.ContentType);
         Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
-        Assert.IsType<JsonResult>(context.Result);
+        Assert.IsType<ObjectResult>(context.Result);
     }
 
     [Fact]

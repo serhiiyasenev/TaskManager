@@ -1,147 +1,246 @@
-version: "3.9"
+name: ${COMPOSE_PROJECT_NAME:-taskmanager-local}
+
+x-build: &app-build
+  context: .
+  dockerfile: Dockerfile
+
+x-rabbit-environment: &rabbit-environment
+  RabbitMQ__HostName: rabbitmq
+  RabbitMQ__Port: "5672"
+  RabbitMQ__UserName: ${RABBITMQ_USER:-taskmanager}
+  RabbitMQ__Password: ${RABBITMQ_PASSWORD:?Run scripts/local-init.ps1 or set RABBITMQ_PASSWORD}
+  RabbitMQ__QueueName: TestQueue
+  RabbitMQ__ReminderQueueName: TaskReminders
+  RabbitMQ__Durable: "true"
+
+x-api-environment: &api-environment
+  DOTNET_ENVIRONMENT: Development
+  ASPNETCORE_ENVIRONMENT: Development
+  ASPNETCORE_URLS: http://+:8080
+  ConnectionStrings__DbConnection: "Server=mssql,1433;Database=TaskManagerDB;User Id=sa;Password=${MSSQL_SA_PASSWORD:?Run scripts/local-init.ps1 or set MSSQL_SA_PASSWORD};MultipleActiveResultSets=True;Encrypt=True;TrustServerCertificate=True"
+  Jwt__Key: ${TASKMANAGER_JWT_KEY:?Run scripts/local-init.ps1 or set TASKMANAGER_JWT_KEY}
+  Jwt__Issuer: TaskManager
+  Jwt__Audience: TaskManagerClients
+  BrowserAuth__PublicOrigin: ${PUBLIC_ORIGIN:-https://localhost:7151}
+  DataProtection__KeyRingPath: /home/app/.aspnet/DataProtection-Keys
+  Email__SmtpHost: mailpit
+  Email__SmtpPort: "1025"
+  Email__UseTls: "false"
+  Email__FromAddress: noreply@taskmanager.local
+  BootstrapAdmin__Enabled: "false"
+  ProxyTrust__KnownProxies__0: ${GATEWAY_IP:-172.29.24.10}
+  Serilog__Using__0: Serilog.Sinks.Console
+  Serilog__WriteTo__0__Name: Console
+  Serilog__MinimumLevel__Default: Information
+  Serilog__Enrich__0: FromLogContext
 
 services:
-  # ---------- SQL Server ----------
+  web:
+    profiles: [web]
+    image: taskmanager-web:${TASKMANAGER_IMAGE_TAG:-local}
+    platform: linux/amd64
+    build:
+      <<: *app-build
+      target: web
+    depends_on:
+      webapi:
+        condition: service_healthy
+      notifier:
+        condition: service_healthy
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080;https://+:8443"
+      Kestrel__Certificates__Default__Path: /app/certificates/localhost.pfx
+      Kestrel__Certificates__Default__Password: ${GATEWAY_CERT_PASSWORD:-}
+      BrowserAuth__PublicOrigin: ${PUBLIC_ORIGIN:-https://localhost:7151}
+      Gateway__ApiDestination: http://webapi:8080/
+      Gateway__NotifierDestination: http://notifier:8080/
+    ports:
+      - "127.0.0.1:${WEB_PORT:-7151}:8443"
+    volumes:
+      - type: bind
+        source: ${GATEWAY_CERT_PATH:-./.local/certificates/localhost.pfx}
+        target: /app/certificates/localhost.pfx
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      default:
+        ipv4_address: ${GATEWAY_IP:-172.29.24.10}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; read -r -t 4 status <&3; [[ \"$$status\" == *\" 200 \"* ]]'"
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+    mem_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.31.5
+    ports:
+      - "127.0.0.1:${MAILPIT_PORT:-8025}:8025"
+    mem_limit: 128m
+    restart: unless-stopped
+
   mssql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: task-mssql
+    image: mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04
+    platform: linux/amd64
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "Your_strong_password_123!"
-      MSSQL_PID: "Express"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Run scripts/local-init.ps1 or set MSSQL_SA_PASSWORD}
     ports:
-      - "1433:1433"
+      - "127.0.0.1:${SQL_PORT:-1433}:1433"
     volumes:
       - mssql_data:/var/opt/mssql
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/1433'"]
+      test: ["CMD-SHELL", "SQLCMDPASSWORD=\"$${MSSQL_SA_PASSWORD}\" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -Q 'SELECT 1' -b -o /dev/null"]
       interval: 5s
-      timeout: 3s
-      retries: 30
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+    mem_limit: 2g
+    cpus: 2.0
     restart: unless-stopped
 
-  # ---------- RabbitMQ + UI ----------
   rabbitmq:
-    image: rabbitmq:3.13-management
-    container_name: task-rabbit
+    image: rabbitmq:4.3.6-management
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-taskmanager}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Run scripts/local-init.ps1 or set RABBITMQ_PASSWORD}
     ports:
-      - "5672:5672"     # AMQP
-      - "15672:15672"   # http://localhost:15672
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
-      timeout: 3s
+      timeout: 5s
       retries: 30
+      start_period: 20s
+    mem_limit: 512m
+    cpus: 1.0
     restart: unless-stopped
 
-  # ---------- WebAPI (REST + SignalR Hub) ----------
+  migrations:
+    image: taskmanager-migrations:${TASKMANAGER_IMAGE_TAG:-local}
+    platform: linux/amd64
+    build:
+      <<: *app-build
+      target: migrations
+    depends_on:
+      mssql:
+        condition: service_healthy
+    environment:
+      <<: *api-environment
+      DOTNET_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Production
+      Reminders__Enabled: "false"
+    mem_limit: 512m
+    cpus: 1.0
+    restart: "no"
+
   webapi:
-    image: mcr.microsoft.com/dotnet/sdk:9.0
-    container_name: task-webapi
+    image: taskmanager-api:${TASKMANAGER_IMAGE_TAG:-local}
+    platform: linux/amd64
+    build:
+      <<: *app-build
+      target: webapi
     depends_on:
-      mssql:
-        condition: service_healthy
+      mailpit:
+        condition: service_started
+      migrations:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
-    working_dir: /src
-    volumes:
-      - ./:/src:rw
-      - nuget_cache:/root/.nuget/packages
     environment:
-      DOTNET_ENVIRONMENT: "Development"
-      ASPNETCORE_URLS: "http://+:8080"
-
-      # DB connection (override appsettings)
-      ConnectionStrings__DbConnection: "Server=mssql,1433;Database=TaskManagerDB;User Id=sa;Password=Your_strong_password_123!;MultipleActiveResultSets=True;TrustServerCertificate=True"
-
-      # RabbitMQ
-      RabbitMQ__HostName: "rabbitmq"
-      RabbitMQ__UserName: "guest"
-      RabbitMQ__Password: "guest"
-
-      # CORS (if needed)
-      Cors__AllowedOrigins__0: "http://localhost:4200"
+      <<: [*api-environment, *rabbit-environment]
+      Reminders__Enabled: "false"
     ports:
-      - "8080:8080"
-    command: >
-      bash -c "
-      until </dev/tcp/mssql/1433; do echo 'Waiting for MSSQL...'; sleep 2; done;
-      until </dev/tcp/rabbitmq/5672; do echo 'Waiting for RabbitMQ...'; sleep 2; done;
-      dotnet restore &&
-      dotnet run --project WebAPI/WebAPI.csproj --urls http://0.0.0.0:8080
-      "
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+    volumes:
+      - data_protection_keys:/home/app/.aspnet/DataProtection-Keys
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8080'"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
+      test:
+        - CMD-SHELL
+        - "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; read -r -t 4 status <&3; [[ \"$$status\" == *\" 200 \"* ]]'"
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+    mem_limit: 512m
+    cpus: 1.0
     restart: unless-stopped
 
-  # ---------- Notifier (RabbitMQ consumer -> SignalR) ----------
   notifier:
-    image: mcr.microsoft.com/dotnet/sdk:9.0
-    container_name: task-notifier
+    image: taskmanager-notifier:${TASKMANAGER_IMAGE_TAG:-local}
+    platform: linux/amd64
+    build:
+      <<: *app-build
+      target: notifier
     depends_on:
-      mssql:
-        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
-      webapi:
-        condition: service_healthy
-    working_dir: /src
-    volumes:
-      - ./:/src:rw
-      - nuget_cache:/root/.nuget/packages
     environment:
-      DOTNET_ENVIRONMENT: "Development"
-
-      # RabbitMQ
-      RabbitMQ__HostName: "rabbitmq"
-      RabbitMQ__UserName: "guest"
-      RabbitMQ__Password: "guest"
-
-      # URL SignalR Hub (у WebAPI)
-      SignalR__HubUrl: "http://webapi:8080/hub"
-    command: >
-      bash -c "
-      until </dev/tcp/mssql/1433; do echo 'Waiting for MSSQL...'; sleep 2; done;
-      until </dev/tcp/rabbitmq/5672; do echo 'Waiting for RabbitMQ...'; sleep 2; done;
-      until </dev/tcp/webapi/8080; do echo 'Waiting for WebAPI...'; sleep 2; done;
-      dotnet restore &&
-      dotnet run --project Notifier/Notifier.csproj
-      "
+      <<: [*api-environment, *rabbit-environment]
+      DOTNET_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Reminders__Enabled: "true"
+      Reminders__PollIntervalMinutes: "1"
+    ports:
+      - "127.0.0.1:${NOTIFIER_PORT:-8081}:8080"
+    volumes:
+      - data_protection_keys:/home/app/.aspnet/DataProtection-Keys
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; read -r -t 4 status <&3; [[ \"$$status\" == *\" 200 \"* ]]'"
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+    mem_limit: 512m
+    cpus: 1.0
     restart: unless-stopped
 
-  # ---------- Console Client ----------
   client:
-    image: mcr.microsoft.com/dotnet/sdk:9.0
-    container_name: task-client
+    profiles: [console]
+    image: taskmanager-client:${TASKMANAGER_IMAGE_TAG:-local}
+    platform: linux/amd64
+    build:
+      <<: *app-build
+      target: client
     depends_on:
       webapi:
         condition: service_healthy
-    working_dir: /src
-    volumes:
-      - ./:/src:rw
-      - nuget_cache:/root/.nuget/packages
+      notifier:
+        condition: service_healthy
     environment:
-      Api__BaseUrl: "http://webapi:8080"
-      DOTNET_ENVIRONMENT: "Development"
-    stdin_open: true   # дозволяє ввод з клавіатури
-    tty: true          # інтерактивна консоль
-    command: >
-      bash -c "
-      until </dev/tcp/webapi/8080; do echo 'Waiting for WebAPI...'; sleep 2; done;
-      dotnet restore &&
-      dotnet run --project Client/Client.csproj
-      "
+      DOTNET_ENVIRONMENT: Development
+      Api__BaseUrl: http://webapi:8080/api/
+      SignalR__HubUrl: http://notifier:8080/chathub
+    stdin_open: true
+    tty: true
+    mem_limit: 256m
+    cpus: 0.5
     restart: "no"
 
 volumes:
   mssql_data:
   rabbitmq_data:
-  nuget_cache:
+  data_protection_keys:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${COMPOSE_NETWORK_SUBNET:-172.29.24.0/24}

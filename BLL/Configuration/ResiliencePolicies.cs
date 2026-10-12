@@ -17,11 +17,7 @@ public static class ResiliencePolicies
                 sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                 onRetry: (exception, timespan, retryCount, context) =>
                 {
-#pragma warning disable CA2254
-                    logger.LogWarning(context?.OperationKey);
-#pragma warning restore CA2254
                     logger.LogWarning(
-                        exception,
                         "RabbitMQ operation failed. Retry {RetryCount} after {Delay}s",
                         retryCount,
                         timespan.TotalSeconds);

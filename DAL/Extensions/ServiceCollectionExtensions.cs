@@ -15,7 +15,7 @@ public static class ServiceCollectionExtensions
 
         services.AddDbContext<TaskContext>(options =>
             options.UseSqlServer(
-                configuration["ConnectionStrings:DbConnection"],
+                AzureSqlConnectionPolicy.ResolveConnectionString(configuration),
                 sql => sql.MigrationsAssembly(migrationsAssembly)));
 
         services.AddScoped<DbContext>(sp => sp.GetRequiredService<TaskContext>());

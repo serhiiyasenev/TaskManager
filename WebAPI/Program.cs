@@ -6,6 +6,8 @@ using BLL.Interfaces;
 using BLL.Interfaces.Analytics;
 using BLL.Mapping;
 using BLL.Services;
+using BLL.Services.AI;
+using BLL.Services.Notifications;
 using BLL.Services.Analytics;
 using BLL.Validators;
 using DAL.Extensions;
@@ -16,25 +18,37 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.OpenApi;
 using Serilog;
+using TaskManager.Hosting.Cloud;
 using System.Text.Json.Serialization;
 using WebAPI;
 using WebAPI.Middleware;
 using WebAPI.Services;
+using WebAPI.Authentication;
+using BLL.Authorization;
+using TaskManager.Hosting;
 
-Serilog.Debugging.SelfLog.Enable(msg => File.AppendAllText("serilog-selflog.txt", msg + Environment.NewLine));
+// Sink failures must not crash the application through a competing file append.
+// Serilog's diagnostic callback can run concurrently with host startup/timers.
+Serilog.Debugging.SelfLog.Enable(TextWriter.Synchronized(Console.Error));
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddPrivateFrameworkLogging();
+builder.Services.AddTaskManagerTelemetry(builder.Configuration);
+builder.Services.AddTrustedProxyForwarding(builder.Configuration);
 
 builder.Host.UseSerilog((ctx, services, lc) =>
     lc.ReadFrom.Configuration(ctx.Configuration)
-        .ReadFrom.Services(services));
+        .ReadFrom.Services(services)
+        // Serilog has its own filtering pipeline; ILogger rules alone do not
+        // protect its configured console/Loki sinks from private SQL errors.
+        .Filter.With(new PrivateFrameworkLogFilter())
+        // Framework request-start logging includes query strings (email/invite tokens).
+        .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", Serilog.Events.LogEventLevel.Warning));
 
 // Configure Options Pattern
-builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection(RabbitMqOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<PaginationOptions>(builder.Configuration.GetSection(PaginationOptions.SectionName));
 builder.Services.Configure<BootstrapAdminOptions>(builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
-builder.Services.Configure<ReminderOptions>(builder.Configuration.GetSection(ReminderOptions.SectionName));
 
 // Add AutoMapper
 builder.Services.AddSingleton<IMapper>(_ =>
@@ -62,34 +76,30 @@ builder.Services
         o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("Frontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:4200", "https://localhost:7151")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
-    });
-});
-
 builder.Services.AddRepositories(builder.Configuration);
 builder.Services.AddUserIdentityService(builder.Configuration);
+builder.Services.AddBrowserAuthentication(builder.Configuration, builder.Environment);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
+builder.Services.AddScoped<IUserAccess, DatabaseUserAccess>();
+builder.Services.AddTaskExtraction(builder.Configuration);
+builder.Services.AddNotificationStorage().AddNotificationTransport(builder.Configuration);
 
-builder.Services.AddScoped<ITaskAnalyticsService, TaskAnalyticsService>();
-builder.Services.AddScoped<IProjectAnalyticsService, ProjectAnalyticsService>();
-builder.Services.AddScoped<ITeamAnalyticsService, TeamAnalyticsService>();
-builder.Services.AddScoped<IUserAnalyticsService, UserAnalyticsService>();
+// Direct legacy service tests keep their constructors; production always
+// requires the caller scope and cannot silently use the unscoped test path.
+builder.Services.AddScoped<ITaskAnalyticsService>(sp => ActivatorUtilities.CreateInstance<TaskAnalyticsService>(sp, sp.GetRequiredService<IUserAccess>()));
+builder.Services.AddScoped<IProjectAnalyticsService>(sp => ActivatorUtilities.CreateInstance<ProjectAnalyticsService>(sp, sp.GetRequiredService<IUserAccess>()));
+builder.Services.AddScoped<ITeamAnalyticsService>(sp => ActivatorUtilities.CreateInstance<TeamAnalyticsService>(sp, sp.GetRequiredService<IUserAccess>()));
+builder.Services.AddScoped<IUserAnalyticsService>(sp => ActivatorUtilities.CreateInstance<UserAnalyticsService>(sp, sp.GetRequiredService<IUserAccess>()));
 
-builder.Services.AddScoped<IProjectsService, ProjectsService>();
-builder.Services.AddScoped<ITasksService, TasksService>();
-builder.Services.AddScoped<ITeamsService, TeamsService>();
-builder.Services.AddScoped<IUsersService, UsersService>();
-builder.Services.AddSingleton<IQueueService, RabbitMqService>();
+builder.Services.AddScoped<IProjectsService>(sp => ActivatorUtilities.CreateInstance<ProjectsService>(sp, sp.GetRequiredService<IUserAccess>()));
+builder.Services.AddScoped<ITasksService>(sp => ActivatorUtilities.CreateInstance<TasksService>(sp, sp.GetRequiredService<IUserAccess>(), sp.GetRequiredService<DAL.Context.TaskContext>()));
+builder.Services.AddScoped<ITeamManagementService, TeamManagementService>();
+builder.Services.AddScoped<ITeamsService>(sp => ActivatorUtilities.CreateInstance<TeamsService>(sp, sp.GetRequiredService<IUserAccess>(), sp.GetRequiredService<ITeamManagementService>()));
+builder.Services.AddScoped<IUsersService>(sp => ActivatorUtilities.CreateInstance<UsersService>(sp, sp.GetRequiredService<IUserAccess>()));
 
-builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthService>(sp => ActivatorUtilities.CreateInstance<AuthService>(sp, sp.GetRequiredService<IAccountEmailSender>()));
 builder.Services.AddHostedService<BootstrapAdminHostedService>();
-builder.Services.AddHostedService<TaskReminderScheduler>();
 
 // Add API Versioning
 builder.Services.AddApiVersioning(options =>
@@ -106,7 +116,7 @@ builder.Services.AddHealthChecks()
         connectionString: builder.Configuration.GetConnectionString("DbConnection")!,
         name: "sql-server",
         failureStatus: HealthStatus.Unhealthy,
-        tags: ["db", "sql", "sqlserver"]);
+        tags: ["ready", "db", "sql", "sqlserver"]);
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -141,9 +151,15 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-Serilog.Debugging.SelfLog.Enable(Console.Error);
-
 var app = builder.Build();
+app.UseTrustedProxyForwarding();
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.CacheControl = "no-store";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    await next();
+});
 
 Log.Information("WebAPI started; env={Env}; service={Service}", "dev", "task-platform");
 
@@ -167,7 +183,10 @@ app.Use(async (ctx, next) =>
     }
 });
 
-app.UseHttpsRedirection();
+// ACA dependency probes reach the private HTTP listener directly. Browser
+// routes still require external HTTPS, restored only from trusted ingress.
+app.UseWhen(context => context.Request.Path != "/health/live" && context.Request.Path != "/health/ready",
+    branch => branch.UseHttpsRedirection());
 
 app.UseCors("Frontend");
 
@@ -178,6 +197,7 @@ app.UseSwaggerUI();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 
@@ -185,19 +205,18 @@ app.MapControllers();
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-});
+}).RequireAuthorization("AdminOnly");
 
 app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
-    Predicate = check => check.Tags.Contains("ready"),
-    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-});
+    Predicate = check => check.Tags.Contains("ready")
+}).AllowAnonymous();
 
 app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = _ => false,
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-});
+}).AllowAnonymous();
 
 app.Run();
 

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "kind": "controlled-full-stack-browser",
+  "runId": "618291d04d7e41f59226a27fa8de2e4b",
+  "provider": "fake",
+  "transport": "rabbitmq",
+  "total": 6,
+  "passed": 6,
+  "failed": 0,
+  "skipped": 0,
+  "flaky": 0,
+  "failedCases": []
+}

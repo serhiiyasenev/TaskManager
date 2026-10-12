@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 using NotifierLib::Notifier;
 using Xunit;
 
@@ -30,14 +31,42 @@ public class NotifierProgramTests : IClassFixture<NotifierWebApplicationFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("SignalR - ChatHub is working now", content);
     }
+
+    [Fact]
+    public async Task DevelopmentHostValidatesWorkerDependenciesWithoutHttpInboxAuthority()
+    {
+        using var factory = new DevelopmentNotifierFactory();
+        using var client = factory.CreateClient();
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health/live")).StatusCode);
+    }
+
+    private sealed class DevelopmentNotifierFactory : NotifierWebApplicationFactory
+    {
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            base.ConfigureWebHost(builder);
+            builder.UseEnvironment("Development");
+        }
+    }
 }
 
 public class NotifierWebApplicationFactory : WebApplicationFactory<NotifierLib::Notifier.Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Testing");
+        builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Jwt:Key"] = "NotifierProgramSyntheticTestConfiguration",
+            ["Jwt:Issuer"] = "TaskManager",
+            ["Jwt:Audience"] = "TaskManagerClients",
+            ["ConnectionStrings:DbConnection"] = "Server=localhost;Database=NotifierTests;Integrated Security=True;TrustServerCertificate=True"
+        }));
         builder.ConfigureServices(services =>
         {
+            // Endpoint-only host fixture intentionally starts no network/SQL
+            // worker. Worker behavior has dedicated durable integration cases.
+            Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.RemoveAll<IHostedService>(services);
             var descriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(IHostedService) &&
                      d.ImplementationType == typeof(NotifierLib::Notifier.RabbitMqListenerService));

@@ -23,6 +23,7 @@ public static class DependencyInjection
             options.Password.RequireNonAlphanumeric = false;
             options.Password.RequiredLength = 8;
             options.User.RequireUniqueEmail = true;
+            options.SignIn.RequireConfirmedEmail = true;
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             options.Lockout.AllowedForNewUsers = true;
@@ -32,29 +33,33 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<TaskContext>()
             .AddDefaultTokenProviders();
 
-        var jwtKey = configuration["Jwt:Key"];
-        if (string.IsNullOrWhiteSpace(jwtKey))
-        {
-            throw new InvalidOperationException("JWT Key is not configured in appsettings.json");
-        }
-
-        // Use SHA256 hash of the key to ensure it's exactly 256 bits (32 bytes)
-        var keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(jwtKey));
-
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                var jwtKey = configuration["Jwt:Key"];
+                if (string.IsNullOrWhiteSpace(jwtKey) ||
+                    jwtKey.TrimStart().StartsWith("@Microsoft.KeyVault", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Jwt:Key must be configured through private configuration.");
+                }
+                // Resolve final configuration at startup (including host/test
+                // providers), preserving the console client's signing contract.
+                var keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(jwtKey));
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
+                    ValidateIssuer = true,
+                    ValidIssuer = configuration["Jwt:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = configuration["Jwt:Audience"],
                     ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromMinutes(1),
                     RoleClaimType = ClaimTypes.Role,
                     NameClaimType = ClaimTypes.NameIdentifier
                 };
             });
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme).ValidateOnStart();
 
         services.AddAuthorizationBuilder().AddPolicy("AdminOnly", p => p.RequireRole("admin"));
 

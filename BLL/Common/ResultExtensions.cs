@@ -19,13 +19,17 @@ public static class ResultExtensions
 
         return result.Error.Code switch
         {
-            "Error.NotFound" => new NotFoundObjectResult(new { error = result.Error.Message }),
+            "Error.NotFound" => new NotFoundObjectResult(ToProblem(result.Error, 404)),
             var code when code == "Error.Validation" || code.StartsWith("Error.Validation.") => 
-                new BadRequestObjectResult(new { error = result.Error.Message }),
-            "Error.Conflict" => new ConflictObjectResult(new { error = result.Error.Message }),
-            "Error.Unauthorized" => new UnauthorizedObjectResult(new { error = result.Error.Message }),
-            "Error.Forbidden" => new ObjectResult(new { error = result.Error.Message }) { StatusCode = 403 },
-            _ => new ObjectResult(new { error = result.Error.Message }) { StatusCode = 500 }
+                new BadRequestObjectResult(ToProblem(result.Error, 400)),
+            "Error.Conflict" => new ConflictObjectResult(ToProblem(result.Error, 409)),
+            "Error.Unauthorized" => new UnauthorizedObjectResult(ToProblem(result.Error, 401)),
+            "Error.Forbidden" => new ObjectResult(ToProblem(result.Error, 403)) { StatusCode = 403 },
+            "Error.Gone" => new ObjectResult(ToProblem(result.Error, 410)) { StatusCode = 410 },
+            "Error.PreconditionRequired" => new ObjectResult(ToProblem(result.Error, 428)) { StatusCode = 428 },
+            "Error.TooManyRequests" => new ObjectResult(ToProblem(result.Error, 429)) { StatusCode = 429 },
+            "Error.ServiceUnavailable" => new ObjectResult(ToProblem(result.Error, 503)) { StatusCode = 503 },
+            _ => new ObjectResult(ToProblem(result.Error, 500)) { StatusCode = 500 }
         };
     }
 
@@ -41,15 +45,27 @@ public static class ResultExtensions
 
         return result.Error.Code switch
         {
-            "Error.NotFound" => new NotFoundObjectResult(new { error = result.Error.Message }),
+            "Error.NotFound" => new NotFoundObjectResult(ToProblem(result.Error, 404)),
             var code when code == "Error.Validation" || code.StartsWith("Error.Validation.") => 
-                new BadRequestObjectResult(new { error = result.Error.Message }),
-            "Error.Conflict" => new ConflictObjectResult(new { error = result.Error.Message }),
-            "Error.Unauthorized" => new UnauthorizedObjectResult(new { error = result.Error.Message }),
-            "Error.Forbidden" => new ObjectResult(new { error = result.Error.Message }) { StatusCode = 403 },
-            _ => new ObjectResult(new { error = result.Error.Message }) { StatusCode = 500 }
+                new BadRequestObjectResult(ToProblem(result.Error, 400)),
+            "Error.Conflict" => new ConflictObjectResult(ToProblem(result.Error, 409)),
+            "Error.Unauthorized" => new UnauthorizedObjectResult(ToProblem(result.Error, 401)),
+            "Error.Forbidden" => new ObjectResult(ToProblem(result.Error, 403)) { StatusCode = 403 },
+            "Error.Gone" => new ObjectResult(ToProblem(result.Error, 410)) { StatusCode = 410 },
+            "Error.PreconditionRequired" => new ObjectResult(ToProblem(result.Error, 428)) { StatusCode = 428 },
+            "Error.TooManyRequests" => new ObjectResult(ToProblem(result.Error, 429)) { StatusCode = 429 },
+            "Error.ServiceUnavailable" => new ObjectResult(ToProblem(result.Error, 503)) { StatusCode = 503 },
+            _ => new ObjectResult(ToProblem(result.Error, 500)) { StatusCode = 500 }
         };
     }
+
+    private static ProblemDetails ToProblem(Error error, int status) => new()
+    {
+        Status = status,
+        Title = status == 500 ? "internal_error" : error.Code,
+        Detail = status == 500 ? "Unexpected server error." : error.Message,
+        Extensions = { ["code"] = error.Code }
+    };
 
     /// <summary>
     /// Matches on Result<T> and executes the appropriate function

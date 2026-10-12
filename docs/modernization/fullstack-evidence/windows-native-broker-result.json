@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "serviceInstalled": false,
+  "listenersRemoved": true,
+  "kind": "native-windows-rabbit-verification",
+  "rabbitVersion": "4.3.6",
+  "otpVersion": "28.5",
+  "cloudCalls": false,
+  "failureType": null,
+  "registryChanged": false,
+  "profileCookieUsed": false,
+  "passed": true,
+  "runId": "621691200db443b5a4fff9dbea17482b",
+  "completedAtUtc": "2026-10-12T16:10:19.2376668+00:00",
+  "phase": "browser"
+}

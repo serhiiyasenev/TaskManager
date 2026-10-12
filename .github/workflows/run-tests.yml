@@ -25,7 +25,33 @@ jobs:
         && github.actor == 'github-actions[bot]'
         && contains(github.event.head_commit.message, '[skip ci]'))
     runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_PID: Developer
+          # Disposable CI-only credential; never used by an application/deploy.
+          MSSQL_SA_PASSWORD: TaskManager_CI_Disposable_Aa9!
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd="/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P TaskManager_CI_Disposable_Aa9! -C -Q 'SELECT 1' -b -o /dev/null"
+          --health-interval=10s --health-timeout=5s --health-retries=30
+      rabbitmq:
+        image: rabbitmq:4.3.6-management
+        env:
+          # Disposable loopback CI broker; no application/deploy credentials.
+          RABBITMQ_DEFAULT_USER: taskmanager-ci
+          RABBITMQ_DEFAULT_PASS: TaskManager_CI_Rabbit_Disposable
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd="rabbitmq-diagnostics -q ping"
+          --health-interval=5s --health-timeout=5s --health-retries=30
     env:
+      TASKMANAGER_TEST_SQL_SERVER: 'Server=localhost,1433;Database=master;User Id=sa;Password=TaskManager_CI_Disposable_Aa9!;Encrypt=True;TrustServerCertificate=True'
+      TASKMANAGER_TEST_RABBITMQ: 'true'
       GIST_SECRET: ${{ secrets.GIST_SECRET }}
       GIST_ID: ${{ secrets.GIST_ID }}
 
@@ -36,10 +62,13 @@ jobs:
     - name: Set up .NET 10
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.x'
+        global-json-file: global.json
+
+    - name: Restore pinned .NET tools
+      run: dotnet tool restore
 
     - name: Restore dependencies
-      run: dotnet restore TaskManager.sln -warnaserror:NU1901,NU1902,NU1903,NU1904
+      run: dotnet restore TaskManager.sln --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
 
     - name: Build solution
       run: dotnet build TaskManager.sln --configuration Release --no-restore -warnaserror:NU1901,NU1902,NU1903,NU1904
@@ -62,13 +91,21 @@ jobs:
       with:
         files: '**/TestResults/**/test_results.trx'
         check_name: 'Test Results'
+        # Real SQL/HTTP regression logs exceed lxml's default text-node limit.
+        # Keep complete runs and their annotations, including failures.
+        large_files: true
 
-    - name: Install ReportGenerator
-      run: dotnet tool install -g dotnet-reportgenerator-globaltool
+    - name: Preserve test diagnostics
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-diagnostics
+        path: TestResults/**/*.trx
+        retention-days: 7
 
     - name: Merge and generate coverage report
       run: |
-        reportgenerator \
+        dotnet tool run reportgenerator \
           -reports:"./TestResults/**/coverage.cobertura.xml" \
           -targetdir:"CoverageReport" \
           -reporttypes:"HtmlInline_AzurePipelines;JsonSummary;Badges;Cobertura"

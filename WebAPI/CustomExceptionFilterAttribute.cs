@@ -10,12 +10,17 @@ public class CustomExceptionFilterAttribute : ExceptionFilterAttribute
     {
         var statusCode = context.Exception.ParseException();
 
-        context.HttpContext.Response.ContentType = "application/json";
+        context.HttpContext.Response.ContentType = "application/problem+json";
         context.HttpContext.Response.StatusCode = (int)statusCode;
-        context.Result = new JsonResult(new
+        var problem = new ProblemDetails
         {
-            error = context.Exception.Message,
-            code = statusCode
-        });
+            Status = (int)statusCode,
+            Title = statusCode == System.Net.HttpStatusCode.InternalServerError ? "internal_error" : statusCode.ToString(),
+            Detail = statusCode == System.Net.HttpStatusCode.InternalServerError
+                ? "Unexpected server error." : context.Exception.Message,
+            Extensions = { ["traceId"] = context.HttpContext.TraceIdentifier }
+        };
+        context.Result = new ObjectResult(problem) { StatusCode = (int)statusCode };
+        context.ExceptionHandled = true;
     }
 }

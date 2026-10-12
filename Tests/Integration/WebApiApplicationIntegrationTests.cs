@@ -57,6 +57,7 @@ namespace Tests.Integration
                 configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["BootstrapAdmin:Enabled"] = "false",
+                    ["Reminders:Enabled"] = "false",
                     ["ConnectionStrings:DbConnection"] = "Server=fake;Database=fake;",
                     ["Jwt:Key"] = "integration-test-jwt-key"
                 });

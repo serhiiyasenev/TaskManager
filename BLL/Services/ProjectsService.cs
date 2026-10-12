@@ -1,4 +1,6 @@
-﻿using AutoMapper;
+﻿#nullable enable annotations
+using AutoMapper;
+using BLL.Authorization;
 using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Projects;
@@ -15,25 +17,17 @@ public class ProjectsService(
     IReadRepository<Team> teams,
     IUnitOfWork uow,
     IMapper mapper,
-    ILogger<ProjectsService> logger)
+    ILogger<ProjectsService> logger,
+    IUserAccess? access = null)
     : IProjectsService
 {
     public async Task<Result<List<ProjectDetailDto>>> GetProjectsAsync(CancellationToken ct = default)
     {
         try
         {
-            var projectList = await projects.Query()
-                .Include(p => p.Author)
-                    .ThenInclude(a => a.Team)
-                .Include(p => p.Author)
-                    .ThenInclude(a => a.Tasks)
-                .Include(p => p.Team)
-                    .ThenInclude(t => t.Users)
-                .Include(p => p.Tasks)
-                    .ThenInclude(t => t.Performer)
-                .AsSplitQuery()
-                .AsNoTracking()
-                .ToListAsync(ct);
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            var projectList = await QueryWithDetails(scope).ToListAsync(ct);
             
             var dtos = mapper.Map<List<ProjectDetailDto>>(projectList);
             logger.LogInformation("Retrieved {Count} projects", dtos.Count);
@@ -41,7 +35,7 @@ public class ProjectsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving projects");
+            logger.LogError("Error retrieving projects ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -50,19 +44,10 @@ public class ProjectsService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
             logger.LogInformation("Retrieving project {ProjectId}", id);
-            var project = await projects.Query()
-                .Include(p => p.Author)
-                    .ThenInclude(a => a.Team)
-                .Include(p => p.Author)
-                    .ThenInclude(a => a.Tasks)
-                .Include(p => p.Team)
-                    .ThenInclude(t => t.Users)
-                .Include(p => p.Tasks)
-                    .ThenInclude(t => t.Performer)
-                .AsSplitQuery()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == id, ct);
+            var project = await QueryWithDetails(scope).FirstOrDefaultAsync(p => p.Id == id, ct);
             
             if (project is null)
             {
@@ -75,7 +60,7 @@ public class ProjectsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving project {ProjectId}", id);
+            logger.LogError("Error retrieving project {ProjectId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -84,6 +69,14 @@ public class ProjectsService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            if (scope is not null)
+            {
+                if (!scope.IsAdmin && scope.TeamId != project.TeamId) return Error.Forbidden;
+                project = ProjectWriteRequest.Sanitize(project);
+                project.AuthorId = scope.UserId;
+            }
             // Validate author exists
             if (!await users.AnyAsync(u => u.Id == project.AuthorId, ct))
             {
@@ -104,12 +97,12 @@ public class ProjectsService(
             await projects.AddAsync(project, ct);
             await uow.SaveChangesAsync(ct);
             
-            logger.LogInformation("Project created: {ProjectId} - {ProjectName}", project.Id, project.Name);
+            logger.LogInformation("Project created: {ProjectId}", project.Id);
             return Result<Project>.Success(project);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error creating project {ProjectName}", project.Name);
+            logger.LogError("Error creating project ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -118,11 +111,22 @@ public class ProjectsService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
             var entity = await projects.GetByIdAsync(id, ct);
-            if (entity is null)
+            if (entity is null || (scope is { IsAdmin: false } && entity.TeamId != scope.TeamId))
             {
                 logger.LogWarning("Project {ProjectId} not found for update", id);
                 return Error.NotFound(nameof(Project), id);
+            }
+
+            if (scope is { IsAdmin: false } && entity.AuthorId != scope.UserId) return Error.Forbidden;
+            if (scope is not null)
+            {
+                if (project.TeamId != entity.TeamId) return Error.Validation("TeamId", "Project team cannot be changed through this endpoint.");
+                project = ProjectWriteRequest.Sanitize(project);
+                project.AuthorId = entity.AuthorId;
+                project.TeamId = entity.TeamId;
             }
 
             // Validate author exists
@@ -148,12 +152,12 @@ public class ProjectsService(
             projects.Update(entity);
             await uow.SaveChangesAsync(ct);
             
-            logger.LogInformation("Project updated: {ProjectId} - {ProjectName}", id, entity.Name);
+            logger.LogInformation("Project updated: {ProjectId}", id);
             return Result<Project>.Success(entity);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating project {ProjectId}", id);
+            logger.LogError("Error updating project {ProjectId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -162,12 +166,16 @@ public class ProjectsService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
             var entity = await projects.GetByIdAsync(id, ct);
-            if (entity is null)
+            if (entity is null || (scope is { IsAdmin: false } && entity.TeamId != scope.TeamId))
             {
                 logger.LogWarning("Project {ProjectId} not found for deletion", id);
                 return Error.NotFound(nameof(Project), id);
             }
+
+            if (scope is { IsAdmin: false } && entity.AuthorId != scope.UserId) return Error.Forbidden;
 
             projects.Remove(entity);
             await uow.SaveChangesAsync(ct);
@@ -177,8 +185,19 @@ public class ProjectsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deleting project {ProjectId}", id);
+            logger.LogError("Error deleting project {ProjectId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
+    }
+    private IQueryable<Project> QueryWithDetails(UserAccessScope? scope)
+    {
+        var query = projects.Query().VisibleProjects(scope)
+            .Include(project => project.Author).ThenInclude(author => author.Team)
+            .Include(project => project.Team).ThenInclude(team => team.Users)
+            .Include(project => project.Tasks).ThenInclude(task => task.Performer)
+            .AsSplitQuery().AsNoTracking();
+        return scope is { IsAdmin: false }
+            ? query.Include(project => project.Author).ThenInclude(author => author.Tasks.Where(task => task.Project.TeamId == scope.TeamId))
+            : query.Include(project => project.Author).ThenInclude(author => author.Tasks);
     }
 }

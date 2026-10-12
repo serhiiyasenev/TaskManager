@@ -4,12 +4,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Client.Services;
 
-public class SignalRListenerService(HubConnection connection, ILogger<SignalRListenerService> log) : BackgroundService
+public class SignalRListenerService(HubConnection connection, ILogger<SignalRListenerService> log, ConsoleSession session) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         connection.On<string, string>("ReceiveMessage", (user, message) =>
         {
+            if (!session.IsAuthenticated) return Task.CompletedTask;
             Console.WriteLine("\n---Message was received from Notifier---");
             Console.WriteLine($"{user}: {message}\n");
             return Task.CompletedTask;
@@ -19,6 +20,12 @@ public class SignalRListenerService(HubConnection connection, ILogger<SignalRLis
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            if (!session.IsAuthenticated)
+            {
+                if (connection.State != HubConnectionState.Disconnected) await connection.StopAsync(stoppingToken);
+                await Task.Delay(1000, stoppingToken);
+                continue;
+            }
             if (connection.State is not HubConnectionState.Connected
                 and not HubConnectionState.Connecting)
             {
@@ -27,9 +34,15 @@ public class SignalRListenerService(HubConnection connection, ILogger<SignalRLis
                     await connection.StartAsync(stoppingToken);
                     log.LogInformation("SignalR connected");
                 }
-                catch (Exception ex)
+                catch (HttpRequestException error) when (error.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    log.LogWarning(ex, "Hub not ready, retry in 5s...");
+                    session.Logout();
+                    log.LogWarning("Notification session expired. Sign in again.");
+                    continue;
+                }
+                catch (Exception) when (!stoppingToken.IsCancellationRequested)
+                {
+                    log.LogWarning("Notification hub unavailable. Retrying after 3 seconds.");
                     await Task.Delay(3000, stoppingToken);
                     continue;
                 }

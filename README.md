@@ -5,7 +5,65 @@
 ![AI Validation](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-validation.yml/badge.svg)
 
 **TaskManager** is a multi-component project management and task tracking system built with **.NET 10**, **SignalR**, **RabbitMQ**, **Serilog**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
-The system supports **real-time notifications**, **asynchronous task processing**, **analytics**, and **modular expansion**.
+The browser application uses Ukrainian React/TypeScript screens and a separate
+ASP.NET Core YARP web host. Identity cookies, confirmed email and server-side
+team/project permissions protect browser operations; the existing JWT console
+client remains supported.
+
+## Notes to reviewed tasks
+
+Open **AI нотатки**, choose an accessible project and the notes' date/time zone,
+then request proposals. Review the quoted source, choose an allowed assignee,
+edit each proposal and explicitly select the rows to save. Suggestions and
+unresolved people/deadlines require human review. Extraction creates only a
+private expiring draft; confirmation atomically creates tasks, materialization
+links, an idempotency receipt and pending notification outbox entries.
+
+AI defaults to unavailable, with manual task creation available. Configure a real
+Azure OpenAI deployment through [AI provider settings](docs/ai-provider.md).
+The separate [30-case evaluation runner](evaluation/task-extraction/README.md)
+requires explicit live opt-in and token/cost limits; fixture tests are not model
+quality measurements.
+
+The authoritative implementation status is [AI/plan.md](AI/plan.md), with exact
+verification results in [AI/traces](AI/traces). The durable notification inbox and
+worker adapters and Azure delivery code passed step27 at79b6e3d:860backend tests
+with real SQL/RabbitMQ,87frontend tests,52browser scenarios,six container images
+and Windows/Linux offline Azure tooling checks. The separate
+[full-stack gate](docs/fullstack-verification.md) exercises actual Identity, SQL,
+gateway and private realtime requests without browser API interception.
+Azure provisioning and live model verification remain external gates in step28.
+
+## Azure delivery
+
+The [Azure runbook](docs/azure-deployment.md) defines the three Bicep phases,
+five deployment identities, immutable images, SQL bootstrap/migration jobs,
+shared Blob/Key Vault cookie keys, provider permissions, protected GitHub OIDC,
+candidate smoke, explicit traffic promotion and worker-aware rollback.
+Scripts have offline Windows/Linux gates; actual validation, what-if, pricing
+and authenticated cloud verification require reviewed environment parameters.
+Local Windows SQL verification preserves `TaskManager_Codex_20261012` and creates
+separate disposable test databases. Azure has not been deployed from this chat.
+See the [product architecture](docs/architecture.md) for component ownership,
+transaction boundaries and recovery behavior.
+For this Windows machine, [native SQL/Rabbit verification](docs/native-windows-verification.md)
+uses the existing SQL Server and verified portable tools inside the repository.
+Azure deployment is deferred while local verification is completed.
+
+## Private notification history
+
+Open **Сповіщення** to read your current task notifications, filter unread items
+and mark them as read. Counts come from the scoped server inbox. Refresh and
+reconnect retrieve the saved history; logging out clears the browser snapshot
+and stops its realtime connection.
+
+The Notifier runtime owns reminder scans, outbox dispatch and retention cleanup.
+It commits a notification and its unique processing marker before broker ACK.
+SignalR carries only a private change hint; the SQL inbox is the history source.
+Local delivery uses RabbitMQ; deployed Azure delivery explicitly selects the
+managed identity Service Bus and Azure SignalR adapters. See
+[delivery guarantees and configuration](docs/notifications.md) for retry/DLQ,
+retention, compatibility and verification boundaries.
 
 ---
 
@@ -59,16 +117,27 @@ The system supports **real-time notifications**, **asynchronous task processing*
 sequenceDiagram
     participant Client as Console Client/Postman/WebUI
     participant WebAPI as WebAPI
-    participant Notifier as Notifier Service
-    participant Rabbit as RabbitMQ
-    participant SignalR as SignalR Hub
+    participant SQL as TaskManager SQL
+    participant Worker as Notifier worker
+    participant Queue as RabbitMQ / Service Bus
+    participant Consumer as Notifier consumer
+    participant SignalR as Private SignalR hub
 
-    Client->>WebAPI: Request data or create task
-    WebAPI-->>Client: Response with task/project info
-    WebAPI->>Rabbit: Publish message about task update
-    Rabbit->>Notifier: Deliver task update message
-    Notifier->>SignalR: Send "ReceiveMessage" event
-    SignalR->>Client: Display notification in real time
+    Client->>WebAPI: Confirm selected reviewed drafts
+    WebAPI->>SQL: Commit tasks, receipt and stable outbox intents
+    WebAPI-->>Client: Saved task receipt
+    Worker->>SQL: Claim pending intent with expiring lease
+    Worker->>Queue: Publish immutable body and stable ID
+    Queue-->>Worker: Publisher confirmation
+    Worker->>SQL: Mark intent published
+    Queue->>Consumer: Deliver stable message
+    Consumer->>SQL: Commit inbox row and processing marker
+    Consumer->>Queue: Acknowledge durable processing
+    Consumer->>SignalR: Optional private InboxChanged hint
+    SignalR-->>Client: Notification ID
+    Client->>WebAPI: Fetch current scoped inbox
+    WebAPI->>SQL: Query own currently accessible history
+    WebAPI-->>Client: Notification history and unread count
 ```
 
 ## 📦 Project Structure
@@ -124,18 +193,38 @@ graph TD
     G ---|queries/visualizes| LS
 ```
 
-⚙️ Local Setup Instructions
+## Local Docker setup
+
+Use Docker with Compose v2 and Linux x86-64 containers. From PowerShell in the
+repository root:
+
+```powershell
+./scripts/local-init.ps1
+./scripts/local-up.ps1
+./scripts/local-smoke.ps1
+```
+
+The init script generates private local credentials in ignored `.env`. Compose
+builds non-root .NET 10 application images, applies a migration bundle before API
+startup, and exposes the API at `http://localhost:8080` and the Notifier hub at
+`http://localhost:8081/chathub`. Bootstrap admin is disabled by default.
+`./scripts/local-down.ps1` stops services and retains data volumes. See
+[local development](docs/local-development.md) for the optional console profile,
+configuration and upgrade notes. Container execution was not verified in the
+implementation environment because Docker was unavailable.
+
+## Run from the .NET SDK
 
 Install SQL Server and RabbitMQ (or run them via Docker)
 
 Configure connection strings in appsettings.json for WebAPI and Notifier
 
-`WebAPI/appsettings.Development.json` has `BootstrapAdmin` enabled in `Development`, but the password is intentionally empty.
-
-- Email: `admin@example.com`
-- Password: set `BootstrapAdmin:Password` via User Secrets or an environment variable (for example `BootstrapAdmin__Password`) before starting the app
-
-If `BootstrapAdmin:Password` is missing (or left as a placeholder value), WebAPI startup will fail with a configuration error.
+Bootstrap administration is disabled by default. Register and confirm ordinary
+accounts using the local email sink. An operator can explicitly enable the
+development bootstrap with an email and a private strong password, then disable
+it. Production does not automatically seed administrators or demo passwords.
+Configure `Jwt__Key`, SQL, `BrowserAuth__PublicOrigin`, email and persistent keys
+as described in [authentication and access](docs/authentication-and-access.md).
 
 Run the following commands in the projects root:
 

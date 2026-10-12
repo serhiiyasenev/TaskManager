@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceNamePrefix": { "value": "taskmanager" },
+    "environmentName": { "value": "dev" },
+    "location": { "value": "REQUIRED_AZURE_REGION" },
+    "publicOrigin": { "value": "" },
+    "monthlyBudget": { "value": 100 },
+    "budgetContactEmails": { "value": ["REQUIRED_OPERATOR_EMAIL"] },
+    "openAiDeploymentName": { "value": "REQUIRED_ACTUAL_DEPLOYMENT_NAME" },
+    "openAiModelName": { "value": "REQUIRED_AVAILABLE_STRUCTURED_OUTPUT_MODEL" },
+    "openAiModelVersion": { "value": "REQUIRED_MODEL_VERSION" },
+    "openAiDeploymentSkuName": { "value": "GlobalStandard" },
+    "openAiDeploymentCapacity": { "value": 10 },
+    "emailDomainResourceId": { "value": "/subscriptions/REQUIRED_SUBSCRIPTION/resourceGroups/REQUIRED_DOMAIN_RG/providers/Microsoft.Communication/emailServices/REQUIRED_EMAIL_SERVICE/domains/REQUIRED_VERIFIED_DOMAIN" },
+    "emailDataLocation": { "value": "REQUIRED_EMAIL_DATA_GEOGRAPHY" },
+    "emailFromAddress": { "value": "REQUIRED_VERIFIED_LINKED_SENDER" },
+    "signalRPrivateEndpointConnectionNames": { "value": [] }
+  }
+}

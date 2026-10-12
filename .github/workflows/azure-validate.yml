@@ -1,0 +1,50 @@
+name: Azure offline delivery validation
+on:
+  pull_request:
+    paths: ['infra/azure/**', 'scripts/azure/**', '.github/workflows/azure-*.yml', 'Dockerfile', 'docs/azure-deployment.md']
+  push:
+    branches: [main]
+    paths: ['infra/azure/**', 'scripts/azure/**', '.github/workflows/azure-*.yml', 'Dockerfile', 'docs/azure-deployment.md']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install hash-verified pinned Microsoft tools
+        shell: pwsh
+        run: |
+          $tools = ./scripts/azure/Install-Tools.ps1 -Tools Bicep,PowerShell,Actionlint
+          "TM_PWSH=$($tools.PowerShell)" >> $env:GITHUB_ENV
+          "TM_BICEP=$($tools.Bicep)" >> $env:GITHUB_ENV
+          "TM_ACTIONLINT=$($tools.Actionlint)" >> $env:GITHUB_ENV
+      - name: Native Azure workflow validation
+        shell: pwsh
+        run: |
+          & $env:TM_ACTIONLINT -shellcheck='' -pyflakes='' .github/workflows/azure-deploy.yml .github/workflows/azure-validate.yml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: PowerShell security and execution fixtures
+        shell: pwsh
+        run: |
+          & $env:TM_PWSH -NoProfile -File scripts/azure/tests/Run.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Native Bicep compile and canonical contract gate
+        shell: pwsh
+        run: |
+          & $env:TM_PWSH -NoProfile -File scripts/azure/Test-Deployment.ps1 -OfflineOnly -BicepPath $env:TM_BICEP
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compiled native notification permission regressions
+        shell: pwsh
+        run: |
+          & $env:TM_PWSH -NoProfile -File scripts/azure/tests/CompiledRoles.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      # This job has no id-token permission, cloud environment or Azure login.

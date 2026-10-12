@@ -15,4 +15,5 @@ public record TaskBasicDto(
     bool EscalationEnabled,
     int? EscalationDelayMinutes,
     DateTime? ReminderSentAt,
-    DateTime? EscalationSentAt);
+    DateTime? EscalationSentAt,
+    Guid Version = default);

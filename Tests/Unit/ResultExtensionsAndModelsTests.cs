@@ -10,6 +10,32 @@ namespace Tests.Unit;
 
 public class ResultExtensionsAndModelsTests
 {
+    [Theory]
+    [InlineData("Error.Gone", 410)]
+    [InlineData("Error.PreconditionRequired", 428)]
+    [InlineData("Error.ServiceUnavailable", 503)]
+    [InlineData("Error.TooManyRequests", 429)]
+    public void DraftAndQuotaFailures_UseRecoverableHttpStatuses(string code, int status)
+    {
+        var error = Error.Custom(code, "A safe recovery explanation.");
+        var typed = Assert.IsType<ObjectResult>(Result<string>.Failure(error).ToActionResult().Result);
+        var empty = Assert.IsType<ObjectResult>(Result.Failure(error).ToActionResult());
+        Assert.Equal(status, typed.StatusCode);
+        Assert.Equal(status, empty.StatusCode);
+        Assert.Equal(code, Assert.IsType<ProblemDetails>(typed.Value).Extensions["code"]);
+    }
+
+    [Fact]
+    public void BusinessFailure_ReturnsProblemDetailsWithStableCodeAndSafeDetail()
+    {
+        var response = Assert.IsType<NotFoundObjectResult>(Result<string>.Failure(Error.NotFound("Task", 12)).ToActionResult().Result);
+        var problem = Assert.IsType<ProblemDetails>(response.Value);
+        Assert.Equal(404, problem.Status);
+        Assert.Equal("Error.NotFound", problem.Extensions["code"]);
+        var unknown = Assert.IsType<ObjectResult>(Result.Failure(Error.Custom("internal", "private SQL diagnostics")).ToActionResult());
+        Assert.DoesNotContain("private SQL diagnostics", Assert.IsType<ProblemDetails>(unknown.Value).Detail ?? "");
+    }
+
     [Fact]
     public void ResultExtensions_ToActionResultT_MapsAllErrorTypes()
     {

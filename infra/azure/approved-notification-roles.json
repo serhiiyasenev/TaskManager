@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "verifiedAtUtc": "2026-10-12",
+  "purpose": "Independent native SDK permission contract for static compiled-template checks; compiler schema validation alone cannot validate role GUIDs.",
+  "roles": {
+    "serviceBusSender": {
+      "roleName": "Azure Service Bus Data Sender",
+      "roleId": "69a216fc-b8fb-44d8-bc22-1f3c2cd27a39",
+      "requiredPrincipals": ["api", "notifier"],
+      "scope": "Each dedicated notification queue",
+      "operation": "Native ServiceBusSender.SendMessageAsync",
+      "source": "https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/integration#azure-service-bus-data-sender"
+    },
+    "serviceBusReceiver": {
+      "roleName": "Azure Service Bus Data Receiver",
+      "roleId": "4f6d3b9b-027b-4f4c-9142-0e5a2a2247e0",
+      "requiredPrincipals": ["notifier"],
+      "scope": "Each dedicated notification queue",
+      "operation": "Native PeekLock processor/PeekMessage and settlement",
+      "source": "https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/integration#azure-service-bus-data-receiver"
+    },
+    "signalRAppServer": {
+      "roleName": "SignalR App Server",
+      "roleId": "420fcaa2-552c-430f-98ca-3264be4806c7",
+      "requiredPrincipals": ["notifier"],
+      "scope": "Dedicated SignalR resource",
+      "operation": "Native Default-mode hub server connection and negotiation signing",
+      "source": "https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/web-and-mobile#signalr-app-server"
+    }
+  },
+  "prohibitedRuntimeRoles": {
+    "serviceBusDataOwner": "090c5cfd-751d-490a-894a-3ce6f1109419"
+  },
+  "liveEvidence": "Actual scoped managed identity send/receive/hub authorization and RBAC propagation remain live deployment gates."
+}
