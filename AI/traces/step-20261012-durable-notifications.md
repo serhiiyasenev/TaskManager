@@ -207,3 +207,16 @@ previous accepted screenshot sets are preserved as historical evidence.
 Next: push this frontend checkpoint and require final-head backend/frontend/
 container CI before accepting26. Then implement27 and actualfull-stack28;
 native SQL availability now removes the previous local SQL blocker.
+
+## Reduced-motion CI defect and product repair
+
+At74d09e66 frontend run38219508301/job114712086373 passed87unit and50browser,
+but the two unchanged motion checks still failed. Added diagnostics identified
+five finite CSSTransitions on skip-link top/outline and main outline after
+keyboard focus, all currentTime0/duration0.01ms. The universal duration override
+was itself creating pending transitions. Product CSS now sets animation:none,
+transition:none and scroll-behavior:auto under prefers-reduced-motion:reduce;
+normal preference is unchanged. No threshold/polling/timeout/retry relaxation.
+Fresh production build and both original Chrome desktop/mobile motion casesPASS.
+New assets index-BQThKCVI.css/index-aiuH2eE7.js; focused inbox screenshots remain
+historical evidence of their recorded assets. Final-head CI follows this repair.
