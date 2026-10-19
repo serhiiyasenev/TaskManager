@@ -375,6 +375,42 @@ public class TasksService(
         }
     }
 
+    public Task<Result<DAL.Entities.Task>> UpdateTaskStateWithVersionAsync(int id, TaskState state, Guid expectedVersion, CancellationToken ct = default) =>
+        InTaskWriteAsync(() => UpdateTaskStateCoreAsync(id, state, expectedVersion, ct), checkAssignee: false, ct);
+
+    private async Task<Result<DAL.Entities.Task>> UpdateTaskStateCoreAsync(int id, TaskState state, Guid expectedVersion, CancellationToken ct)
+    {
+        if (!Enum.IsDefined(state)) return Error.Validation("State", "Use a supported task state.");
+        if (expectedVersion == Guid.Empty) return Error.Validation("ExpectedVersion", "Use the task's current non-empty version.");
+        try
+        {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            var entity = await tasks.GetByIdAsync(id, ct);
+            if (entity is null || !await CanAccessTaskAsync(entity, scope, ct)) return Error.NotFound(nameof(DAL.Entities.Task), id);
+            if (expectedVersion != entity.Version) return Error.Conflict("The task changed. Reload it before applying your edit.");
+            if (entity.State == state) return Result<DAL.Entities.Task>.Success(entity);
+
+            // Existing assignment, source fields and reminder settings are not
+            // re-submitted by the Board. Access is rechecked before committing.
+            entity.State = state;
+            entity.FinishedAt = state is TaskState.Done or TaskState.Canceled ? DateTime.UtcNow : null;
+            if (state is TaskState.Done or TaskState.Canceled)
+            {
+                entity.ReminderNotificationId = null;
+                entity.EscalationNotificationId = null;
+            }
+            tasks.Update(entity);
+            await uow.SaveChangesAsync(ct);
+            logger.LogInformation("Task state updated: {TaskId}", id);
+            return Result<DAL.Entities.Task>.Success(entity);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Error.Conflict("The task changed. Reload it before applying your edit.");
+        }
+    }
+
     public Task<Result<DAL.Entities.Task>> UpdateTaskReminderAsync(int id, UpdateTaskReminderDto reminderDto, CancellationToken ct = default) =>
         InTaskWriteAsync(() => UpdateTaskReminderCoreAsync(id, reminderDto, null, ct), checkAssignee: false, ct);
 
@@ -582,8 +618,19 @@ public class TasksService(
         return Error.Conflict("The task changed. Refresh and retry.");
     }
 
-    private static bool IsDeadlock(Exception exception) => exception is SqlException { Number: 1205 }
-        or DbUpdateException { InnerException: SqlException { Number: 1205 } };
+    private static bool IsDeadlock(Exception exception)
+    {
+        // EF can wrap a SQL deadlock in InvalidOperationException. Retry only
+        // a typed server1205, including errors below the EF wrapper.
+        Exception? current = exception;
+        for (var depth = 0; current is not null && depth < 16; current = current.InnerException, depth++)
+        {
+            if (current is not SqlException sql) continue;
+            foreach (SqlError error in sql.Errors)
+                if (error.Number == 1205) return true;
+        }
+        return false;
+    }
 
     private async Task<bool> CanAccessTaskAsync(DAL.Entities.Task task, UserAccessScope? scope, CancellationToken ct) =>
         scope is null || scope.IsAdmin || (scope.TeamId.HasValue

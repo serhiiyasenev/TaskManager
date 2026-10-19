@@ -3,6 +3,7 @@ using DAL.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using TaskManager.Hosting.Cloud;
+using TaskManager.Hosting;
 
 namespace Notifier.Authentication;
 
@@ -32,9 +33,10 @@ public static class NotifierAuthenticationExtensions
         if (sessionMinutes is < 5 or > 1440) throw new InvalidOperationException("BrowserAuth:SessionMinutes is outside supported bounds.");
         services.ConfigureApplicationCookie(options =>
         {
-            options.Cookie.Name = "__Host-TaskManager.Session";
+            var localHttp = AllowedBrowserOrigins.HasDevelopmentHttp(configuration, environment);
+            options.Cookie.Name = localHttp ? "TaskManager.Local.Session" : "__Host-TaskManager.Session";
             options.Cookie.HttpOnly = true;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SecurePolicy = localHttp ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
             options.Cookie.SameSite = SameSiteMode.Lax;
             options.Cookie.Path = "/";
             options.ExpireTimeSpan = TimeSpan.FromMinutes(sessionMinutes);

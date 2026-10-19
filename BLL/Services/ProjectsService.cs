@@ -5,7 +5,9 @@ using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Projects;
 using DAL.Entities;
+using DAL.Context;
 using DAL.Repositories.Interfaces;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -18,7 +20,8 @@ public class ProjectsService(
     IUnitOfWork uow,
     IMapper mapper,
     ILogger<ProjectsService> logger,
-    IUserAccess? access = null)
+    IUserAccess? access = null,
+    TaskContext? context = null)
     : IProjectsService
 {
     public async Task<Result<List<ProjectDetailDto>>> GetProjectsAsync(CancellationToken ct = default)
@@ -65,7 +68,10 @@ public class ProjectsService(
         }
     }
 
-    public async Task<Result<Project>> AddProjectAsync(Project project, CancellationToken ct = default)
+    public Task<Result<Project>> AddProjectAsync(Project project, CancellationToken ct = default) =>
+        WriteAsync(() => AddProjectCoreAsync(project, ct), ct);
+
+    private async Task<Result<Project>> AddProjectCoreAsync(Project project, CancellationToken ct)
     {
         try
         {
@@ -100,6 +106,7 @@ public class ProjectsService(
             logger.LogInformation("Project created: {ProjectId}", project.Id);
             return Result<Project>.Success(project);
         }
+        catch (Exception ex) when (access is not null && (CallerScopedWrite.IsDeadlock(ex) || ex is DbUpdateConcurrencyException)) { throw; }
         catch (Exception ex)
         {
             logger.LogError("Error creating project ({FailureType}).", ex.GetType().Name);
@@ -107,7 +114,10 @@ public class ProjectsService(
         }
     }
 
-    public async Task<Result<Project>> UpdateProjectByIdAsync(int id, Project project, CancellationToken ct = default)
+    public Task<Result<Project>> UpdateProjectByIdAsync(int id, Project project, CancellationToken ct = default) =>
+        WriteAsync(() => UpdateProjectCoreAsync(id, project, ct), ct);
+
+    private async Task<Result<Project>> UpdateProjectCoreAsync(int id, Project project, CancellationToken ct)
     {
         try
         {
@@ -155,6 +165,7 @@ public class ProjectsService(
             logger.LogInformation("Project updated: {ProjectId}", id);
             return Result<Project>.Success(entity);
         }
+        catch (Exception ex) when (access is not null && (CallerScopedWrite.IsDeadlock(ex) || ex is DbUpdateConcurrencyException)) { throw; }
         catch (Exception ex)
         {
             logger.LogError("Error updating project {ProjectId} ({FailureType}).", id, ex.GetType().Name);
@@ -163,6 +174,12 @@ public class ProjectsService(
     }
 
     public async Task<Result> DeleteProjectByIdAsync(int id, CancellationToken ct = default)
+    {
+        var result = await WriteAsync(() => DeleteProjectCoreAsync(id, ct), ct);
+        return result.IsFailure ? Result.Failure(result.Error) : Result.Success();
+    }
+
+    private async Task<Result<Project>> DeleteProjectCoreAsync(int id, CancellationToken ct)
     {
         try
         {
@@ -177,18 +194,33 @@ public class ProjectsService(
 
             if (scope is { IsAdmin: false } && entity.AuthorId != scope.UserId) return Error.Forbidden;
 
+            if (scope is not null && await projects.Query().AnyAsync(project => project.Id == id && project.Tasks.Any(), ct))
+                return Error.Conflict("Delete the project's tasks before deleting the project.");
+
             projects.Remove(entity);
             await uow.SaveChangesAsync(ct);
             
             logger.LogInformation("Project deleted: {ProjectId}", id);
-            return Result.Success();
+            return Result<Project>.Success(entity);
         }
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 547 })
+        {
+            // A task can be created between the precheck and DELETE. The FK
+            // remains authoritative and must not turn this conflict into 500.
+            return Error.Conflict("The project still has dependent records. Refresh and retry.");
+        }
+        catch (Exception ex) when (access is not null && (CallerScopedWrite.IsDeadlock(ex) || ex is DbUpdateConcurrencyException)) { throw; }
         catch (Exception ex)
         {
             logger.LogError("Error deleting project {ProjectId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
+    private Task<Result<Project>> WriteAsync(Func<Task<Result<Project>>> action, CancellationToken ct) =>
+        CallerScopedWrite.RunAsync(context, access, action,
+            (project, current, _) => current is not null && (current.IsAdmin
+                || (current.TeamId == project.TeamId && current.UserId == project.AuthorId)), logger, ct);
+
     private IQueryable<Project> QueryWithDetails(UserAccessScope? scope)
     {
         var query = projects.Query().VisibleProjects(scope)

@@ -2,7 +2,7 @@
 <RunSettings>
   <DataCollectionRunSettings>
     <DataCollectors>
-      <DataCollector friendlyName="XPlat Code Coverage" uri="datacollector://Microsoft/TestPlatform/CodeCoverage/Collector/v1">
+      <DataCollector friendlyName="XPlat Code Coverage" uri="datacollector://microsoft/CoverletCodeCoverage/1.0">
         <Configuration>
           <Format>cobertura</Format>
           <ExcludeByFile>**/Migrations/*.cs,**/*.g.cs,**/*.designer.cs,**/*.Designer.cs</ExcludeByFile>

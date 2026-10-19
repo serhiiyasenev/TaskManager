@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Empty, ErrorNotice, Loading, Pagination } from '../../components/Feedback';
 import { formatDate } from '../../lib/dates';
+import { useLocale } from '../../lib/i18n';
 import { useSession } from '../../lib/session';
 import { useNotifications } from './context';
-import { copy as m } from './copy';
+import { notificationsCopy } from './copy';
 
 export function InboxPage() {
+  const { locale } = useLocale(); const m = notificationsCopy[locale];
   const session = useSession(); const inbox = useNotifications();
   if (!inbox) throw new Error('NotificationsProvider is required.');
   if (!session.user) return <p className="alert">{m.anonymous}</p>;
@@ -33,6 +35,7 @@ export function InboxPage() {
 }
 
 export function NotificationSummary() {
+  const { locale } = useLocale(); const m = notificationsCopy[locale];
   const inbox = useNotifications(); const count = inbox?.data && !inbox.loading && !inbox.error ? inbox.data.unreadCount : '—';
   return <div className="stat"><p>{m.unreadSummary}</p><strong>{count}</strong><small>{m.unreadCaption}</small><Link to="/notifications">{m.title} →</Link></div>;
 }

@@ -35,7 +35,7 @@ export const aiCopy = {
   en: {
     title: 'Tasks from notes', eyebrow: 'AI notes', subtitle: 'Review proposals and sources, then save only the tasks you select.',
     notes: 'Notes', inputRegion: 'Notes input', project: 'Project', chooseProject: 'Choose a project', noteDate: 'Note date (optional)', zone: 'Time zone',
-    zoneHelp: 'For example: Europe/Kyiv. Relative dates are resolved in this zone.', locale: 'Response language', uk: 'Українська', en: 'English',
+    zoneHelp: 'For example: Europe/Kyiv. Relative dates are resolved in this zone.', locale: 'Response language', uk: 'Ukrainian', en: 'English',
     extract: 'Propose tasks', pending: 'Please wait…', manual: 'Create a task manually',
     unavailable: 'AI is currently unavailable. You can keep working and create tasks manually.', fake: 'AI test mode: controlled fixtures, not the live service.',
     notesRequired: 'Enter notes containing commitments.', projectRequired: 'Choose an accessible project.', zoneInvalid: 'Enter a supported time zone.',

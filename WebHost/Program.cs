@@ -46,11 +46,12 @@ public partial class Program
             context.Response.Headers["X-Frame-Options"] = "DENY";
             await next(context);
         });
-        // Platform probes use the private HTTP listener; browser routes require HTTPS.
+        // Browser routes require HTTPS except explicitly configured Development loopback traffic.
         app.UseWhen(context => !context.Request.Path.StartsWithSegments("/health"), branch =>
         {
             branch.UseHostFiltering();
-            branch.UseHttpsRedirection();
+            branch.UseWhen(context => !AllowedBrowserOrigins.AllowsDevelopmentHttp(context, app.Configuration, app.Environment),
+                secure => secure.UseHttpsRedirection());
         });
         if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing")) app.UseHsts();
         app.UseWhen(context => !IsReservedPath(context.Request.Path), branch => branch.UseStaticFiles());

@@ -5,6 +5,7 @@ using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Users;
 using DAL.Entities;
+using DAL.Context;
 using DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,8 @@ public class UsersService(
     IUnitOfWork uow,
     IMapper mapper,
     ILogger<UsersService> logger,
-    IUserAccess? access = null) : IUsersService
+    IUserAccess? access = null,
+    TaskContext? context = null) : IUsersService
 {
     public async Task<Result<List<UserDetailDto>>> GetUsersAsync(CancellationToken ct = default)
     {
@@ -25,6 +27,7 @@ public class UsersService(
         {
             var scope = access is null ? null : await access.GetScopeAsync(ct);
             if (access is not null && scope is null) return Error.Unauthorized;
+            if (scope is { IsAdmin: false }) return Error.Forbidden;
             var entities = await QueryWithDetails(scope).ToListAsync(ct);
             
             var dtos = mapper.Map<List<UserDetailDto>>(entities);
@@ -63,7 +66,12 @@ public class UsersService(
         }
     }
 
-    public async Task<Result<UserDto>> UpdateUserByIdAsync(int id, UpdateUserDto userDto, CancellationToken ct = default)
+    public Task<Result<UserDto>> UpdateUserByIdAsync(int id, UpdateUserDto userDto, CancellationToken ct = default) =>
+        CallerScopedWrite.RunAsync(context, access, () => UpdateUserCoreAsync(id, userDto, ct),
+            (user, current, original) => current is not null && (current.IsAdmin
+                || (current.UserId == user.Id && user.TeamId == original.TeamId)), logger, ct);
+
+    private async Task<Result<UserDto>> UpdateUserCoreAsync(int id, UpdateUserDto userDto, CancellationToken ct)
     {
         try
         {
@@ -103,6 +111,7 @@ public class UsersService(
             logger.LogInformation("Updated user {UserId}", id);
             return Result<UserDto>.Success(dto);
         }
+        catch (Exception ex) when (access is not null && (CallerScopedWrite.IsDeadlock(ex) || ex is DbUpdateConcurrencyException)) { throw; }
         catch (Exception ex)
         {
             logger.LogError("Error updating user {UserId} ({FailureType}).", id, ex.GetType().Name);
@@ -111,6 +120,15 @@ public class UsersService(
     }
 
     public async Task<Result> DeleteUserByIdAsync(int id, CancellationToken ct = default)
+    {
+        var result = await CallerScopedWrite.RunAsync(context, access, () => DeleteUserCoreAsync(id, ct),
+            // The caller may delete their own dependency-free account. Its row
+            // no longer exists at the final read, so use its original identity.
+            (user, current, original) => current?.IsAdmin == true || user.Id == original.UserId, logger, ct);
+        return result.IsFailure ? Result.Failure(result.Error) : Result.Success();
+    }
+
+    private async Task<Result<UserDto>> DeleteUserCoreAsync(int id, CancellationToken ct)
     {
         try
         {
@@ -127,8 +145,10 @@ public class UsersService(
             users.Remove(entity);
             await uow.SaveChangesAsync(ct);
             logger.LogInformation("Deleted user {UserId}", id);
-            return Result.Success();
+            return Result<UserDto>.Success(new UserDto(entity.Id, entity.TeamId, entity.FirstName, entity.LastName,
+                entity.Email, entity.RegisteredAt, entity.BirthDay));
         }
+        catch (Exception ex) when (access is not null && (CallerScopedWrite.IsDeadlock(ex) || ex is DbUpdateConcurrencyException)) { throw; }
         catch (Exception ex)
         {
             logger.LogError("Error deleting user {UserId} ({FailureType}).", id, ex.GetType().Name);

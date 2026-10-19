@@ -156,8 +156,12 @@ app.UseTrustedProxyForwarding();
 
 app.Use(async (context, next) =>
 {
-    context.Response.Headers.CacheControl = "no-store";
-    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers["Referrer-Policy"] = "no-referrer";
+        return Task.CompletedTask;
+    });
     await next();
 });
 
@@ -176,7 +180,11 @@ app.Use(async (ctx, next) =>
         cid = ctx.TraceIdentifier;
         ctx.Request.Headers[header] = cid;
     }
-    ctx.Response.Headers[header] = cid;
+    ctx.Response.OnStarting(() =>
+    {
+        ctx.Response.Headers[header] = cid;
+        return Task.CompletedTask;
+    });
     using (Serilog.Context.LogContext.PushProperty("CorrelationId", cid.ToString()))
     {
         await next();
@@ -184,8 +192,9 @@ app.Use(async (ctx, next) =>
 });
 
 // ACA dependency probes reach the private HTTP listener directly. Browser
-// routes still require external HTTPS, restored only from trusted ingress.
-app.UseWhen(context => context.Request.Path != "/health/live" && context.Request.Path != "/health/ready",
+// routes require HTTPS, with an explicit Development-only loopback HTTP exception.
+app.UseWhen(context => context.Request.Path != "/health/live" && context.Request.Path != "/health/ready"
+    && !AllowedBrowserOrigins.AllowsDevelopmentHttp(context, app.Configuration, app.Environment),
     branch => branch.UseHttpsRedirection());
 
 app.UseCors("Frontend");

@@ -5,10 +5,19 @@
 ![AI Validation](https://github.com/serhiiyasenev/TaskManager/actions/workflows/ai-validation.yml/badge.svg)
 
 **TaskManager** is a multi-component project management and task tracking system built with **.NET 10**, **SignalR**, **RabbitMQ**, **Serilog**, and a layered architecture (**BLL**, **DAL**, **WebAPI**, **Client**, **Notifier**).  
-The browser application uses Ukrainian React/TypeScript screens and a separate
+The browser application uses Ukrainian/English React/TypeScript screens and a separate
 ASP.NET Core YARP web host. Identity cookies, confirmed email and server-side
 team/project permissions protect browser operations; the existing JWT console
 client remains supported.
+
+Choose **Українська / English** on account pages or at the bottom of the workspace sidebar.
+The interface language survives refresh and sign-out. User content stays in its
+original language; AI response language is a separate choice on the notes form.
+
+On the task **Board**, drag the **⋮⋮** handle between status columns to save a
+status change. Mouse, touch and keyboard are supported: Space to pick up, arrows
+to choose a column, Enter to drop, Escape to cancel. The status menu remains
+available on every card. Board counts and sorting describe the current page.
 
 ## Notes to reviewed tasks
 
@@ -33,6 +42,11 @@ and Windows/Linux offline Azure tooling checks. The separate
 [full-stack gate](docs/fullstack-verification.md) exercises actual Identity, SQL,
 gateway and private realtime requests without browser API interception.
 Azure provisioning and live model verification remain external gates in step28.
+
+For current test risks, maintained assets and replay commands, see the
+[test registry](TESTS.md). The [2026-10-13 local verification report](AI/traces/step-20261013-thorough-local-verification.md)
+records the complete working-tree results, discovered fixes, fresh coverage,
+isolated-resource cleanup and remaining external gates.
 
 ## Azure delivery
 

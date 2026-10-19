@@ -26,6 +26,15 @@ export const authCopy = {
     validationError: 'Перевірте введені дані.', forbidden: 'Права змінилися або ця дія недоступна.',
     sessionExpired: 'Сесію завершено. Увійдіть знову.', unavailable: 'Сервіс тимчасово недоступний. Повторіть спробу пізніше.',
     rateLimit: 'Забагато спроб. Зачекайте хвилину та повторіть запит.', invalidLink: 'Посилання неповне або недійсне. Запитайте новий лист.',
+    conflict: 'Дані або права змінилися. Оновіть сторінку й перевірте зміни.', maxTextLength: 'Використайте не більше 100 символів.',
+    forgotPassword: 'Забули пароль?', alreadyRegistered: 'Вже маєте обліковий запис?',
+    confirmTitle: 'Підтвердження email', confirmHelp: 'Підтвердьте адресу, до якої надійшов цей лист.',
+    resetTitle: 'Відновлення пароля', newRecoveryLink: 'Запитати нове посилання', changePasswordTitle: 'Зміна пароля',
+    emailConfirmed: 'Email підтверджено', emailNeedsConfirmation: 'Email потребує підтвердження',
+    birthday: 'Дата народження (необов’язково)', signOut: 'Вийти з облікового запису', openTeam: 'Перейти до команди',
+    invitationPreviewHelp: 'Перегляньте запрошення після входу з підтвердженою email-адресою.',
+    invitationAccount: 'Ви увійшли як {email}. Приєднання змінить вашу поточну команду лише після підтвердження.',
+    signInOtherEmail: 'Увійти з іншою адресою',
   },
   en: {
     loginTitle: 'Sign in to TaskManager', login: 'Sign in', email: 'Email', password: 'Password',
@@ -52,7 +61,14 @@ export const authCopy = {
     validationError: 'Check the entered values.', forbidden: 'Permissions changed or this action is unavailable.',
     sessionExpired: 'Your session ended. Sign in again.', unavailable: 'This service is temporarily unavailable. Please retry later.',
     rateLimit: 'Too many attempts. Wait a minute and retry.', invalidLink: 'This link is incomplete or invalid. Request another email.',
+    conflict: 'Data or permissions changed. Refresh the page and review the changes.', maxTextLength: 'Use no more than 100 characters.',
+    forgotPassword: 'Forgot password?', alreadyRegistered: 'Already have an account?',
+    confirmTitle: 'Email confirmation', confirmHelp: 'Confirm the address that received this email.',
+    resetTitle: 'Reset password', newRecoveryLink: 'Request a new link', changePasswordTitle: 'Change password',
+    emailConfirmed: 'Email confirmed', emailNeedsConfirmation: 'Email needs confirmation',
+    birthday: 'Birthday (optional)', signOut: 'Sign out', openTeam: 'Open team',
+    invitationPreviewHelp: 'Review this invitation after signing in with a confirmed email address.',
+    invitationAccount: 'You are signed in as {email}. Joining changes your current team only after confirmation.',
+    signInOtherEmail: 'Sign in with another address',
   },
 } as const;
-
-export const copy = authCopy.uk;

@@ -1,22 +1,18 @@
 import type { z } from 'zod';
+import { localizedApiMessage } from './commonCopy';
+import { getLocale } from './i18n';
+import type { Locale } from './i18n';
+
+export function apiErrorMessage(status: number, locale: Locale = getLocale()): string {
+  return localizedApiMessage(status, locale);
+}
 
 export class ApiError extends Error {
   constructor(public status: number, public traceId?: string, public fieldErrors: Record<string, string[]> = {}) {
-    super(messages[status] ?? 'Не вдалося виконати запит. Спробуйте ще раз.');
+    super(apiErrorMessage(status));
     this.name = 'ApiError';
   }
 }
-const messages: Record<number, string> = {
-  0: 'Немає з’єднання із сервером. Перевірте мережу та повторіть запит.',
-  400: 'Перевірте введені дані.', 401: 'Увійдіть у свій обліковий запис.',
-  403: 'Ви не маєте дозволу на цю дію.', 404: 'Об’єкт недоступний або вже видалений.',
-  409: 'Дані або права змінилися. Оновіть запис і перевірте зміни.',
-  410: 'Строк дії минув або посилання відкликано.',
-  428: 'Завантажте актуальну версію перед збереженням.',
-  429: 'Забагато запитів. Зачекайте хвилину та повторіть спробу.',
-  502: 'Сервер повернув неочікувану відповідь. Повторіть запит.',
-  503: 'Сервіс тимчасово недоступний. Спробуйте пізніше.'
-};
 export const sessionExpiredEvent = 'taskmanager:session-expired';
 export interface RequestOptions { method?: string; body?: unknown; signal?: AbortSignal; headers?: HeadersInit }
 export async function request<T = unknown>(path: string, schema?: z.ZodType<T>, options: RequestOptions = {}): Promise<T> {

@@ -83,7 +83,7 @@ test('task list and board preserve filters and submit a current-version status c
   await expect(page.getByRole('button', { name: 'Дошка', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('heading', { name: 'До виконання', exact: true })).toBeVisible();
   await page.getByLabel(`Статус: ${longTaskName}`).selectOption('InProgress');
-  await expect.poll(() => api.captured.some(call => call.method === 'PUT' && call.path === '/api/tasks/101' && call.body?.state === 'InProgress' && typeof call.body?.expectedVersion === 'string' && !!call.csrf)).toBe(true);
+  await expect.poll(() => api.captured.some(call => call.method === 'PATCH' && call.path === '/api/tasks/101/state' && call.body?.state === 'InProgress' && typeof call.body?.expectedVersion === 'string' && Object.keys(call.body).length === 2 && !!call.csrf)).toBe(true);
   await page.getByLabel('Пошук', { exact: true }).fill('Перевірити запрошення'); await page.getByRole('button', { name: 'Показати', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Перевірити запрошення учасників' })).toBeVisible();
   await expect(page.getByRole('link', { name: longTaskName })).toHaveCount(0);
@@ -171,7 +171,9 @@ test('expired business session returns to labelled sign-in with an explanation',
 
 test('labelled keyboard login uses the actual transport and returns to the work surface', async ({ page }, info) => {
   const api = await syntheticApi(page, { anonymous: true }); await page.goto('/login');
-  await labelledFields(page); await page.keyboard.press('Tab'); await expect(page.getByLabel('Email', { exact: true })).toBeFocused();
+  await labelledFields(page); await page.keyboard.press('Tab');
+  await expect(page.getByLabel('Мова інтерфейсу', { exact: true })).toBeFocused();
+  await page.keyboard.press('Tab'); await expect(page.getByLabel('Email', { exact: true })).toBeFocused();
   await page.keyboard.type('olena@example.test'); await page.keyboard.press('Tab'); await expect(page.getByLabel('Пароль', { exact: true })).toBeFocused();
   await page.keyboard.type('SyntheticPassword123!'); await page.keyboard.press('Tab'); await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: /Вітаємо/ })).toBeVisible();
@@ -190,4 +192,41 @@ test('registration password mismatch is associated with the labelled repeat fiel
   await expect(page.getByLabel('Повторіть пароль')).toHaveAccessibleDescription('Паролі не збігаються.');
   expect(api.captured.some(call => call.path === '/api/auth/register')).toBe(false);
   await capture(page, info, 'registration-validation'); await noDocumentOverflow(page); await touchTargets(page);
+});
+
+test('interface language preserves forms and survives reload and sign-out', async ({ page }, info) => {
+  const api = await syntheticApi(page, { anonymous: true }); await page.goto('/login');
+  await page.getByLabel('Мова інтерфейсу', { exact: true }).selectOption('en');
+  await expect(page.getByRole('heading', { name: 'Sign in to TaskManager', exact: true })).toBeVisible();
+  await expect(page).toHaveTitle('TaskManager — team tasks');
+  await page.getByLabel('Email', { exact: true }).fill('olena@example.test');
+  await page.getByLabel('Password', { exact: true }).fill('SyntheticPassword123!');
+  await page.getByLabel('Interface language', { exact: true }).selectOption('uk');
+  await expect(page).toHaveTitle('TaskManager — командні завдання');
+  await expect(page.getByLabel('Пароль', { exact: true })).toHaveValue('SyntheticPassword123!');
+  await page.getByLabel('Мова інтерфейсу', { exact: true }).selectOption('en');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Welcome/ })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: /Welcome/ })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('link', { name: 'Tasks', exact: true })).toBeVisible();
+  await capture(page, info, 'dashboard-en'); await noDocumentOverflow(page); await touchTargets(page);
+  await page.goto('/tasks/new');
+  await page.getByLabel('Name', { exact: true }).fill('Моя незбережена назва');
+  await page.getByLabel('Remind before the deadline').check();
+  await page.getByRole('button', { name: 'Create task', exact: true }).click();
+  await expect(page.getByText('A deadline is required for reminders.', { exact: true })).toBeVisible();
+  await page.getByLabel('Interface language', { exact: true }).selectOption('uk');
+  await expect(page.getByText('Для нагадування потрібен строк виконання.', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Назва', { exact: true })).toHaveValue('Моя незбережена назва');
+  await expect(page.getByLabel('Нагадати до строку')).toBeChecked();
+  expect(api.captured.some(call => call.path === '/api/tasks' && call.method === 'POST')).toBe(false);
+  await page.getByLabel('Мова інтерфейсу', { exact: true }).selectOption('en');
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Sign in to TaskManager', exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Sign in to TaskManager', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => ({ keys: Object.keys(localStorage), language: localStorage.getItem('taskmanager.ui-locale'), session: sessionStorage.length })))
+    .toEqual({ keys: ['taskmanager.ui-locale'], language: 'en', session: 0 });
 });

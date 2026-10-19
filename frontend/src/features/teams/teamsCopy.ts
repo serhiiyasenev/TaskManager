@@ -23,6 +23,7 @@ export const teamsCopy = {
     invalidName: 'Введіть назву від 1 до 100 символів.', invalidEmail: 'Введіть коректну email-адресу.',
     rightsChanged: 'Права змінилися. Оновіть сторінку, щоб перевірити поточний доступ.', retry: 'Повторити',
     invalidRoute: 'Некоректне посилання на команду.', copyFailed: 'Не вдалося скопіювати посилання. Скопіюйте його з поля вручну.',
+    sharedWork: 'Спільна робота', trace: 'Код звернення', inviteLink: 'Посилання для запрошеної людини',
   },
   en: {
     title: 'Teams', subtitle: 'Members, access and private invitations to work together.',
@@ -47,6 +48,6 @@ export const teamsCopy = {
     back: 'Back to teams', memberCount: 'Members', invalidName: 'Enter a name between 1 and 100 characters.',
     invalidEmail: 'Enter a valid email address.', rightsChanged: 'Permissions changed. Refresh to review your current access.',
     retry: 'Retry', invalidRoute: 'Invalid team link.', copyFailed: 'The link could not be copied. Copy it manually from the field.',
+    sharedWork: 'Working together', trace: 'Support reference', inviteLink: 'Link for the invited person',
   },
 } as const;
-export const copy = teamsCopy.uk;

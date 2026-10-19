@@ -105,6 +105,20 @@ public class TasksController(ITasksService tasksService, ITaskNotificationDispat
         return result.IsFailure ? result.ToActionResult() : Ok(TaskWriteResponse.FromEntity(result.Value!));
     }
 
+    [HttpPatch("{id}/state")]
+    [ProducesResponseType(typeof(TaskWriteResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status428PreconditionRequired)]
+    public async System.Threading.Tasks.Task<ActionResult<Task>> UpdateState([FromRoute] int id, [FromBody] UpdateTaskStateRequest request, CancellationToken ct)
+    {
+        var version = ExpectedVersion(request.ExpectedVersion, requireVersion: true);
+        if (version.IsFailure) return VersionProblem(version.Error);
+        var result = await tasksService.UpdateTaskStateWithVersionAsync(id, request.State!.Value, version.Value!.Value, ct);
+        return result.IsFailure ? result.ToActionResult() : Ok(TaskWriteResponse.FromEntity(result.Value!));
+    }
+
     [HttpPut("{id}/reminder")]
     [ProducesResponseType(typeof(TaskWriteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -139,7 +153,7 @@ public class TasksController(ITasksService tasksService, ITaskNotificationDispat
         return result.ToActionResult();
     }
 
-    private Result<Guid?> ExpectedVersion(Guid? bodyVersion)
+    private Result<Guid?> ExpectedVersion(Guid? bodyVersion, bool requireVersion = false)
     {
         if (bodyVersion == Guid.Empty) return Error.Validation("ExpectedVersion", "Use the task's current non-empty version.");
         Guid? headerVersion = null;
@@ -156,7 +170,7 @@ public class TasksController(ITasksService tasksService, ITaskNotificationDispat
         var expected = bodyVersion ?? headerVersion;
         // A missing HTTP context occurs only in existing direct controller tests.
         // Every browser HTTP mutation requires a version; explicit JWT stays compatible.
-        if (HttpContext is not null && !BrowserAuthenticationExtensions.HasBearerHeader(Request) && !expected.HasValue)
+        if (!expected.HasValue && (requireVersion || (HttpContext is not null && !BrowserAuthenticationExtensions.HasBearerHeader(Request))))
             return Error.Custom("Error.PreconditionRequired", "Load the task's current version before changing or deleting it.");
         return Result<Guid?>.Success(expected);
     }

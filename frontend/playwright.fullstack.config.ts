@@ -8,7 +8,7 @@ fullStackRunId();
 // by our reporter because this switch does not suppress buildErrorContext.
 process.env.PLAYWRIGHT_NO_COPY_PROMPT = '1';
 export default defineConfig({
-  testDir: './fullstack', testMatch: 'journeys.spec.ts', timeout: 30_000, expect: { timeout: 8_000 },
+  testDir: './fullstack', testMatch: ['journeys.spec.ts', 'board.spec.ts', 'thorough.spec.ts'], timeout: 30_000, expect: { timeout: 8_000 },
   fullyParallel: false, workers: 1, retries: 0, forbidOnly: Boolean(process.env.CI),
   outputDir: './test-results/fullstack-private',
   reporter: [['./fullstack/sanitizedReporter.ts']],

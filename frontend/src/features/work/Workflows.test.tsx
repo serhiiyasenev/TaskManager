@@ -62,7 +62,7 @@ describe('task and project workflows', () => {
   it('changes board status with the server version', async () => {
     const user = userEvent.setup(); screenFor(<TasksPage />, '/tasks?view=board');
     await user.selectOptions(await screen.findByLabelText(`Статус: ${task.name}`), 'InProgress');
-    await waitFor(() => expect(request).toHaveBeenCalledWith('/api/tasks/101', expect.anything(), expect.objectContaining({ method: 'PUT', body: expect.objectContaining({ state: 'InProgress', expectedVersion: version }) })));
+    await waitFor(() => expect(request).toHaveBeenCalledWith('/api/tasks/101/state', expect.anything(), expect.objectContaining({ method: 'PATCH', body: { state: 'InProgress', expectedVersion: version } })));
   });
   it('filters by a permitted team member and keeps that selection across paging', async () => {
     const user = userEvent.setup(); screenFor(<TasksPage />, '/tasks');

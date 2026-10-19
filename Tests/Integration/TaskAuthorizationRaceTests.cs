@@ -18,6 +18,7 @@ public sealed class TaskAuthorizationRaceTests
     [InlineData("update")]
     [InlineData("reminder")]
     [InlineData("delete")]
+    [InlineData("state")]
     public async Task CallerMembershipRevokedAtWrite_DoesNotCommitTaskOrOutboxChanges(string operation)
     {
         var fault = new TaskWriteInterleaving(operation == "delete" ? "DELETE" : "UPDATE", 101);
@@ -35,8 +36,10 @@ public sealed class TaskAuthorizationRaceTests
         Assert.Equal(snapshot, await SnapshotAsync(factory));
     }
 
-    [Fact]
-    public async Task AdministratorRoleRevokedAtWrite_DoesNotCommitTaskChange()
+    [Theory]
+    [InlineData("update")]
+    [InlineData("state")]
+    public async Task AdministratorRoleRevokedAtWrite_DoesNotCommitTaskChange(string operation)
     {
         var fault = new TaskWriteInterleaving("UPDATE", 105, revokeRole: true);
         using var factory = await DataIsolationFactory.CreateAsync(fault);
@@ -45,11 +48,31 @@ public sealed class TaskAuthorizationRaceTests
         var snapshot = await SnapshotAsync(factory);
         fault.Arm();
 
-        var response = await MutateAsync(caller, "update", version);
+        var response = await MutateAsync(caller, operation, version);
 
         Assert.True(fault.Injected);
         AssertDenied(response);
         Assert.Equal(snapshot, await SnapshotAsync(factory));
+    }
+
+    [Fact]
+    public async Task ProjectMovedToForeignTeamAtStateWrite_DoesNotCommitTaskOrOccurrenceChanges()
+    {
+        var fault = new TaskWriteInterleaving("UPDATE", 101, moveProject: true);
+        using var factory = await DataIsolationFactory.CreateAsync(fault);
+        await AddClaimedOutboxAsync(factory);
+        using var caller = factory.CreateUserClient(101);
+        var version = await VersionAsync(caller);
+        var snapshot = await SnapshotAsync(factory);
+        fault.Arm();
+
+        var response = await MutateAsync(caller, "state", version);
+
+        Assert.True(fault.Injected);
+        AssertDenied(response);
+        Assert.Equal(snapshot, await SnapshotAsync(factory));
+        await factory.WithDatabaseAsync(async db => Assert.Equal(101,
+            (await db.Projects.AsNoTracking().SingleAsync(project => project.Id == 101)).TeamId));
     }
 
     [Theory]
@@ -87,6 +110,7 @@ public sealed class TaskAuthorizationRaceTests
         {
             "update" => await caller.PutAsJsonAsync("/api/tasks/101", new { projectId = 101, performerId = 101, name = "Raced edit", description = "Must not persist", state = 0, expectedVersion = version }),
             "reminder" => await caller.PutAsJsonAsync("/api/tasks/101/reminder", new { dueDate = DateTime.UtcNow.AddDays(2), reminderEnabled = true, reminderOffsetMinutes = 15, escalationEnabled = true, escalationDelayMinutes = 30, expectedVersion = version }),
+            "state" => await caller.PatchAsJsonAsync("/api/tasks/101/state", new { state = "Done", expectedVersion = version }),
             _ => await caller.DeleteAsync("/api/tasks/101")
         };
     }
@@ -98,8 +122,9 @@ public sealed class TaskAuthorizationRaceTests
         {
             tasks = await db.Tasks.AsNoTracking().OrderBy(task => task.Id).Select(task => new
             {
-                task.Id, task.Version, task.Name, task.PerformerId, task.DueDate, task.ReminderEnabled, task.ReminderNotificationId,
-                task.ReminderSentAt, task.EscalationEnabled, task.EscalationNotificationId, task.EscalationSentAt
+                task.Id, task.Version, task.Name, task.Description, task.ProjectId, task.PerformerId, task.State, task.FinishedAt,
+                task.DueDate, task.ReminderEnabled, task.ReminderOffsetMinutes, task.ReminderNotificationId,
+                task.ReminderSentAt, task.EscalationEnabled, task.EscalationDelayMinutes, task.EscalationNotificationId, task.EscalationSentAt
             }).ToListAsync(),
             outbox = await db.NotificationOutbox.AsNoTracking().OrderBy(value => value.Id).ToListAsync()
         }));
@@ -116,7 +141,7 @@ public sealed class TaskAuthorizationRaceTests
         await db.SaveChangesAsync();
     });
 
-    private sealed class TaskWriteInterleaving(string verb, int subjectId, bool revokeRole = false) : DbCommandInterceptor
+    private sealed class TaskWriteInterleaving(string verb, int subjectId, bool revokeRole = false, bool moveProject = false) : DbCommandInterceptor
     {
         private bool _armed;
         public bool Injected { get; private set; }
@@ -143,10 +168,11 @@ public sealed class TaskAuthorizationRaceTests
             Injected = true;
             await using var change = command.Connection!.CreateCommand();
             change.Transaction = command.Transaction;
-            change.CommandText = revokeRole ? "DELETE FROM \"AspNetUserRoles\" WHERE \"UserId\" = @id"
+            change.CommandText = moveProject ? "UPDATE \"Projects\" SET \"TeamId\" = 102 WHERE \"Id\" = @id"
+                : revokeRole ? "DELETE FROM \"AspNetUserRoles\" WHERE \"UserId\" = @id"
                 : "UPDATE \"AspNetUsers\" SET \"TeamId\" = NULL, \"ConcurrencyStamp\" = @stamp WHERE \"Id\" = @id";
             var id = change.CreateParameter(); id.ParameterName = "@id"; id.Value = subjectId; change.Parameters.Add(id);
-            if (!revokeRole)
+            if (!revokeRole && !moveProject)
             {
                 var stamp = change.CreateParameter(); stamp.ParameterName = "@stamp"; stamp.Value = Guid.NewGuid().ToString(); change.Parameters.Add(stamp);
             }

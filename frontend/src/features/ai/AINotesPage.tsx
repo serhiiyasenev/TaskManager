@@ -7,9 +7,11 @@ import { ApiError, request } from '../../lib/api';
 import { AIDraftSchema, AIStatusSchema, AICommitReceiptSchema, ProjectSchema, TeamSchema } from '../../lib/contracts';
 import type { AIDraft, AIDraftItem, AICommitReceipt, TeamMember } from '../../lib/contracts';
 import { formatDate, toLocalInput, toUtc } from '../../lib/dates';
+import { browserTimeZone, canonicalTimeZone } from '../../lib/timeZone';
+import { translateCopyText, useLocale } from '../../lib/i18n';
 import { useLoad } from '../../lib/useLoad';
 import { useSession } from '../../lib/session';
-import { copy as m, explainAiMarker } from './aiCopy';
+import { aiCopy, explainAiMarker } from './aiCopy';
 
 interface RowEdit {
   selected: boolean; title: string; description: string; assignee: string; due: string;
@@ -31,6 +33,7 @@ function validMinutes(value: string) { return /^\d+$/.test(value) && Number(valu
 function outcomeUnknown(error: unknown) { return !(error instanceof ApiError) || error.status === 0 || error.status >= 500; }
 
 function AIFailure({ error, unknown, block, retry }: { error: unknown; unknown: boolean; block: Block; retry?: () => void }) {
+  const { locale: uiLocale } = useLocale(); const m = aiCopy[uiLocale];
   const focus = useRef<HTMLDivElement>(null);
   useEffect(() => { if (error) focus.current?.focus(); }, [error]);
   if (!error) return null;
@@ -48,9 +51,10 @@ function DraftRow({ item, edit, number, members, disabled, errors, timeZone, upd
   item: AIDraftItem; edit: RowEdit; number: number; members: TeamMember[]; disabled: boolean; errors: Errors; timeZone: string;
   update: (field: keyof RowEdit, value: string | boolean) => void;
 }) {
+  const { locale: uiLocale } = useLocale(); const m = aiCopy[uiLocale];
   const id = useId(); const locked = disabled || Boolean(item.materializedTaskId);
   const changed = edit.title !== item.title || edit.description !== item.description || edit.assignee !== (item.proposedAssigneeId ? String(item.proposedAssigneeId) : '') || edit.due !== toLocalInput(item.proposedDueAtUtc);
-  const error = (field: string) => errors[field] ? <span id={`${id}-${field}-error`} className="field-error" role="alert">{errors[field]}</span> : null;
+  const error = (field: string) => errors[field] ? <span id={`${id}-${field}-error`} className="field-error" role="alert">{translateCopyText(errors[field], aiCopy, uiLocale)}</span> : null;
   const fieldProps = (field: string) => ({ 'aria-invalid': Boolean(errors[field]), 'aria-describedby': errors[field] ? `${id}-${field}-error` : undefined });
   return <tr>
     <td><label className="checkbox" htmlFor={`${id}-selected`}><input id={`${id}-selected`} type="checkbox" aria-label={`${m.select} ${m.rowSelection} ${number}`}
@@ -80,18 +84,20 @@ function DraftRow({ item, edit, number, members, disabled, errors, timeZone, upd
     <td><h3>{m.source}</h3>{item.sourceQuote ? <blockquote className="ai-source">{item.sourceQuote}</blockquote> : <p className="muted">{m.sourceMissing}</p>}
       <dl className="ai-source-meta"><div><dt>{m.originalAssignee}</dt><dd>{item.originalAssigneeText ?? m.notSpecified}</dd></div>
         <div><dt>{m.originalDue}</dt><dd>{item.originalDueText ?? m.notSpecified}</dd></div></dl>
-      {!!item.interpretations.length && <><h3>{m.interpretations}</h3><ul>{item.interpretations.map((marker, index) => <li key={index}>{explainAiMarker(marker, 'uk', timeZone)}</li>)}</ul></>}
-      {!!item.clarificationReasons.length && <><h3>{m.clarification}</h3><ul>{item.clarificationReasons.map((marker, index) => <li key={index}>{explainAiMarker(marker, 'uk', timeZone)}</li>)}</ul></>}
+      {!!item.interpretations.length && <><h3>{m.interpretations}</h3><ul>{item.interpretations.map((marker, index) => <li key={index}>{explainAiMarker(marker, uiLocale, timeZone)}</li>)}</ul></>}
+      {!!item.clarificationReasons.length && <><h3>{m.clarification}</h3><ul>{item.clarificationReasons.map((marker, index) => <li key={index}>{explainAiMarker(marker, uiLocale, timeZone)}</li>)}</ul></>}
     </td>
   </tr>;
 }
 
 export function AINotesPage() {
+  const { locale: uiLocale, intlLocale } = useLocale(); const m = aiCopy[uiLocale];
   const session = useSession(); const [query, setQuery] = useSearchParams();
   const status = useLoad('ai-status', signal => request('/api/ai/status', AIStatusSchema, { signal }));
   const projects = useLoad(`ai-projects-${session.user?.id}`, signal => request('/api/projects', z.array(ProjectSchema), { signal }));
   const [notes, setNotes] = useState(''); const [projectId, setProjectId] = useState(''); const [noteDate, setNoteDate] = useState('');
-  const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const browserZone = browserTimeZone();
+  // Response language is evidence/request state, independent of UI preference.
   const [zone, setZone] = useState(browserZone); const [locale, setLocale] = useState<'uk' | 'en'>('uk');
   const [draft, setDraft] = useState<AIDraft | null>(null); const [edits, setEdits] = useState<Record<string, RowEdit>>({});
   const [inputErrors, setInputErrors] = useState<Errors>({}); const [rowErrors, setRowErrors] = useState<Record<string, Errors>>({});
@@ -114,7 +120,7 @@ export function AINotesPage() {
 
   function adopt(value: AIDraft, preserve = false) {
     if (value.ownerId !== session.user?.id) throw new ApiError(404);
-    setDraft(value); setProjectId(String(value.projectId)); setZone(value.timeZoneId); setLocale(value.locale);
+    setDraft(value); setProjectId(String(value.projectId)); setZone(canonicalTimeZone(value.timeZoneId)); setLocale(value.locale);
     setEdits(previous => Object.fromEntries(value.items.map(item => [item.draftItemId,
       preserve && previous[item.draftItemId] ? { ...previous[item.draftItemId], selected: !item.materializedTaskId && previous[item.draftItemId].selected } : initialEdit(item)])));
   }
@@ -126,7 +132,7 @@ export function AINotesPage() {
     void request(`/api/ai/task-extractions/${routeId}`, AIDraftSchema, { signal: controller.signal }).then(value => {
       if (!controller.signal.aborted) {
         if (value.ownerId !== session.user?.id) { setFailure(new ApiError(404)); setBlock('missing'); return; }
-        setDraft(value); setProjectId(String(value.projectId)); setZone(value.timeZoneId); setLocale(value.locale);
+        setDraft(value); setProjectId(String(value.projectId)); setZone(canonicalTimeZone(value.timeZoneId)); setLocale(value.locale);
         setEdits(Object.fromEntries(value.items.map(item => [item.draftItemId, initialEdit(item)]))); setRestored(true); setRestoring(false);
       }
     }).catch(error => { if (!controller.signal.aborted) { setFailure(error); setBlock(error instanceof ApiError && error.status === 410 ? 'expired' : 'missing'); } })
@@ -152,7 +158,7 @@ export function AINotesPage() {
     if (!notes.trim()) errors.notes = m.notesRequired;
     if (notes.length > (status.data?.maxInputCharacters ?? 20_000)) errors.notes = m.notesLimit;
     if (!selectedProject) errors.project = m.projectRequired;
-    try { new Intl.DateTimeFormat('uk-UA', { timeZone: zone }).format(new Date()); } catch { errors.zone = m.zoneInvalid; }
+    try { new Intl.DateTimeFormat(intlLocale, { timeZone: zone }).format(new Date()); } catch { errors.zone = m.zoneInvalid; }
     if (noteDate && !z.iso.date().safeParse(noteDate).success) errors.noteDate = m.noteDateInvalid;
     setInputErrors(errors); if (Object.keys(errors).length || !status.data?.available) return;
     await start(async () => {
@@ -255,7 +261,7 @@ export function AINotesPage() {
   const rowLocked = inputLocked || block === 'forbidden' || block === 'expired' || block === 'missing' || team.loading || Boolean(team.error);
   const selectedCount = draft?.items.filter(item => !item.materializedTaskId && edits[item.draftItemId]?.selected).length ?? 0;
   const inputId = useId();
-  const inputError = (field: string) => inputErrors[field] ? <span id={`${inputId}-${field}-error`} className="field-error" role="alert">{inputErrors[field]}</span> : null;
+  const inputError = (field: string) => inputErrors[field] ? <span id={`${inputId}-${field}-error`} className="field-error" role="alert">{translateCopyText(inputErrors[field], aiCopy, uiLocale)}</span> : null;
   const inputProps = (field: string) => ({ 'aria-invalid': Boolean(inputErrors[field]), 'aria-describedby': inputErrors[field] ? `${inputId}-${field}-error` : undefined });
   return <>
     <header className="page-header"><div><p className="eyebrow">{m.eyebrow}</p><h1>{m.title}</h1><p>{m.subtitle}</p></div>
@@ -266,7 +272,7 @@ export function AINotesPage() {
     {status.data && !status.data.available && <p className="alert alert-warning">{m.unavailable}</p>}
     {status.data?.provider === 'fake' && <p className="alert alert-warning">{m.fake}</p>}
     <AIFailure error={failure} unknown={Boolean(unknown)} block={block} />
-    {message && <p className="alert" role="status">{message}</p>}
+    {message && <p className="alert" role="status">{translateCopyText(message, aiCopy, uiLocale)}</p>}
     {!projects.loading && <section className="form-panel ai-notes" aria-label={m.inputRegion}><form noValidate onSubmit={event => void extract(event)} aria-busy={pending}>
       <div className="form-grid">
         <div className="field span-full"><label htmlFor={`${inputId}-notes`}>{m.notes}</label><textarea id={`${inputId}-notes`} value={notes} disabled={inputLocked}
@@ -288,7 +294,7 @@ export function AINotesPage() {
     {restoring && <Loading />}
     {draft && <section className="ai-review" aria-labelledby="ai-review-heading"><header className="page-header"><div><h2 id="ai-review-heading">{m.review}</h2><p>{m.reviewHelp}</p></div>
       <button className="button danger" type="button" disabled={inputLocked} onClick={() => void deleteDraft()}>{m.delete}</button></header>
-      <p className="muted">{m.reference}: {draft.referenceDate} · {m.sourceZone}: {draft.timeZoneId} · {m.expires}: {formatDate(draft.expiresAtUtc)}</p>
+      <p className="muted">{m.reference}: {draft.referenceDate} · {m.sourceZone}: {canonicalTimeZone(draft.timeZoneId)} · {m.expires}: {formatDate(draft.expiresAtUtc)}</p>
       <p className="muted">{m.browserZone}: {browserZone}. {m.maxItems}: {status.data?.maxItems ?? '—'}.</p>
       {restored && <p className="muted">{m.noWholeNotes}</p>}
       {!!team.error && !directoryBlocked && <ErrorNotice error={team.error} retry={() => void team.reload()} />}
@@ -298,7 +304,7 @@ export function AINotesPage() {
       {!draft.items.length ? <Empty title={m.empty}><p>{m.emptyHelp}</p></Empty> : <>
         <div className="panel table-wrap" role="region" aria-label={m.proposalTable} tabIndex={0}><table className="ai-review-table"><thead><tr><th scope="col">{m.selection}</th><th scope="col">{m.task}</th><th scope="col">{m.assignee} / {m.deadline}</th><th scope="col">{m.evidence}</th></tr></thead>
           <tbody>{draft.items.map((item, index) => <DraftRow key={item.draftItemId} item={item} edit={edits[item.draftItemId] ?? initialEdit(item)} number={index + 1}
-            members={members} disabled={rowLocked} errors={rowErrors[item.draftItemId] ?? {}} timeZone={draft.timeZoneId} update={(field, value) => update(item.draftItemId, field, value)} />)}</tbody></table></div>
+            members={members} disabled={rowLocked} errors={rowErrors[item.draftItemId] ?? {}} timeZone={canonicalTimeZone(draft.timeZoneId)} update={(field, value) => update(item.draftItemId, field, value)} />)}</tbody></table></div>
         <div className="form-actions"><button className="button" type="button" disabled={rowLocked || Boolean(block) || !selectedCount} onClick={() => void commit()}>{pending ? m.pending : m.commit}</button>
           <p className="muted">{m.selected}: {selectedCount}</p></div>
       </>}

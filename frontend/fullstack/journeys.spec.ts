@@ -136,10 +136,20 @@ test('owner removal revokes a real member draft and task; test clock expires the
     await page.getByLabel('Email запрошеного учасника', { exact: true }).fill(person.email);
     await page.getByRole('button', { name: 'Створити запрошення', exact: true }).click();
     const link = await page.getByLabel('Посилання для запрошеної людини', { exact: true }).inputValue();
+    // The real API omits null timestamps on a fresh invitation. A reload must
+    // keep the owner list usable after the one-time private link is hidden.
+    await page.reload();
+    const invitations = page.getByRole('region', { name: 'Приватні запрошення', exact: true });
+    await expect(invitations.getByText('Активне', { exact: true })).toBeVisible();
+    await expect(invitations.getByRole('button', { name: `Відкликати запрошення ${person.email}`, exact: true })).toBeVisible();
+    await expect(invitations.getByRole('alert')).toHaveCount(0);
     await privateLink(member, link, '/invite');
     await member.getByRole('button', { name: 'Приєднатися до команди', exact: true }).click();
     await expect(member.getByRole('status')).toContainText('Ви приєдналися до команди');
-    await page.getByRole('button', { name: 'Приховати посилання', exact: true }).click();
+    await page.reload();
+    await expect(invitations.getByText('Прийняте', { exact: true })).toBeVisible();
+    await expect(invitations.getByRole('button', { name: `Відкликати запрошення ${person.email}`, exact: true })).toHaveCount(0);
+    await expect(invitations.getByRole('alert')).toHaveCount(0);
     const taskId = await createManualTask(member, owned.projectId, 'Завдання учасника до вилучення');
     const draft = await extract(member, owned.projectId);
     await member.getByLabel('Вибрати пропозицію 1').check();
@@ -150,9 +160,12 @@ test('owner removal revokes a real member draft and task; test clock expires the
     await page.getByRole('button', { name: 'Підтвердити вилучення', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('Учасника вилучено');
     await member.getByRole('button', { name: 'Зберегти вибрані завдання', exact: true }).click();
-    await expect(member.getByText(/Доступ змінився. Вибір учасників приховано/)).toBeVisible();
-    await expect(member.getByLabel('Назва пропозиції 1')).toHaveValue('Мої незбережені правки');
-    await expect(member.getByRole('button', { name: 'Зберегти вибрані завдання', exact: true })).toBeDisabled();
+    // A refreshed real /me now has no team. Protected pages must discard the
+    // former scope's private source/rows rather than keep a stale review form.
+    await expect(member.getByLabel('Назва пропозиції 1')).toHaveCount(0);
+    await expect(member.locator('.ai-source')).toHaveCount(0);
+    await expect(member.getByRole('button', { name: 'Зберегти вибрані завдання', exact: true })).toHaveCount(0);
+    await expect(member.getByRole('alert')).toContainText('Чернетка недоступна');
     expect((await member.request.get(`/api/tasks/${taskId}`)).status()).toBe(404);
     expect((await member.request.get(`/api/projects/${owned.projectId}`)).status()).toBe(404);
     expect((await member.request.get(`/api/ai/task-extractions/${draft.id}`)).status()).toBe(403);

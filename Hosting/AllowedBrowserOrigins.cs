@@ -1,4 +1,7 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Http;
+using System.Net;
 
 namespace TaskManager.Hosting;
 
@@ -6,6 +9,16 @@ namespace TaskManager.Hosting;
 // candidate. Recovery/confirmation links always retain the canonical origin.
 public static class AllowedBrowserOrigins
 {
+    public static bool HasDevelopmentHttp(IConfiguration configuration, IHostEnvironment environment) =>
+        environment.IsDevelopment() && Read(configuration, true).Any(origin => origin.Scheme == Uri.UriSchemeHttp);
+
+    public static bool AllowsDevelopmentHttp(HttpContext context, IConfiguration configuration, IHostEnvironment environment) =>
+        environment.IsDevelopment() && !context.Request.IsHttps
+        && context.Connection.RemoteIpAddress is { } remote && IPAddress.IsLoopback(remote)
+        && Uri.TryCreate($"{context.Request.Scheme}://{context.Request.Host}", UriKind.Absolute, out var requested)
+        && requested.Scheme == Uri.UriSchemeHttp
+        && Read(configuration, true).Any(origin => origin == requested && origin.IsLoopback);
+
     public static IReadOnlyList<Uri> Read(IConfiguration configuration, bool development)
     {
         var publicOrigin = configuration["BrowserAuth:PublicOrigin"];

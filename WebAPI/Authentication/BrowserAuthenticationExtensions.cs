@@ -101,9 +101,10 @@ public static class BrowserAuthenticationExtensions
         services.AddOptions<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme)
             .Configure<IOptions<BrowserAuthenticationOptions>, TimeProvider>((options, account, clock) =>
         {
-            options.Cookie.Name = CookieName;
+            var localHttp = AllowedBrowserOrigins.HasDevelopmentHttp(configuration, environment);
+            options.Cookie.Name = localHttp ? "TaskManager.Local.Session" : CookieName;
             options.Cookie.HttpOnly = true;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SecurePolicy = localHttp ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
             options.Cookie.SameSite = SameSiteMode.Lax;
             options.Cookie.Path = "/";
             options.ExpireTimeSpan = TimeSpan.FromMinutes(account.Value.SessionMinutes);
@@ -123,9 +124,10 @@ public static class BrowserAuthenticationExtensions
         services.AddAntiforgery(options =>
         {
             options.HeaderName = AntiforgeryHeaderName;
-            options.Cookie.Name = "__Host-TaskManager.Antiforgery";
+            var localHttp = AllowedBrowserOrigins.HasDevelopmentHttp(configuration, environment);
+            options.Cookie.Name = localHttp ? "TaskManager.Local.Antiforgery" : "__Host-TaskManager.Antiforgery";
             options.Cookie.HttpOnly = true;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SecurePolicy = localHttp ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
             options.Cookie.SameSite = SameSiteMode.Strict;
             options.Cookie.Path = "/";
         });

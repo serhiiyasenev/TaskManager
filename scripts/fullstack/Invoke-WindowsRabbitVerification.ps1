@@ -91,6 +91,17 @@ try {
     $backend = Start-FullStackChild -Executable (Get-Command dotnet -ErrorAction Stop).Source -Arguments @('test','TaskManager.sln','--settings','.runsettings','--results-directory','TestResults/fullstack-native-rabbit-backend','--logger','trx;LogFileName=test_results.trx','--configuration','Release','--no-build') -WorkingDirectory $repository -Environment @{TASKMANAGER_TEST_SQL_SERVER=$sql;TASKMANAGER_TEST_RABBITMQ='true'}
     try { if ((Wait-FullStackChild $backend -TimeoutSeconds 600) -ne 0) { throw 'Actual native SQL/Rabbit backend regression failed; private raw output is discarded.' } }
     finally { $null=Stop-FullStackChild $backend -GraceSeconds 1;$backend.Process.Dispose() }
+    # Exit0 alone also accepts a collector warning with no fresh report. Do
+    # not let stale coverage from another invocation certify this backend run.
+    $backendTrx = [xml][IO.File]::ReadAllText((Join-Path $repository 'TestResults/fullstack-native-rabbit-backend/test_results.trx'))
+    $counts = $backendTrx.SelectSingleNode('//*[local-name()="Counters"]')
+    $coverage = $backendTrx.SelectNodes('//*[local-name()="Collector" and @uri="datacollector://microsoft/CoverletCodeCoverage/1.0"]//*[local-name()="A"]')
+    $collectorWarnings = @($backendTrx.SelectNodes('//*[local-name()="RunInfo"]') | Where-Object { $_.InnerText -match '(?i)coverlet|data collector|coverage' })
+    if ($null -eq $counts -or [int]$counts.GetAttribute('total') -lt 1 -or
+        $counts.GetAttribute('passed') -cne $counts.GetAttribute('total') -or $counts.GetAttribute('failed') -cne '0' -or
+        $counts.GetAttribute('notExecuted') -cne '0' -or $coverage.Count -ne 1 -or $collectorWarnings.Count -ne 0) {
+        throw 'Backend tests or current coverage evidence are incomplete; no prior report is accepted.'
+    }
     Write-Host 'PASS actual native SQL/Rabbit backend regression; inspect TRX for exact counts.'
     $phase='browser'
     $browserRunner = Start-FullStackChild -Executable $pwshExecutable -Arguments @('-NoProfile','-File',(Join-Path $PSScriptRoot 'Run.ps1'),'-Mode','RabbitMQ','-NoBuild') -WorkingDirectory $repository -Environment @{

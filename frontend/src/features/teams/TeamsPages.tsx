@@ -4,24 +4,28 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { ErrorNotice, Empty, Loading } from '../../components/Feedback';
 import { ApiError, request } from '../../lib/api';
-import { TeamSchema } from '../../lib/contracts';
+import { TeamInvitationSchema, TeamSchema } from '../../lib/contracts';
 import type { Team, TeamMember } from '../../lib/contracts';
 import { useLoad } from '../../lib/useLoad';
 import { useSession } from '../../lib/session';
-import { copy as m } from './teamsCopy';
+import { formatDate, parseUtc } from '../../lib/dates';
+import { translateCopyText, useLocale } from '../../lib/i18n';
+import { teamsCopy } from './teamsCopy';
 
 const TeamBasicSchema = TeamSchema.omit({ users: true });
-const InvitationSchema = z.object({
-  id: z.string().uuid(), email: z.string(), createdAtUtc: z.string(), expiresAtUtc: z.string(),
-  acceptedAtUtc: z.string().nullable(), revokedAtUtc: z.string().nullable(),
-});
 const CreatedInvitationSchema = z.object({
   id: z.string().uuid(), email: z.string(), token: z.string().min(32).max(128).regex(/^[A-Za-z0-9_-]+$/), expiresAtUtc: z.string(),
 });
 type CreatedInvitation = z.infer<typeof CreatedInvitationSchema>;
 type MutationKind = 'rename' | 'invite' | 'revoke' | 'remove' | 'leave' | 'disband' | 'copy';
 
+function useTeamsCopy() {
+  const { locale } = useLocale();
+  return teamsCopy[locale];
+}
+
 function useMutation(onForbidden?: () => Promise<void>) {
+  const { locale } = useLocale();
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<unknown>();
   const [kind, setKind] = useState<MutationKind>();
@@ -37,10 +41,11 @@ function useMutation(onForbidden?: () => Promise<void>) {
       if (error instanceof ApiError && error.status === 403) await onForbidden?.();
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }
-  return { pending, failure, kind, message, run };
+  return { pending, failure, kind, message: translateCopyText(message, teamsCopy, locale), run };
 }
 
 function MutationError({ error, kind }: { error: unknown; kind?: MutationKind }) {
+  const m = useTeamsCopy();
   const focus = useRef<HTMLDivElement>(null);
   useEffect(() => { if (error) focus.current?.focus(); }, [error]);
   if (!error) return null;
@@ -48,19 +53,21 @@ function MutationError({ error, kind }: { error: unknown; kind?: MutationKind })
     : kind === 'copy' ? m.copyFailed : undefined;
   return <div tabIndex={-1} ref={focus}>
     {special ? <div className="alert alert-error" role="alert"><p>{special}</p>
-      {error instanceof ApiError && error.traceId && <small>Код звернення: {error.traceId}</small>}</div> : <ErrorNotice error={error} />}
+      {error instanceof ApiError && error.traceId && <small>{m.trace}: {error.traceId}</small>}</div> : <ErrorNotice error={error} />}
   </div>;
 }
 
 function NameField({ value, set, error }: { value: string; set: (value: string) => void; error: string }) {
+  const m = useTeamsCopy();
   const id = useId();
   return <div className="field"><label htmlFor={id}>{m.name}</label>
     <input id={id} value={value} onChange={event => set(event.target.value)} required maxLength={100} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} />
-    {error && <span id={`${id}-error`} className="field-error" role="alert">{error}</span>}
+    {error && <span id={`${id}-error`} className="field-error" role="alert">{translateCopyText(error, teamsCopy)}</span>}
   </div>;
 }
 
 export function TeamsPage() {
+  const m = useTeamsCopy();
   const session = useSession(); const navigate = useNavigate();
   const teams = useLoad('teams', signal => request('/api/teams', z.array(TeamSchema), { signal }));
   const mutation = useMutation(async () => { await session.refresh(); });
@@ -75,7 +82,7 @@ export function TeamsPage() {
     }, m.created);
   }
   return <>
-    <header className="page-header"><div><p className="eyebrow">Спільна робота</p><h1>{m.title}</h1><p>{m.subtitle}</p></div></header>
+    <header className="page-header"><div><p className="eyebrow">{m.sharedWork}</p><h1>{m.title}</h1><p>{m.subtitle}</p></div></header>
     <MutationError error={mutation.failure} />
     {teams.loading ? <Loading /> : teams.error ? <ErrorNotice error={teams.error} retry={() => void teams.reload()} />
       : teams.data?.length ? <div className="panel"><div className="panel-body"><ul className="member-list">
@@ -93,6 +100,7 @@ export function TeamsPage() {
 function ConfirmAction({ kind, member, pending, cancel, confirm }: {
   kind: 'remove' | 'leave' | 'disband'; member?: TeamMember; pending: boolean; cancel: () => void; confirm: () => void;
 }) {
+  const m = useTeamsCopy();
   const id = useId();
   const title = kind === 'remove' ? `${m.remove}: ${member?.firstName} ${member?.lastName}` : kind === 'leave' ? m.leave : m.disband;
   const warning = kind === 'remove' ? m.removeWarning : kind === 'leave' ? m.leaveWarning : m.disbandWarning;
@@ -105,16 +113,11 @@ function ConfirmAction({ kind, member, pending, cancel, confirm }: {
   </div></section>;
 }
 
-function utcDate(value: string) { return new Date(/(?:Z|[+-]\d{2}:\d{2})$/i.test(value) ? value : `${value}Z`); }
-function formatDate(value: string) {
-  const date = utcDate(value);
-  return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat('uk-UA', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
-}
-
 function InvitationManagement({ teamId, mutation, fresh, setFresh }: {
   teamId: number; mutation: ReturnType<typeof useMutation>; fresh: CreatedInvitation | null; setFresh: (value: CreatedInvitation | null) => void;
 }) {
-  const invitations = useLoad(`invitations-${teamId}`, signal => request(`/api/teams/${teamId}/invitations`, z.array(InvitationSchema), { signal }));
+  const m = useTeamsCopy();
+  const invitations = useLoad(`invitations-${teamId}`, signal => request(`/api/teams/${teamId}/invitations`, z.array(TeamInvitationSchema), { signal }));
   const [email, setEmail] = useState(''); const [emailError, setEmailError] = useState(''); const emailId = useId();
   async function invite(event: FormEvent) {
     event.preventDefault(); if (!z.email().safeParse(email.trim()).success) { setEmailError(m.invalidEmail); return; }
@@ -131,12 +134,12 @@ function InvitationManagement({ teamId, mutation, fresh, setFresh }: {
       <div className="field"><label htmlFor={emailId}>{m.email}</label>
         <input id={emailId} type="email" value={email} onChange={event => { setEmail(event.target.value); setEmailError(''); }} required maxLength={256} autoComplete="off"
           aria-invalid={Boolean(emailError)} aria-describedby={emailError ? `${emailId}-error` : undefined} />
-        {emailError && <span id={`${emailId}-error`} className="field-error" role="alert">{emailError}</span>}
+        {emailError && <span id={`${emailId}-error`} className="field-error" role="alert">{translateCopyText(emailError, teamsCopy)}</span>}
       </div><div className="form-actions"><button className="button" type="submit" disabled={mutation.pending}>{mutation.pending ? m.pending : m.invite}</button></div>
     </form>
     {fresh && <section className="alert" aria-labelledby="new-invitation-heading"><h3 id="new-invitation-heading">{m.privateLink}</h3><p>{m.oneTime}</p>
       <p>{fresh.email} · {m.expires}: {formatDate(fresh.expiresAtUtc)}</p>
-      <div className="field"><label htmlFor="fresh-invitation-link">Посилання для запрошеної людини</label>
+      <div className="field"><label htmlFor="fresh-invitation-link">{m.inviteLink}</label>
         <input id="fresh-invitation-link" readOnly value={link} onFocus={event => event.target.select()} /></div>
       <div className="form-actions"><button className="button" type="button" disabled={mutation.pending} onClick={() => { void mutation.run('copy', async () => { await navigator.clipboard.writeText(link); }, m.copied); }}>{m.copy}</button>
         <button className="button secondary" type="button" disabled={mutation.pending} onClick={() => setFresh(null)}>{m.hideLink}</button></div>
@@ -144,7 +147,7 @@ function InvitationManagement({ teamId, mutation, fresh, setFresh }: {
     {invitations.loading ? <Loading /> : invitations.error ? <ErrorNotice error={invitations.error} retry={() => void invitations.reload()} />
       : !invitations.data?.length ? <Empty title={m.noInvitations} /> : <ul className="member-list">
         {invitations.data.map(invitation => {
-          const expired = utcDate(invitation.expiresAtUtc).getTime() <= Date.now();
+          const expired = parseUtc(invitation.expiresAtUtc).getTime() <= Date.now();
           const status = invitation.revokedAtUtc ? m.revoked : invitation.acceptedAtUtc ? m.accepted : expired ? m.expired : m.active;
           return <li className="member" key={invitation.id}><div><strong>{invitation.email}</strong><p className="muted">{m.expires}: {formatDate(invitation.expiresAtUtc)}</p><span className="badge">{status}</span></div>
             {!invitation.revokedAtUtc && !invitation.acceptedAtUtc && !expired && <button className="button secondary compact" type="button" disabled={mutation.pending}
@@ -159,6 +162,7 @@ function InvitationManagement({ teamId, mutation, fresh, setFresh }: {
 }
 
 function TeamContent({ team, reload }: { team: Team; reload: () => Promise<void> }) {
+  const m = useTeamsCopy();
   const session = useSession(); const navigate = useNavigate();
   const [denied, setDenied] = useState(false); const [fresh, setFresh] = useState<CreatedInvitation | null>(null);
   const [name, setName] = useState(team.name); const [nameError, setNameError] = useState('');
@@ -185,7 +189,7 @@ function TeamContent({ team, reload }: { team: Team; reload: () => Promise<void>
     }, confirmation.kind === 'remove' ? m.removed : '');
   }
   return <>
-    <header className="page-header"><div><p className="eyebrow">Спільна робота</p><h1>{team.name}</h1><p>{m.memberCount}: {team.users.length}</p></div><Link className="button secondary" to="/teams">{m.back}</Link></header>
+    <header className="page-header"><div><p className="eyebrow">{m.sharedWork}</p><h1>{team.name}</h1><p>{m.memberCount}: {team.users.length}</p></div><Link className="button secondary" to="/teams">{m.back}</Link></header>
     <MutationError error={mutation.failure} kind={mutation.kind} />{mutation.message && <p className="alert" role="status">{mutation.message}</p>}
     {denied && <p className="muted">{m.rightsChanged}</p>}
     {confirmation && <ConfirmAction {...confirmation} pending={mutation.pending} cancel={() => setConfirmation(null)} confirm={() => void confirm()} />}
@@ -212,6 +216,7 @@ function TeamContent({ team, reload }: { team: Team; reload: () => Promise<void>
 }
 
 export function TeamDetailPage() {
+  const m = useTeamsCopy();
   const { id } = useParams(); const number = Number(id); const valid = Number.isSafeInteger(number) && number > 0 && number <= 2147483647;
   const team = useLoad(`team-${id}`, signal => valid ? request(`/api/teams/${number}`, TeamSchema, { signal }) : Promise.reject(new ApiError(400)));
   if (!valid) return <><h1>{m.invalidRoute}</h1><Link to="/teams">{m.back}</Link></>;

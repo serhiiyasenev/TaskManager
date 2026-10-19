@@ -14,6 +14,12 @@ export const UserSchema = z.object({
 export type TeamMember = z.infer<typeof UserSchema>;
 export const TeamSchema = z.object({ id: z.number().int(), name: z.string(), createdAt: z.string(), ownerId: z.number().int().nullable().optional(), users: z.array(UserSchema) });
 export type Team = z.infer<typeof TeamSchema>;
+// Shared wire contract used by the owner invitation list and its request-boundary tests.
+export const TeamInvitationSchema = z.object({
+  id: z.string().uuid(), email: z.string(), createdAtUtc: z.string(), expiresAtUtc: z.string(),
+  acceptedAtUtc: z.string().nullish().transform(value => value ?? null),
+  revokedAtUtc: z.string().nullish().transform(value => value ?? null),
+});
 export const states = ['ToDo', 'InProgress', 'Done', 'Canceled'] as const;
 export const TaskSchema = z.object({
   id: z.number().int(), projectId: z.number().int(), performerId: z.number().int(),

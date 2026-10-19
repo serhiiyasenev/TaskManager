@@ -4,7 +4,9 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { z } from 'zod';
 import { ApiError, request } from '../../lib/api';
 import { useSession } from '../../lib/session';
-import { copy as m } from './authCopy';
+import { getLocale, translateCopyText, useLocale } from '../../lib/i18n';
+import { authCopy } from './authCopy';
+import { Icon } from '../../components/Icon';
 
 const MessageSchema = z.object({ message: z.string() });
 const PreviewSchema = z.object({ teamName: z.string(), expired: z.boolean() });
@@ -17,11 +19,17 @@ const ProfileUpdatedSchema = z.object({ id: z.number().int().positive(), firstNa
 type Fields = Record<string, string>;
 type FormErrors = Record<string, string>;
 
+function useAuthCopy() {
+  const { locale } = useLocale();
+  return authCopy[locale];
+}
+
 function errorText(error: unknown, context?: 'login' | 'invite'): string {
+  const m = authCopy[getLocale()];
   if (!(error instanceof ApiError)) return m.error;
   if (error.status === 401) return context === 'login' ? m.invalidLogin : m.sessionExpired;
   if (error.status === 403) return context === 'invite' ? m.wrongInvitationEmail : m.forbidden;
-  if (error.status === 409) return context === 'invite' ? m.invitationConflict : 'Дані або права змінилися. Оновіть сторінку й перевірте зміни.';
+  if (error.status === 409) return context === 'invite' ? m.invitationConflict : m.conflict;
   if (error.status === 410 || error.status === 404) return context === 'invite' ? m.expiredInvite : m.invalidLink;
   if (error.status === 429) return m.rateLimit;
   if (error.status === 400) return m.validationError;
@@ -30,6 +38,7 @@ function errorText(error: unknown, context?: 'login' | 'invite'): string {
 }
 
 function ErrorNotice({ error, context }: { error: unknown; context?: 'login' | 'invite' }) {
+  const m = useAuthCopy();
   const target = useRef<HTMLDivElement>(null);
   useEffect(() => { if (error) target.current?.focus(); }, [error]);
   if (!error) return null;
@@ -40,6 +49,7 @@ function ErrorNotice({ error, context }: { error: unknown; context?: 'login' | '
 }
 
 function useAction() {
+  const { locale } = useLocale();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [message, setMessage] = useState('');
@@ -52,10 +62,11 @@ function useAction() {
     catch (failure) { if (alive.current) setError(failure); }
     finally { if (alive.current) setPending(false); }
   }
-  return { pending, error, message, run, setError };
+  return { pending, error, message: translateCopyText(message, authCopy, locale), run, setError };
 }
 
 function useFields(initial: Fields) {
+  const m = useAuthCopy();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<FormErrors>({});
   function update(field: string, value: string) {
@@ -68,7 +79,7 @@ function useFields(initial: Fields) {
     if (values.email && !z.email().safeParse(values.email.trim()).success) issues.email = m.invalidEmail;
     if (minimumPassword && values[minimumPassword].length < 8) issues[minimumPassword] = m.passwordLength;
     if (passwords && values[passwords[0]] !== values[passwords[1]]) issues[passwords[1]] = m.passwordMismatch;
-    for (const field of ['firstName', 'lastName', 'userName']) if (values[field]?.trim().length > 100) issues[field] = 'Використайте не більше 100 символів.';
+    for (const field of ['firstName', 'lastName', 'userName']) if (values[field]?.trim().length > 100) issues[field] = m.maxTextLength;
     setErrors(issues);
     return Object.keys(issues).length === 0;
   }
@@ -78,9 +89,10 @@ function useFields(initial: Fields) {
 function Field({ label, name, fields, actionError, ...input }: InputHTMLAttributes<HTMLInputElement> & {
   label: string; name: string; fields: ReturnType<typeof useFields>; actionError?: unknown;
 }) {
+  const m = useAuthCopy();
   const id = useId();
   const serverError = actionError instanceof ApiError && Object.keys(actionError.fieldErrors).some(key => key.toLowerCase() === name.toLowerCase());
-  const error = fields.errors[name] || (serverError ? m.validationError : '');
+  const error = translateCopyText(fields.errors[name] || (serverError ? m.validationError : ''), authCopy);
   return <div className="field">
     <label htmlFor={id}>{label}</label>
     <input {...input} id={id} name={name} value={fields.values[name] ?? ''} onChange={event => fields.update(name, event.target.value)}
@@ -92,11 +104,12 @@ function Field({ label, name, fields, actionError, ...input }: InputHTMLAttribut
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   const heading = useId();
   return <section className="auth-panel" aria-labelledby={heading}>
-    <header className="page-header"><p className="muted">TaskManager</p><h1 id={heading}>{title}</h1></header>{children}
+    <header className="page-header"><div className="auth-brand"><span className="brand-mark"><Icon name="check" /></span><span>TaskManager<span className="brand-cursor" aria-hidden="true">_</span></span></div><h1 id={heading}>{title}</h1></header>{children}
   </section>;
 }
 
 function Submit({ pending, children }: { pending: boolean; children: ReactNode }) {
+  const m = useAuthCopy();
   return <button className="button" type="submit" disabled={pending}>{pending ? m.pending : children}</button>;
 }
 
@@ -106,6 +119,7 @@ function safeReturnTo(value: string | null): string {
 }
 
 export function LoginPage() {
+  const m = useAuthCopy();
   const session = useSession(); const action = useAction(); const navigate = useNavigate(); const [query] = useSearchParams();
   const fields = useFields({ email: '', password: '' });
   function submit(event: FormEvent) {
@@ -120,12 +134,13 @@ export function LoginPage() {
       <Field fields={fields} actionError={action.error} name="password" label={m.password} type="password" autoComplete="current-password" required maxLength={256} />
       <Submit pending={action.pending}>{m.login}</Submit>
     </form>
-    <p><Link to="/forgot-password">Забули пароль?</Link></p><p><Link to="/register">Створити обліковий запис</Link></p>
+    <p><Link to="/forgot-password">{m.forgotPassword}</Link></p><p><Link to="/register">{m.registerTitle}</Link></p>
     <ResendConfirmation initialEmail={fields.values.email} />
   </Panel>;
 }
 
 function ResendConfirmation({ initialEmail }: { initialEmail: string }) {
+  const m = useAuthCopy();
   const action = useAction();
   return <div>
     <button className="button secondary" type="button" disabled={action.pending || !z.email().safeParse(initialEmail.trim()).success}
@@ -137,6 +152,7 @@ function ResendConfirmation({ initialEmail }: { initialEmail: string }) {
 }
 
 export function RegisterPage() {
+  const m = useAuthCopy();
   const action = useAction(); const [registeredEmail, setRegisteredEmail] = useState('');
   const fields = useFields({ userName: '', firstName: '', lastName: '', email: '', password: '', repeatPassword: '' });
   function submit(event: FormEvent) {
@@ -159,17 +175,18 @@ export function RegisterPage() {
         <Field fields={fields} name="repeatPassword" label={m.repeatPassword} type="password" autoComplete="new-password" required maxLength={256} />
         <p className="muted">{m.passwordLength}</p><Submit pending={action.pending}>{m.register}</Submit>
       </form>}
-    <p><Link to="/login">Вже маєте обліковий запис?</Link></p>
+    <p><Link to="/login">{m.alreadyRegistered}</Link></p>
   </Panel>;
 }
 
 export function ConfirmEmailPage() {
+  const m = useAuthCopy();
   const [query] = useSearchParams(); const action = useAction();
   const userId = query.get('userId') ?? ''; const token = query.get('token') ?? '';
   const valid = /^[1-9]\d*$/.test(userId) && Number(userId) <= 2147483647 && token.length > 0 && token.length <= 4096;
-  return <Panel title="Підтвердження email">
+  return <Panel title={m.confirmTitle}>
     {!valid ? <p role="alert">{m.invalidLink}</p> : <>
-      <p>Підтвердьте адресу, до якої надійшов цей лист.</p>
+      <p>{m.confirmHelp}</p>
       <ErrorNotice error={action.error} />
       {action.message ? <p role="status">{action.message}</p> : <button className="button" type="button" disabled={action.pending}
         onClick={() => { void action.run(async () => { await request('/api/auth/confirm-email', MessageSchema, { method: 'POST', body: { userId, token } }); }, m.confirmed); }}>{action.pending ? m.pending : m.confirm}</button>}
@@ -179,6 +196,7 @@ export function ConfirmEmailPage() {
 }
 
 export function ForgotPasswordPage() {
+  const m = useAuthCopy();
   const action = useAction(); const fields = useFields({ email: '' });
   function submit(event: FormEvent) {
     event.preventDefault(); if (!fields.validate(['email'])) return;
@@ -194,6 +212,7 @@ export function ForgotPasswordPage() {
 }
 
 export function ResetPasswordPage() {
+  const m = useAuthCopy();
   const [query] = useSearchParams(); const action = useAction();
   const email = query.get('email') ?? ''; const token = query.get('token') ?? '';
   const valid = z.email().safeParse(email).success && token.length > 0 && token.length <= 4096;
@@ -202,16 +221,17 @@ export function ResetPasswordPage() {
     event.preventDefault(); if (!valid || !fields.validate(['newPassword', 'repeatNewPassword'], ['newPassword', 'repeatNewPassword'], 'newPassword')) return;
     void action.run(async () => { await request('/api/auth/reset-password', MessageSchema, { method: 'POST', body: { email, token, newPassword: fields.values.newPassword } }); fields.update('newPassword', ''); fields.update('repeatNewPassword', ''); }, m.passwordChanged);
   }
-  return <Panel title="Відновлення пароля"><ErrorNotice error={action.error} />
+  return <Panel title={m.resetTitle}><ErrorNotice error={action.error} />
     {!valid ? <p role="alert">{m.invalidLink}</p> : action.message ? <p role="status">{action.message}</p> : <form className="form-grid" noValidate onSubmit={submit} aria-busy={action.pending}>
       <Field fields={fields} actionError={action.error} name="newPassword" label={m.newPassword} type="password" autoComplete="new-password" required maxLength={256} />
       <Field fields={fields} name="repeatNewPassword" label={m.repeatNewPassword} type="password" autoComplete="new-password" required maxLength={256} />
       <Submit pending={action.pending}>{m.changePassword}</Submit>
-    </form>}<p><Link to="/login">{m.login}</Link></p><p><Link to="/forgot-password">Запитати нове посилання</Link></p>
+    </form>}<p><Link to="/login">{m.login}</Link></p><p><Link to="/forgot-password">{m.newRecoveryLink}</Link></p>
   </Panel>;
 }
 
 function ChangePasswordForm() {
+  const m = useAuthCopy();
   const session = useSession(); const action = useAction();
   const fields = useFields({ currentPassword: '', newPassword: '', repeatNewPassword: '' });
   function submit(event: FormEvent) {
@@ -221,7 +241,7 @@ function ChangePasswordForm() {
       fields.setValues({ currentPassword: '', newPassword: '', repeatNewPassword: '' }); await session.refresh();
     }, m.profilePasswordChanged);
   }
-  return <section aria-labelledby="change-password-heading"><h2 id="change-password-heading">Зміна пароля</h2>
+  return <section aria-labelledby="change-password-heading"><h2 id="change-password-heading">{m.changePasswordTitle}</h2>
     <ErrorNotice error={action.error} />{action.message && <p role="status">{action.message}</p>}
     <form className="form-grid" noValidate onSubmit={submit} aria-busy={action.pending}>
       <Field fields={fields} actionError={action.error} name="currentPassword" label={m.currentPassword} type="password" autoComplete="current-password" required maxLength={256} />
@@ -233,6 +253,8 @@ function ChangePasswordForm() {
 }
 
 export function ProfilePage() {
+  const m = useAuthCopy();
+  const { intlLocale } = useLocale();
   const session = useSession(); const action = useAction(); const [reload, setReload] = useState(0);
   const [details, setDetails] = useState<z.infer<typeof ProfileDetailsSchema> | null>(null);
   const [loadError, setLoadError] = useState<unknown>(null);
@@ -260,23 +282,24 @@ export function ProfilePage() {
   }
   if (!session.user) return <Panel title={m.profile}><p>{m.sessionExpired}</p><Link to="/login">{m.login}</Link></Panel>;
   return <Panel title={m.profile}>
-    <p className="muted">{session.user.email} · {session.user.emailConfirmed ? 'Email підтверджено' : 'Email потребує підтвердження'}</p>
+    <p className="muted">{session.user.email} · {session.user.emailConfirmed ? m.emailConfirmed : m.emailNeedsConfirmation}</p>
     {loadError ? <><ErrorNotice error={loadError} /><button className="button secondary" type="button" onClick={() => setReload(value => value + 1)}>{m.retry}</button></>
       : !details ? <p role="status">{m.loading}</p> : <>
         <ErrorNotice error={action.error} />{action.message && <p role="status">{action.message}</p>}
         <form className="form-grid" noValidate onSubmit={submit} aria-busy={action.pending}>
           <Field fields={fields} actionError={action.error} name="firstName" label={m.firstName} autoComplete="given-name" required maxLength={100} />
           <Field fields={fields} actionError={action.error} name="lastName" label={m.lastName} autoComplete="family-name" required maxLength={100} />
-          <Field fields={fields} name="birthDay" label="Дата народження (необов’язково)" type="date" autoComplete="bday" />
+          <Field fields={fields} name="birthDay" label={m.birthday} type="date" autoComplete="bday" lang={intlLocale} />
           <Submit pending={action.pending}>{m.saveProfile}</Submit>
         </form>
       </>}
     <ChangePasswordForm />
-    <button className="button secondary" type="button" disabled={action.pending} onClick={() => { void action.run(async () => { await session.logout(); }); }}>Вийти з облікового запису</button>
+    <button className="button secondary" type="button" disabled={action.pending} onClick={() => { void action.run(async () => { await session.logout(); }); }}>{m.signOut}</button>
   </Panel>;
 }
 
 export function InvitationPage() {
+  const m = useAuthCopy();
   const [query] = useSearchParams(); const location = useLocation(); const session = useSession();
   const token = query.get('token') ?? ''; const valid = /^[A-Za-z0-9_-]{32,128}$/.test(token);
   const [preview, setPreview] = useState<z.infer<typeof PreviewSchema> | null>(null);
@@ -299,20 +322,20 @@ export function InvitationPage() {
     </> : preview && <>
       <h2>{preview.teamName}</h2>
       <ErrorNotice error={action.error} context="invite" />
-      {preview.expired ? <p role="alert">{m.expiredInvite}</p> : joinedTeam ? <><p role="status">{m.joined}</p><Link to={`/teams/${joinedTeam}`}>Перейти до команди</Link></>
-        : !session.user ? <><p>Перегляньте запрошення після входу з підтвердженою email-адресою.</p><Link to={returnTo}>{m.invitationLogin}</Link></>
+      {preview.expired ? <p role="alert">{m.expiredInvite}</p> : joinedTeam ? <><p role="status">{m.joined}</p><Link to={`/teams/${joinedTeam}`}>{m.openTeam}</Link></>
+        : !session.user ? <><p>{m.invitationPreviewHelp}</p><Link to={returnTo}>{m.invitationLogin}</Link></>
           : <>
-            <p>Ви увійшли як {session.user.email}. Приєднання змінить вашу поточну команду лише після підтвердження.</p>
+            <p>{m.invitationAccount.replace('{email}', () => session.user?.email ?? '')}</p>
             <button className="button" type="button" disabled={action.pending} onClick={() => { void action.run(async () => {
               const result = await request('/api/team-invitations/accept', AcceptedSchema, { method: 'POST', body: { token } });
               setJoinedTeam(result.teamId); await session.refresh();
             }); }}>{action.pending ? m.pending : m.join}</button>
-            {action.error instanceof ApiError && action.error.status === 403 && <p><button className="button secondary" type="button" disabled={action.pending} onClick={() => { void action.run(async () => { await session.logout(); }); }}>Увійти з іншою адресою</button></p>}
+            {action.error instanceof ApiError && action.error.status === 403 && <p><button className="button secondary" type="button" disabled={action.pending} onClick={() => { void action.run(async () => { await session.logout(); }); }}>{m.signInOtherEmail}</button></p>}
           </>}
       <p><button className="button secondary" type="button" disabled={action.pending} onClick={() => { void action.run(async () => {
         await navigator.clipboard.writeText(`${window.location.origin}/invite?token=${encodeURIComponent(token)}`); setCopyNotice(m.copied);
       }); }}>{m.copy}</button></p>
-      {copyNotice && <p role="status">{copyNotice}</p>}
+      {copyNotice && <p role="status">{translateCopyText(copyNotice, authCopy)}</p>}
     </>}
   </Panel>;
 }

@@ -71,6 +71,14 @@ export async function syntheticApi(page: Page, options: SyntheticOptions = {}) {
     if (path === '/api/tasks' && method === 'POST') {
       const task = { ...tasks[0], ...body, id: 105, version: versionTwo } as typeof tasks[number]; tasks.push(task); return json(route, task);
     }
+    if (/^\/api\/tasks\/\d+\/state$/.test(path) && method === 'PATCH') {
+      const id = Number(path.split('/').at(-2)); const index = tasks.findIndex(task => task.id === id);
+      if (index < 0) return problem(route, 404);
+      if (body?.expectedVersion !== tasks[index].version) return problem(route, 409);
+      if (!body || Object.keys(body).sort().join(',') !== 'expectedVersion,state' || !['ToDo', 'InProgress', 'Done', 'Canceled'].includes(String(body.state))) return problem(route, 400);
+      tasks[index] = { ...tasks[index], state: body.state, version: versionTwo } as typeof tasks[number];
+      return json(route, tasks[index]);
+    }
     if (/^\/api\/tasks\/\d+$/.test(path)) {
       const id = Number(path.split('/').at(-1)); const index = tasks.findIndex(task => task.id === id);
       if (index < 0) return problem(route, 404);

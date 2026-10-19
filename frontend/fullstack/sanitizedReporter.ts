@@ -7,6 +7,9 @@ const cases = new Map([
   ['real source review, two partial commits, private live inbox and durable relogin', 1],
   ['owner removal revokes a real member draft and task; test clock expires the real cookie', 2],
   ['AI unavailable and invalid output create no tasks; manual work and real password recovery remain usable', 3],
+  ['departed assignee Board status uses a narrow versioned write and preserves task data', 4],
+  ['two real tabs preserve bilingual edits and recover version conflicts without lost updates', 5],
+  ['real task filters paginate CRUD and block nonempty project deletion without data loss', 6],
 ]);
 const projects = new Set(['desktop-1440x900', 'mobile-390x844']);
 interface FailedCase {
@@ -14,19 +17,21 @@ interface FailedCase {
 }
 
 function assertionLocation(result: TestResult): string {
-  const file = resolve('fullstack/journeys.spec.ts').replaceAll('\\', '/');
+  const sources = ['journeys.spec.ts', 'board.spec.ts', 'thorough.spec.ts'].map(name => ({ name, file: resolve('fullstack', name).replaceAll('\\', '/') }));
   // Inspect only bounded stack-frame lines, never print or persist the stack.
   // Locator messages/call logs may contain account links or filled passwords.
   for (const error of result.errors.slice(0, 8)) {
     for (const line of (error.stack ?? '').split('\n').slice(0, 80)) {
       const frame = line.trim().replaceAll('\\', '/');
       if (!frame.startsWith('at ') || frame.length > 8_192) continue;
-      const index = frame.lastIndexOf(file + ':');
-      if (index < 0) continue;
-      const suffix = frame.slice(index + file.length + 1);
-      const match = /^(\d{1,6}):(\d{1,5})\)?$/.exec(suffix);
-      if (!match || Number(match[1]) < 1 || Number(match[2]) < 1) continue;
-      return `journeys.spec.ts:${Number(match[1])}:${Number(match[2])}`;
+      for (const { name, file } of sources) {
+        const index = frame.lastIndexOf(file + ':');
+        if (index < 0) continue;
+        const suffix = frame.slice(index + file.length + 1);
+        const match = /^(\d{1,6}):(\d{1,5})\)?$/.exec(suffix);
+        if (!match || Number(match[1]) < 1 || Number(match[2]) < 1) continue;
+        return `${name}:${Number(match[1])}:${Number(match[2])}`;
+      }
     }
   }
   return 'assertion-location-unavailable';
