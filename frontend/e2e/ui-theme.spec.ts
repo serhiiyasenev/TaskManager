@@ -145,7 +145,11 @@ async function focusRing(page: Page, locator: Locator) {
 async function fits(page: Page) {
   const widths = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth,
     document: document.documentElement.scrollWidth }));
-  expect(widths.document, 'The document must fit while named work regions own horizontal scrolling.').toBeLessThanOrEqual(widths.viewport + 1);
+  const overflow = widths.document > widths.viewport + 1 ? await page.evaluate(() => [...document.querySelectorAll('body *')]
+    .filter(element => element.getBoundingClientRect().right > document.documentElement.clientWidth + 1
+      && !element.closest('nav, .board, .table-wrap'))
+    .map(element => ({ tag: element.tagName, className: element.className, right: element.getBoundingClientRect().right }))) : [];
+  expect(widths.document, `The document must fit while named work regions own horizontal scrolling. ${JSON.stringify(overflow)}`).toBeLessThanOrEqual(widths.viewport + 1);
 }
 async function glyphsFit(page: Page, selector: string) {
   const readable = await page.locator(selector).evaluateAll(elements => {
@@ -265,4 +269,19 @@ test('charcoal dashboard and Board reflow with 200 percent text while preserving
   expect(lastItem!.x).toBeGreaterThanOrEqual(navigationBox!.x);
   expect(lastItem!.x + lastItem!.width).toBeLessThanOrEqual(navigationBox!.x + navigationBox!.width + 1);
   await fits(page);
+});
+
+test('enlarged dashboard fits with portable fallback font metrics', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await syntheticApi(page, { longNames: true }); await page.goto('/');
+  await expect(page.getByRole('link', { name: longTaskName, exact: true })).toBeVisible();
+  for (const family of ['Arial, sans-serif', 'Verdana, sans-serif']) {
+    await page.addStyleTag({ content: `html { font-size: 200% !important; font-family: ${family} !important; --mono: monospace !important; }` });
+    const layout = await page.evaluate(() => ({ width: document.documentElement.scrollWidth,
+    overflow: [...document.querySelectorAll('body *')].filter(element => {
+      const box = element.getBoundingClientRect();
+      return box.right > 321 && !element.closest('nav');
+    }).map(element => ({ tag: element.tagName, className: element.className, width: element.getBoundingClientRect().width, right: element.getBoundingClientRect().right })) }));
+    expect(layout.width, `${family}: ${JSON.stringify(layout.overflow)}`).toBeLessThanOrEqual(321);
+  }
 });

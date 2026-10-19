@@ -84,6 +84,15 @@
           "SQLitePCLRaw.provider.e_sqlite3": "2.1.13"
         }
       },
+      "System.Security.Cryptography.Xml": {
+        "type": "Direct",
+        "requested": "[10.0.13, )",
+        "resolved": "10.0.13",
+        "contentHash": "v6/GHhLaHkuN/ISgbKzBeyC7TP7S6Qm/dVyKA+p0ay9nlJyLif+spozjAGclY/FRIv2TC+KNQCo7dSNmupvWtQ==",
+        "dependencies": {
+          "System.Security.Cryptography.Pkcs": "10.0.13"
+        }
+      },
       "xunit": {
         "type": "Direct",
         "requested": "[2.9.3, )",
@@ -344,10 +353,10 @@
       },
       "Microsoft.AspNetCore.Connections.Abstractions": {
         "type": "Transitive",
-        "resolved": "10.0.12",
-        "contentHash": "pP5CXSG//gboXUGrgRrrfWxEWJQ1DJLbTo5BulmPp+GaiWf/KbjCCujWlkh7rPTBSWAP+5s4KXti3JAF5akdxA==",
+        "resolved": "10.0.13",
+        "contentHash": "l/1VmXALhXxdTWG+41N25xigbAXZx/43c6cVw+mXxLH6KCKO25P3c53MLK5w5ua0GCr2RdZhN/xsUwCG7v9N1w==",
         "dependencies": {
-          "Microsoft.Extensions.Features": "10.0.12"
+          "Microsoft.Extensions.Features": "10.0.13"
         }
       },
       "Microsoft.AspNetCore.Cryptography.Internal": {
@@ -431,11 +440,11 @@
       },
       "Microsoft.AspNetCore.SignalR.Common": {
         "type": "Transitive",
-        "resolved": "10.0.12",
-        "contentHash": "7DDVLxtjLtBBfle9RxZhiYc0PTSD4rc0SV4FZiT3Tdz6NxlrcnPqcGWME9Mc0PtbQ+X5GSgyPeyjGfA/tSfG8A==",
+        "resolved": "10.0.13",
+        "contentHash": "Rd6v57QqwW7Uayx0//qsf6J8MGcdw4Lw3Bq3dfT33KWnydaf0HsXoBxHQze/EowSsYQUx2yi9+PWCob9A9GuFw==",
         "dependencies": {
-          "Microsoft.AspNetCore.Connections.Abstractions": "10.0.12",
-          "Microsoft.Extensions.Options": "10.0.12"
+          "Microsoft.AspNetCore.Connections.Abstractions": "10.0.13",
+          "Microsoft.Extensions.Options": "10.0.13"
         }
       },
       "Microsoft.AspNetCore.SignalR.Protocols.Json": {
@@ -693,8 +702,8 @@
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "Transitive",
-        "resolved": "10.0.12",
-        "contentHash": "9/qymSh7hVDMGTGwrLz8MRp5zRyXy9adGDOs4HwRdnLil3oZGYuWeZjbmHgCQ9BL1qBroVfgUK3U/nb61617Cw=="
+        "resolved": "10.0.13",
+        "contentHash": "G2GrGWNAPZBsii2F6AU8n+JT2tC1/I0Ml/e9ZyNCgPjf3hZqronP7o0X91aAynCmVeae8KkSIUNXXeXCNRmdVQ=="
       },
       "Microsoft.Extensions.DependencyModel": {
         "type": "Transitive",
@@ -738,8 +747,8 @@
       },
       "Microsoft.Extensions.Features": {
         "type": "Transitive",
-        "resolved": "10.0.12",
-        "contentHash": "GaHsj8gISJ4BtRI4iK4meCil+LAYmv3NWuPKg6d29sw9cNsEN+1N8UMQXA/JhUXdrGTy16+B+YtjY3bco/8jMA=="
+        "resolved": "10.0.13",
+        "contentHash": "7xLogOKNBYYWbUUEMOPfuirfcYG8iBNQ4TOc3aUzJpiRD7tyQqzYWhDPXAk2kOuJTd7ImcGtdT1HEQTC9VljuQ=="
       },
       "Microsoft.Extensions.FileProviders.Abstractions": {
         "type": "Transitive",
@@ -917,11 +926,11 @@
       },
       "Microsoft.Extensions.Options": {
         "type": "Transitive",
-        "resolved": "10.0.12",
-        "contentHash": "TDYD33TSRpXKZWlmTXNlj5kCihxatmv2Ec1u6C+bMYLphCS7PoSLE9Pjd/nunDoE7yETk+LLKjVJX78HYtWjpA==",
+        "resolved": "10.0.13",
+        "contentHash": "tmMJgdrE4uhf1JcNs9CV9moAHW+hmDuvgMiPpnQxarKaUxqI2eN33sYK5S4l9Uw+rG9PJvlm4qPxMhvolTDTaQ==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
-          "Microsoft.Extensions.Primitives": "10.0.12"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.13",
+          "Microsoft.Extensions.Primitives": "10.0.13"
         }
       },
       "Microsoft.Extensions.Options.ConfigurationExtensions": {
@@ -938,8 +947,8 @@
       },
       "Microsoft.Extensions.Primitives": {
         "type": "Transitive",
-        "resolved": "10.0.12",
-        "contentHash": "dYfCLR52UA+3DL7C4I/pvSaRPkNqxrUAQmbFL2u0zvYKKzqgrFCJl08Df+F1aYc8leu9JvpC9bsURUdpExcBXQ=="
+        "resolved": "10.0.13",
+        "contentHash": "ZjTwxzhiw2TMEzIbUDkMF0dfDB2I4NQgIfKD0ELu9/5Mk+SRGdKZcD0/lvBrRCAPo6KN2r0BW86MRancoyJkoA=="
       },
       "Microsoft.Identity.Client": {
         "type": "Transitive",
@@ -1383,21 +1392,13 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "10.0.10",
-        "contentHash": "KG8t5RHczdgB3IWvRndpI0nE1DSo7ikDYSDbITxfgRFyIvnYiKzuPjaZOsPnwFQ1aOGUl9sEulJul9wlHLEUoA=="
+        "resolved": "10.0.13",
+        "contentHash": "a+EovgC1fBnwdlQ6cn3j4JFBfKqiFaFvoAhjisOoSvazLAcIznaBzPQP0oYnvccmeXfqUH1KebVZOxSeH6rMaw=="
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "Transitive",
         "resolved": "9.0.11",
         "contentHash": "s8yUYuYYu+PAwvBdhLG1KyrGrk9gkYeuPxfAsXsTqqWyepwSyEw8hAaflW4nO98NG52YpYI1am2+9o+79h2RtQ=="
-      },
-      "System.Security.Cryptography.Xml": {
-        "type": "Transitive",
-        "resolved": "10.0.10",
-        "contentHash": "Mz6Y+s+uMQKj1H2BUF0OhlmaOQkLgSG34/IrUaBDirYBQ6bgwcFvO/XtXWcoDlBLFoFB0uKqDNhybHOd+fQK1A==",
-        "dependencies": {
-          "System.Security.Cryptography.Pkcs": "10.0.10"
-        }
       },
       "System.Threading.RateLimiting": {
         "type": "Transitive",
@@ -1474,6 +1475,7 @@
         "dependencies": {
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.12, )",
           "Microsoft.AspNetCore.SignalR.Client.Core": "[10.0.12, )",
+          "Microsoft.AspNetCore.SignalR.Common": "[10.0.13, )",
           "Microsoft.Extensions.Configuration": "[10.0.12, )",
           "Microsoft.Extensions.Configuration.CommandLine": "[10.0.12, )",
           "Microsoft.Extensions.Configuration.Json": "[10.0.12, )",
@@ -1488,7 +1490,8 @@
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "[10.0.12, )",
           "Microsoft.EntityFrameworkCore": "[10.0.12, )",
           "Microsoft.EntityFrameworkCore.SqlServer": "[10.0.12, )",
-          "Newtonsoft.Json": "[13.0.4, )"
+          "Newtonsoft.Json": "[13.0.4, )",
+          "System.Security.Cryptography.Pkcs": "[10.0.13, )"
         }
       },
       "notifier": {
@@ -1518,7 +1521,8 @@
         "type": "Project",
         "dependencies": {
           "Azure.Identity": "[1.21.0, )",
-          "Microsoft.Data.SqlClient": "[6.1.6, )"
+          "Microsoft.Data.SqlClient": "[6.1.6, )",
+          "System.Security.Cryptography.Pkcs": "[10.0.13, )"
         }
       },
       "TaskManager.WebHost": {

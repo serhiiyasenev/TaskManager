@@ -235,3 +235,21 @@ tool for PR metadata; Git Credential Manager remains available for git transport
 Prepared:185 frontend tests with coverage thresholds,90 UI cases,53 focused
 backend regressions, lint/build/contract checks pass. Reviewed source staged;
 see `traces/step-20261019-pr-preparation.md` for publication target and boundaries.
+
+## CI reflow/filter corrections — authorized 2026-10-19
+
+Resolve the four Linux browser failures from PR51 head709a48f: initial Dashboard
+overflows320px at200% text (356px document), and cross-team project selection
+can retain performer43 after Apply. Reproduce with CI-like fallback fonts and
+controlled navigation/load timing, correct causes without weakening assertions,
+run focused/full browser checks, then commit/push and verify new GitHub CI.
+
+Expanded after owner screenshot: backend/full-stack/container gates fail during
+NuGet restore on new PKCS/XML/SignalR advisories. Pin official patched10.0.13
+packages, regenerate affected lockfiles, then audit/locked restore/build/retest;
+do not suppress NU1901-4 or weaken CI. Execution currently blocked by automatic
+approval reviewer usage limit; UI and package manifest edits remain unverified,
+lockfiles were initially NOT regenerated and no follow-up commit/push occurred
+during that block. After reset:9 locks regenerated, locked restore/audit11 projects
+clean, Debug build and53 backend tests pass; new UI34 focused cases pass after a
+deterministic2-case RED reproduction. Publish and inspect fresh Linux CI next.

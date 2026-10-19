@@ -22,18 +22,27 @@ function readFilters(params: URLSearchParams, userId: number) {
 function hasFilters(filters: ReturnType<typeof readFilters>) {
   return Boolean(filters.search || filters.projectId || filters.state || filters.performerId || filters.mine || filters.overdue || filters.sort !== 'due');
 }
+function filterQueryFor(params: URLSearchParams) {
+  return new URLSearchParams([...params].filter(([key]) => ['search', 'projectId', 'state', 'performerId', 'overdue', 'sort'].includes(key))).toString();
+}
 
 export function TasksPage() {
   const { locale, copy, text } = useWorkCopy();
   const stateLabels = getStateLabels(locale);
   const { user } = useSession();
   const [params, setParams] = useSearchParams();
-  const filterQuery = new URLSearchParams([...params].filter(([key]) => ['search', 'projectId', 'state', 'performerId', 'overdue', 'sort'].includes(key))).toString();
+  const filterQuery = filterQueryFor(params);
   const userId = user!.id;
   const searchId = useId(); const advancedId = useId();
   const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const [filters, setFilters] = useState(() => readFilters(params, userId));
-  useEffect(() => { setFilters(readFilters(new URLSearchParams(filterQuery), userId)); }, [filterQuery, userId]);
+  const source = JSON.stringify([userId, filterQuery]);
+  const [draft, setDraft] = useState(() => ({ source, submitted: null as string | null, values: readFilters(params, userId) }));
+  // Synchronize history before committing controls; an Apply navigation must
+  // never replay its older values over edits made immediately after submission.
+  if (draft.source !== source) setDraft({ source, submitted: null,
+    values: draft.submitted === source ? draft.values : readFilters(params, userId) });
+  const filters = draft.values;
+  function setFilters(values: ReturnType<typeof readFilters>) { setDraft(current => ({ ...current, values })); }
   const [actionError, setActionError] = useState<unknown>();
   const [savedState, setSavedState] = useState<{ name: string; state: TaskRecord['state'] }>();
   const [pending, setPending] = useState<ReadonlySet<number>>(() => new Set());
@@ -66,15 +75,19 @@ export function TasksPage() {
     const control = boardElement.current?.querySelector<HTMLElement>(`[data-task-id="${target.id}"] ${target.drag ? '[data-board-drag]' : 'select'}`);
     (control ?? boardElement.current ?? saveFeedback.current)?.focus();
   }, [load.loading, load.data, pending]);
-  function changeQuery(changes: Record<string, string>) { const next = new URLSearchParams(params); for (const [key, value] of Object.entries(changes)) { if (value) next.set(key, value); else next.delete(key); } setParams(next); }
+  function navigateQuery(next: URLSearchParams, preserveDraft = false) {
+    if (preserveDraft) setDraft(current => ({ ...current, submitted: JSON.stringify([userId, filterQueryFor(next)]) }));
+    setParams(next);
+  }
+  function changeQuery(changes: Record<string, string>, preserveDraft = false) { const next = new URLSearchParams(params); for (const [key, value] of Object.entries(changes)) { if (value) next.set(key, value); else next.delete(key); } navigateQuery(next, preserveDraft); }
   function clearFilters() {
     setFilters(readFilters(new URLSearchParams(), userId)); setActionError(undefined); setSavedState(undefined);
     const next = new URLSearchParams();
     if (board) next.set('view', 'board');
     if (params.has('pageSize')) next.set('pageSize', params.get('pageSize')!);
-    setParams(next);
+    navigateQuery(next, true);
   }
-  function filter(event: FormEvent) { event.preventDefault(); changeQuery({ ...filters, mine: '', overdue: filters.overdue ? 'true' : '', performerId: filters.mine ? String(user!.id) : filters.performerId, page: '1', direction: filters.sort === 'created' ? 'desc' : 'asc' }); }
+  function filter(event: FormEvent) { event.preventDefault(); changeQuery({ ...filters, mine: '', overdue: filters.overdue ? 'true' : '', performerId: filters.mine ? String(user!.id) : filters.performerId, page: '1', direction: filters.sort === 'created' ? 'desc' : 'asc' }, true); }
   async function changeState(task: TaskRecord, state: TaskRecord['state'], control: HTMLElement) {
     if (pendingIds.current.has(task.id) || task.state === state) return;
     if (document.activeElement === control) returnFocus.current = { id: task.id, control, drag: control.hasAttribute('data-board-drag') };

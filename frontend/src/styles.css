@@ -80,6 +80,8 @@ h3 { font-size: .96rem; font-weight: 600; line-height: 1.5; }
 .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 22px; margin-bottom: 30px; }
 .page-header > div:first-child { flex: 1 1 360px; min-width: 0; }
 .page-header > .button, .page-header > .actions { flex-shrink: 0; }
+.page-header > .actions { max-width: 100%; }
+.page-header > .actions > .button { max-width: 100%; overflow-wrap: anywhere; }
 .page-header p:last-child { margin-bottom: 0; max-width: 70ch; text-wrap: pretty; }
 .eyebrow { color: var(--accent); font-family: var(--mono); font-size: .66rem; line-height: 1.5; text-transform: uppercase; letter-spacing: .14em; font-weight: 500; margin-bottom: 14px; }
 .muted, .page-header p { color: var(--muted); font-size: .925rem; line-height: 1.65; }

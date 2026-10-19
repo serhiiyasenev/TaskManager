@@ -173,13 +173,27 @@ test('synthetic project team changes clear foreign assignees but retain same-tea
   await assigneeSelect(page).selectOption('43');
   await projectSelect(page).selectOption('72');
   await expect(assigneeSelect(page)).toHaveValue('43');
-  await page.getByRole('button', { name: 'Показати', exact: true }).click();
-  await queryIs(page, { projectId: '72', performerId: '43' });
-
-  await projectSelect(page).selectOption('73');
-  await expect(assigneeSelect(page)).toBeEnabled();
-  await expect(assigneeSelect(page)).toHaveValue('');
-  await expect(assigneeSelect(page).getByRole('option', { name: 'Синтетичний Учасник', exact: true })).toHaveCount(1);
+  let release: () => void = () => {};
+  const submitted = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/tasks/page?**', async route => {
+    const params = new URL(route.request().url()).searchParams;
+    if (params.get('projectId') === '72' && params.get('performerId') === '43') await submitted;
+    await route.fallback();
+  });
+  try {
+    // Submit and edit within one browser turn: the navigation and passive
+    // effects cannot finish before the newer draft project change arrives.
+    await page.evaluate(() => {
+      document.querySelector<HTMLFormElement>('.task-filters')!.requestSubmit();
+      const project = document.querySelector<HTMLSelectElement>('.task-filters .filter-advanced select')!;
+      project.value = '73'; project.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await queryIs(page, { projectId: '72', performerId: '43' });
+    await expect(projectSelect(page)).toHaveValue('73');
+    await expect(assigneeSelect(page)).toBeEnabled();
+    await expect(assigneeSelect(page)).toHaveValue('');
+    await expect(assigneeSelect(page).getByRole('option', { name: 'Синтетичний Учасник', exact: true })).toHaveCount(1);
+  } finally { release(); }
   await page.getByRole('button', { name: 'Показати', exact: true }).click();
   await queryIs(page, { projectId: '73', performerId: null });
 
