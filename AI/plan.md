@@ -253,3 +253,7 @@ lockfiles were initially NOT regenerated and no follow-up commit/push occurred
 during that block. After reset:9 locks regenerated, locked restore/audit11 projects
 clean, Debug build and53 backend tests pass; new UI34 focused cases pass after a
 deterministic2-case RED reproduction. Publish and inspect fresh Linux CI next.
+
+At605e934 Linux frontend passed185 unit/92 browser cases. Container smoke exposed
+a separate missing host SDK for dev-certs; install pinned global.json SDK in that
+workflow (actionlint passes), publish the follow-up and verify final CI.

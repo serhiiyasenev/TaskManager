@@ -28,5 +28,10 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install pinned host SDK for development certificate export
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
       - name: Build images and verify disposable stack
         run: ./scripts/ci-container-smoke.ps1

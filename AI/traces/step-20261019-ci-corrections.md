@@ -66,3 +66,21 @@ an alternate execution path. No tests/build/restore ran before the limit reset.
 Evidence: `.local/ci-fixes-20261019/`. The UI dist is updated; native Release
 processes/database remain intact. Publish the verified corrections to PR51 and
 inspect fresh Linux frontend/backend/container/full-stack CI to completion.
+
+## Linux follow-up at605e934
+
+- Frontend run39304917447/job118239369388 succeeded:185 unit tests and92 browser
+  cases pass, including the original four failures and added font cases. Coverage
+  lines90.45%, statements83.45%, branches75.62%, functions82.51%. This confirms the
+  reflow repair using actual Linux metrics rather than Windows-only inference.
+- Restore now succeeds in backend/live-stack jobs; their execution is monitored.
+- Container run39304917465 failed before Docker build because host `dotnet dev-certs`
+  could not resolve pinned SDK10.0.401 from global.json. Container workflow had
+  relied on whatever SDK the Ubuntu image provided. Add the same SHA-pinned
+  setup-dotnet v6.0.0 action already used by fullstack, reading global.json before
+  local certificate creation. Native actionlint1.7.12 passes for the revised YAML.
+- Local solution rebuilt Release with security gates,0 errors; owned runtime
+  restarted through its supervisor. HTTP7150 and API readiness both return200;
+  SQL database/credentials preserved.
+
+Publish this infrastructure-only follow-up and inspect the final head's checks.
