@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "TaskManager private notification inbox",
-    "version": "1.0.0",
-    "description": "Additive API1.0 boundary. Root owns contract; runtime/provider, frontend/consumer and transport agents review changes. Current owner AND current task/project permissions scope every response/count. id and messageId identify the same single-recipient event. Deleted/moved/inaccessible tasks are filtered. Network hints may duplicate/drop; SQL is authoritative."
+    "version": "1.1.0",
+    "description": "Additive API1.0 boundary. Root owns contract; runtime/provider, frontend/consumer and transport agents review changes. Personal inbox responses/counts require current ownership AND current task/project permissions. id and messageId identify the same single-recipient event. Personal inbox filters deleted/moved/inaccessible tasks. Network hints may duplicate/drop; SQL is authoritative. Administrators can separately inspect a read-only retained overview across teams with current database role verification; recipient read markers remain owner-only."
   },
   "paths": {
     "/api/notifications": {
@@ -369,6 +369,198 @@
           }
         }
       }
+    },
+    "/api/notifications/all": {
+      "get": {
+        "operationId": "GetAllNotificationInboxes",
+        "security": [
+          {
+            "TaskManagerCookie": []
+          },
+          {
+            "LegacyBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "unreadOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Counts cover all current visible notifications, before paging and regardless of unreadOnly; page is ordered occurredAtUtc descending with ID tie break.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationAdminInboxPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Safe ProblemDetails with correlation header; no private content.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "detail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "traceId": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Safe ProblemDetails with correlation header; no private content.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "detail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "traceId": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Safe ProblemDetails with correlation header; no private content.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "detail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "traceId": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Safe ProblemDetails with correlation header; no private content.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "detail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "traceId": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        },
+        "description": "Administrator-only read-only retained notifications across teams. Requires both an admin identity claim and a current database admin role. Recipient read status is unchanged. Current task/project/recipient entities must exist; reassigned-recipient history remains visible. Personal inbox and mutation endpoints remain owner-only."
+      }
     }
   },
   "components": {
@@ -503,6 +695,122 @@
           }
         },
         "description": "Authenticated SignalR InboxChanged hint; refetch canonical inbox. No task, user or private text fields."
+      },
+      "NotificationAdminInboxItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "messageId",
+          "kind",
+          "taskId",
+          "projectId",
+          "taskName",
+          "projectName",
+          "occurredAtUtc",
+          "recipientId",
+          "recipientName"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "messageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ]
+          },
+          "taskId": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "projectId": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "taskName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "projectName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "occurredAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recipientId": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "recipientName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "readAtUtc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Recipient first read time; inspecting this overview never marks another recipient notification read."
+          }
+        }
+      },
+      "NotificationAdminInboxPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount",
+          "unreadCount"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/NotificationAdminInboxItem"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "totalCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "unreadCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        }
       }
     }
   }

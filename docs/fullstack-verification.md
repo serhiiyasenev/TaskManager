@@ -9,20 +9,21 @@
 | `Run.ps1 -Mode RabbitMQ` | The same product stack plus native disposable Rabbit producer/listener/settlement | AI/email fixtures; no Azure identity/adapters/live model claim |
 | Real Azure candidate smoke | Exact immutable deployed revisions, controlled real accounts/mail and actual adapters | Requires the real environment and retained actual evidence; local gates cannot substitute |
 
-The host is a **test-only** project in `tools/TaskManager.FullStackHost`. Production container targets do not include it. It loads the actual .NET10 WebAPI, Notifier and WebHost programs through native Kestrel. Browser tests use `frontend/playwright.fullstack.config.ts` without HTTP interception or a fake frontend server. The UI/API assertions exercise actual Identity and SQL flows. Fixture AI/email providers are explicit and are available only in the test host.
+The host is a **test-only** project in `tools/TaskManager.FullStackHost`. Production container targets do not include it. It loads the actual .NET10 WebAPI, Notifier and WebHost programs through native Kestrel. Browser tests use `tests/frontend/playwright.fullstack.config.ts` without HTTP interception or a fake frontend server. The UI/API assertions exercise actual Identity and SQL flows. Fixture AI/email providers are explicit and are available only in the test host.
 
 The host creates only `taskmanager_e2e_test_<32 lowercase GUID hex>` databases using the explicit SQL master server connection and applies the existing migrations. It never migrates or deletes `TaskManager_Codex_20261012` or another application database. The runner validates this namespace and binds it to the private run directory. Windows Schannel uses a uniquely named current-user nonexportable CNG key for the ephemeral certificate. The key is deleted and its absence verified after actual hosts stop. Linux uses an in-memory RSA key. Neither path adds a certificate store or trust entry.
 
 ## Prepare and run
 
-Use x64 PowerShell7 on Windows or Linux, the SDK locked by `global.json`, Node locked by `frontend/.node-version`, locked npm dependencies and a prepared production frontend `dist`. The new workflow uses immutable action SHAs, locked PowerShell packages and digest-pinned SQL2022/RabbitMQ4.3.6 images recorded in `scripts/fullstack/versions.json`.
+Use x64 PowerShell7 on Windows or Linux, the SDK locked by `global.json`, Node locked by `.node-version`, locked npm dependencies and a prepared production frontend `dist`. The new workflow uses immutable action SHAs, locked PowerShell packages and digest-pinned SQL2022/RabbitMQ4.3.6 images recorded in `scripts/fullstack/versions.json`.
 
 Prepare dependencies/builds explicitly before verification; no package lock is changed by the runner:
 
 ```powershell
 dotnet restore tools/TaskManager.FullStackHost/TaskManager.FullStackHost.csproj --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
 dotnet build tools/TaskManager.FullStackHost/TaskManager.FullStackHost.csproj --configuration Release --no-restore -warnaserror:NU1901,NU1902,NU1903,NU1904
-# Run locked npm ci and npm run build from frontend, using its pinned npm/Node.
+npm ci --ignore-scripts
+npm run build:frontend
 pwsh -NoProfile -File scripts/fullstack/tests/Run.ps1
 pwsh -NoProfile -File scripts/fullstack/tests/Live.ps1
 ```
@@ -36,6 +37,11 @@ $env:TASKMANAGER_FULLSTACK_SQL = Get-Content -LiteralPath '.local/fullstack-inpu
 $env:TASKMANAGER_UI_BROWSER = 'chrome' # Existing installed Chrome; no user profile.
 pwsh -NoProfile -File scripts/fullstack/Run.ps1 -Mode Controlled -NoBuild
 ```
+
+Run these commands from the repository root. The production UI is
+`src/frontend/dist`; browser suites and configuration are in `tests/frontend`.
+The root npm lockfile covers both workspaces, with tooling resolved from root
+`node_modules`.
 
 The runner's default without `-NoBuild` performs an explicit sequential locked restore/build of the test host only. Frontend dependency/build preparation remains explicit. `-NoBuild` requires existing verified host/UI artifacts and never silently builds or restores them. Build/host/browser stdout and stderr are asynchronously drained into `Stream.Null`; raw SQL/Identity/mail/control-token exception output is not persisted or forwarded. Setup failure diagnostics therefore use safe failure types and sanitized browser counts rather than raw private logs.
 
@@ -71,7 +77,7 @@ PASS requires graceful exit0 and this actual cleanup proof bound to the same dat
 
 ## Results and privacy
 
-The Playwright reporter writes `frontend/test-results/fullstack-summary.json` with schema1, kind `controlled-full-stack-browser`, current run ID, provider `fake`, explicit transport and total/passed/failed/skipped/flaky counts. It updates these safe aggregates after each case. A bounded optional `failedCases` array records only numeric case index, fixed project/status and a location in the owned journey source; it excludes titles, URLs, account details, error messages and stacks. The runner rejects missing/stale/empty/skipped/flaky/failing summaries. Screenshots use fixed synthetic product-page names under `frontend/test-results/fullstack-screenshots/`. Only that resolved owned directory is cleared before a new run, preventing stale screenshot uploads; accepted screenshot sets elsewhere remain untouched.
+The Playwright reporter writes `tests/frontend/test-results/fullstack-summary.json` with schema1, kind `controlled-full-stack-browser`, current run ID, provider `fake`, explicit transport and total/passed/failed/skipped/flaky counts. It updates these safe aggregates after each case. A bounded optional `failedCases` array records only numeric case index, fixed project/status and a location in the owned journey source; it excludes titles, URLs, account details, error messages and stacks. The runner rejects missing/stale/empty/skipped/flaky/failing summaries. Screenshots use fixed synthetic product-page names under `tests/frontend/test-results/fullstack-screenshots/`. Only that resolved owned directory is cleared before a new run, preventing stale screenshot uploads; accepted screenshot sets elsewhere remain untouched.
 
 The full-stack browser config has one worker, retries0, desktop1440×900 and mobile390×844. Traces/video/automatic failure screenshots are disabled. `PLAYWRIGHT_NO_COPY_PROMPT=1` prevents the native reporter from capturing DOM snapshots. Native `error-context.md` attachments can still include raw error text; the reporter removes only those exact owned files immediately and performs a bounded contained scan at begin/end. `.github/workflows/fullstack.yml` uploads only the sanitized aggregate JSON and explicitly captured synthetic product PNGs. It never uploads `.local`, raw browser output, mail/cookies/control tokens, environment files or traces. The job has no cloud secrets, environment deployment or OIDC `id-token` permission.
 

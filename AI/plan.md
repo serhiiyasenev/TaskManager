@@ -257,3 +257,80 @@ deterministic2-case RED reproduction. Publish and inspect fresh Linux CI next.
 At605e934 Linux frontend passed185 unit/92 browser cases. Container smoke exposed
 a separate missing host SDK for dev-certs; install pinned global.json SDK in that
 workflow (actionlint passes), publish the follow-up and verify final CI.
+
+## Repository structure — authorized 2026-10-20
+
+Owner requested switching to main, pulling and organizing the complete project.
+PR51 is merged; main was fast-forwarded to22104dc, whose product tree matches the
+fully green d0b9fff tree (924 backend,185 frontend unit,92 UI, real full-stack and
+container gates). This is a large behavior-preserving path refactor.
+
+1. Move .NET BLL/Client/DAL/Hosting/Notifier/WebAPI/WebHost into src/backend with
+   stable project filenames, GUIDs, namespaces, assembly names and migrations.
+2. Move React app into src/frontend, retain colocated unit tests; move Playwright
+   e2e/fullstack/configs into tests/frontend, .NET Tests into tests/backend.
+3. Introduce private root npm workspaces for src/frontend and tests/frontend with
+   a single root lock and existing exact package versions/toolchain pins. Browser
+   test workspace is @taskmanager/browser-tests. Root scripts: lint/typecheck,
+   build:frontend,test:unit,test:coverage,test:e2e,test:fullstack. Dependency versions
+   must not drift as a side effect of moving the lock.
+4. Keep tools/scripts/infra/contracts/evaluation/AI/docs in their clear root roles;
+   move loose README JPG assets into docs/assets. Group the root solution logically.
+5. Update every executable path consumer: project references/content roots,
+   generators, CI, Docker allowlist/build stages, Compose, native/full-stack/azure
+   scripts, Playwright imports/reports, tooling and maintained documentation.
+6. Verify locked restore/build, npm clean install/lint/types/unit coverage/browser,
+   generated contracts, native script/infra fixtures/actionlint, then actual local
+   SQL/Rabbit/full-stack and refreshed localhost as appropriate. Audit the actual
+   diff for unintended logic, security/default/config or package-version changes.
+
+Implementation is authorized by the owner's explicit restructuring request;
+routine folder/tooling decisions follow the plan above. Work stays on main as
+requested; no new commit/push/merge/deployment is requested. Preserve two existing
+untracked synthetic PNGs and ignored local SQL credentials/runtime files. Stop
+only the task-owned local runtime before moving loaded outputs, and update its
+private supervisor paths before restarting. All resolved move paths must remain
+within the repository. Historical dated traces retain their original evidence.
+
+Completed locally2026-10-20: new layout, references/runners/CI/Docker paths and
+maintained docs are updated. Fresh root npm install, types/lint/contracts,
+Release solution build,185 frontend unit,92 UI,924 native SQL/Rabbit backend and
+12 actual full-stack browser cases pass. Offline fixtures/infra/actionlint pass;
+localhost HTTP/HTTPS restored and admin counts preserved. See the repository
+structure trace for evidence and the unavailable local Docker execution gate.
+No new commit/push/deployment was performed.
+
+## Compact responsive dashboard — 2026-10-20
+
+Owner screenshot shows the narrow-screen sidebar/language/account stack consuming
+excessive vertical space and four slim dashboard statistics at the pictured width.
+Apply the existing ECC polish guidance: compact mobile brand/language row, retain
+scrollable labelled navigation and account actions, cap narrow-screen statistics
+at two columns while allowing one column with enlarged text. Preserve desktop
+sidebar footer placement and all business/auth behavior. Add focused browser
+regression, verify existing layout/navigation/200% text cases, rebuild local UI.
+This is a small screenshot-driven correction under the owner's ongoing UI request.
+
+Completed: compact CSS built;16 focused layout/browser executions plus2 final
+admin fixture executions pass, types/lint pass. Synthetic screenshot reviewed;
+localhost serves fresh assets. Trace:step-20261020-compact-dashboard.md.
+
+## Admin notification overview and structure PR — authorized2026-10-20
+
+Owner confirmed personal notifications work and requested admin All notifications
+and a PR covering the full new structure. Create a codex branch from current main
+with existing local changes. Add separate read-only admin API/contract + bilingual
+UI mode with recipient identity and recipient read status; fresh database admin
+rights required. Personal inbox/read actions/sidebar unread counts remain personal.
+Admin mode uses explicit refresh/pagination/unread filter; no global hub broadcast
+or mutation of other recipients' read markers. Preserve valid current task links,
+exclude orphaned task/project rows, retain reassigned-recipient history in admin
+view. Add access/revocation/IDOR/count tests, UI mode/race/locale tests, verify all
+local gates, refresh local runtime, then commit/push/create PR and inspect CI.
+Preserve two preexisting untracked dashboard PNGs; keep private runtime artifacts
+out of commits. No merge or cloud deploy requested.
+
+Completed locally: read-only admin overview, fresh-role/IDOR tests, bilingual
+switching and denial-cache regressions pass.946 backend,199 unit,100 UI,12 real
+SQL/Rabbit browser cases; type/lint/contracts and local admin smoke pass. Current
+branch is prepared for PR publication; CI/container outcome recorded separately.

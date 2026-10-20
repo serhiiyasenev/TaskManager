@@ -79,3 +79,14 @@ and pointer capture support mouse, touch and pen without adding a dependency;
 edge scrolling is scoped to the Board and hovered column. Existing status selects
 provide a single-pointer alternative. Synthetic Playwright verifies actual mouse
 and CDP touch input; no SQL write is needed for regression verification.
+
+## Repository layout — 2026-10-20
+
+Merged main22104dc is the pre-refactor baseline. Existing .NET identities and
+migrations survive moves to src/backend and tests/backend. React unit tests stay
+colocated; Playwright suites/configs move to tests/frontend with their own npm
+workspace. Root npm lock migration changed no existing dependency version or
+integrity. Full-stack discovery/content roots, reporter cwd, Docker COPY/allowlist,
+CI and private native launcher paths must agree with the new layout. Updated
+maintained commands are in docs/repository-layout.md and TESTS.md; historical
+execution evidence retains its original paths.

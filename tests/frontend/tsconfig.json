@@ -1,0 +1,5 @@
+{
+  "extends": "../../src/frontend/tsconfig.json",
+  "compilerOptions": { "types": ["node"] },
+  "include": ["e2e", "fullstack", "playwright.config.ts", "playwright.fullstack.config.ts"]
+}

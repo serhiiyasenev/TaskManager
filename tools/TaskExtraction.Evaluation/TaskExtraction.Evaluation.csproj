@@ -7,6 +7,6 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\BLL\BLL.csproj" />
+    <ProjectReference Include="..\..\src\backend\BLL\BLL.csproj" />
   </ItemGroup>
 </Project>

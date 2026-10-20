@@ -61,3 +61,35 @@ the normal44px layout.
 **Status**
 Accepted within the owner's thorough local test/fix request. Verified behavior
 and external gates are recorded separately in the trace and TESTS.md.
+
+## ADR 004 — Group application sources and tests in a single repository
+
+**Decision (owner-authorized 2026-10-20)**
+Use src/backend for the existing .NET project boundaries, src/frontend for React,
+tests/backend for .NET tests and tests/frontend for browser suites. Retain frontend
+unit tests beside their features. Keep root solution/toolchain/Compose/CI entry
+points; tools, scripts, contracts, infrastructure and documentation have dedicated
+directories. A private root npm workspace and one lock govern the frontend and
+browser-test packages. Preserve all existing dependency versions, assembly names,
+project identities, namespaces, interfaces, migrations and security defaults.
+
+**Rationale**
+Separate product source, executable test suites and operational tools while
+keeping root-level build commands discoverable. Native .NET solution folders and
+npm workspaces provide the organization without an additional orchestration stack.
+Browser tests can resolve the same hoisted tools/contracts without copying schemas
+or maintaining a second dependency graph. Rollback is the inverse path mapping;
+no schema/data migration is part of this change.
+
+## ADR 005 — Read-only administrator notification overview
+
+Owner-authorized2026-10-20: add GET /api/notifications/all and an admin-only
+bilingual mode. Require both AdminOnly policy and fresh database-backed admin
+scope. Return retained notifications joined to existing tasks/projects/recipients
+across teams, with recipient identity and their read status. Reassigned-recipient
+history remains inspectable; current task/project names and links are returned.
+The existing personal inbox, read command, hub routing and unread badge stay
+personal. No global broadcast, new persisted read markers or migration is needed.
+Admin overview is explicitly refreshed and read only; denied requests clear UI
+visibility of cached private data, including during retries. This avoids changing
+another person's read state simply because an administrator reviewed delivery.

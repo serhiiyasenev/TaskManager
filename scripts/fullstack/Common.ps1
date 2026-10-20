@@ -156,7 +156,7 @@ function Assert-FullStackCleanup($Cleanup, [string] $DatabaseName) {
 }
 function Reset-FullStackScreenshots {
     $repository = Get-FullStackRepository
-    $root = [IO.Path]::GetFullPath((Join-Path $repository 'frontend/test-results'))
+    $root = [IO.Path]::GetFullPath((Join-Path $repository 'tests/frontend/test-results'))
     $target = [IO.Path]::GetFullPath((Join-Path $root 'fullstack-screenshots'))
     if (-not $target.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
         [IO.Path]::GetFileName($target) -cne 'fullstack-screenshots') { throw 'Invalid owned screenshot directory.' }

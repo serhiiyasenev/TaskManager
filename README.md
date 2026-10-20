@@ -71,6 +71,13 @@ and mark them as read. Counts come from the scoped server inbox. Refresh and
 reconnect retrieve the saved history; logging out clears the browser snapshot
 and stops its realtime connection.
 
+Administrators can select **Усі сповіщення / All notifications** to inspect
+retained notifications across the system, their recipients and recipients' read
+status. This view is read only and updates on refresh; the personal inbox and
+sidebar unread badge keep their personal meaning. Inspecting another recipient's
+notification never marks it as read. The server checks the current administrator
+role for each request.
+
 The Notifier runtime owns reminder scans, outbox dispatch and retention cleanup.
 It commits a notification and its unique processing marker before broker ACK.
 SignalR carries only a private change hint; the SQL inbox is the history source.
@@ -155,6 +162,23 @@ sequenceDiagram
 ```
 
 ## 📦 Project Structure
+
+Application code lives in `src/`, executable test suites in `tests/`, and
+development/deployment tools in `tools/` and `scripts/`. See the
+[repository map and root commands](docs/repository-layout.md).
+
+```text
+src/backend/    .NET applications and libraries
+src/frontend/   React application and colocated unit tests
+tests/backend/  .NET unit and integration suites
+tests/frontend/ Playwright UI and full-stack suites
+tools/          SQL bootstrap, full-stack host and AI evaluation
+contracts/      Canonical notification API schema
+infra/          Deployment definitions
+docs/           Maintained runbooks and documentation assets
+AI/             Plans, decisions and historical execution evidence
+```
+
 ```mermaid
 graph TD
     A[TaskManager Solution]
@@ -240,12 +264,19 @@ it. Production does not automatically seed administrators or demo passwords.
 Configure `Jwt__Key`, SQL, `BrowserAuth__PublicOrigin`, email and persistent keys
 as described in [authentication and access](docs/authentication-and-access.md).
 
-Run the following commands in the projects root:
+From the repository root, prepare the browser application with the pinned Node/npm:
 
 ```bash
-dotnet run --project WebAPI
-dotnet run --project Notifier
-dotnet run --project Client
+npm ci --ignore-scripts
+npm run build:frontend
+```
+
+Run the following commands from the repository root:
+
+```bash
+dotnet run --project src/backend/WebAPI
+dotnet run --project src/backend/Notifier
+dotnet run --project src/backend/Client
 ```
 
 Use the console client to interact with the system
@@ -265,15 +296,15 @@ Also, you can use Swagger, Postman or any other client to execute Web API reques
 10. Stop Timer Service
 11. Exit the program
 
-<img src="Img_1.jpg" style="max-width: 100%; height: auto;"/>
+<img src="docs/assets/Img_1.jpg" style="max-width: 100%; height: auto;"/>
 
-<img src="Img_2.jpg" style="max-width: 100%; height: auto;"/>
+<img src="docs/assets/Img_2.jpg" style="max-width: 100%; height: auto;"/>
 
-<img src="Img_3.jpg" style="max-width: 100%; height: auto;"/>
+<img src="docs/assets/Img_3.jpg" style="max-width: 100%; height: auto;"/>
 
-<img src="Grafana_1.jpg" style="max-width: 100%; height: auto;"/>
+<img src="docs/assets/Grafana_1.jpg" style="max-width: 100%; height: auto;"/>
 
-<img src="Grafana_2.jpg" style="max-width: 100%; height: auto;"/>
+<img src="docs/assets/Grafana_2.jpg" style="max-width: 100%; height: auto;"/>
 
 ---
 ## 🛢️ Database Diagram
