@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "product": "TaskManager",
+  "tooling": { "bicepVersion": "0.48.1", "azureCliVersion": "2.91.0", "cloudEnvironment": "AzureCloud", "containerPort": 8080, "runtimeUid": 1654 },
+  "templates": { "foundation": "infra/azure/foundation.bicep", "jobs": "infra/azure/jobs.bicep", "apps": "infra/azure/apps.bicep" },
+  "statePath": ".local/azure/<environmentName>/<commitSha>/release.json",
+  "phases": ["preflight", "validate-and-what-if", "foundation", "build-and-push-digests", "configure-secret-and-signalr-acl", "jobs", "sql-bootstrap-before", "migration-once", "sql-bootstrap-after", "candidate-apps", "smoke", "promote"],
+  "repositories": { "web": "taskmanager/web", "api": "taskmanager/api", "notifier": "taskmanager/notifier", "migrations": "taskmanager/migrations", "sqlBootstrap": "taskmanager/sql-bootstrap" },
+  "dockerTargets": { "web": "web", "api": "webapi", "notifier": "notifier", "migrations": "migrations", "sqlBootstrap": "sql-bootstrap" },
+  "imageDigestParameters": { "web": "webImageDigest", "api": "apiImageDigest", "notifier": "notifierImageDigest", "migrations": "migrationsImageDigest", "sqlBootstrap": "sqlBootstrapImageDigest" },
+  "foundationParameters": {
+    "required": ["resourceNamePrefix", "environmentName", "location", "monthlyBudget", "budgetContactEmails", "openAiDeploymentName", "emailDomainResourceId", "emailDataLocation", "emailFromAddress"],
+    "optional": ["publicOrigin", "budgetStartDate", "existingRegistryResourceId", "existingRegistryRoleAssignmentMode", "existingManagedEnvironmentResourceId", "existingVnetResourceId", "existingPrivateEndpointSubnetResourceId", "existingSqlPrivateDnsZoneResourceId", "existingSignalRPrivateDnsZoneResourceId", "vnetAddressPrefix", "ingressSubnetCidr", "privateEndpointSubnetCidr", "existingSqlServerResourceId", "sqlDatabaseSkuName", "existingOpenAiResourceId", "openAiModelName", "openAiModelVersion", "openAiDeploymentSkuName", "openAiDeploymentCapacity", "existingCommunicationServiceResourceId", "signalRPrivateEndpointConnectionNames", "signalRAdditionalAllowedOrigins"],
+    "conditionalRequired": {
+      "newOpenAi": ["openAiModelName", "openAiModelVersion"],
+      "existingManagedEnvironment": ["existingVnetResourceId", "existingPrivateEndpointSubnetResourceId", "ingressSubnetCidr", "existingSqlPrivateDnsZoneResourceId", "existingSignalRPrivateDnsZoneResourceId"],
+      "existingSqlServer": ["operatorAuthorizedSqlBootstrapRoute"]
+    }
+  },
+  "foundationOutputs": ["registryResourceId", "registryLoginServer", "managedEnvironmentId", "environmentDefaultDomain", "appNames", "identityIds", "sqlServerFqdn", "sqlDatabaseName", "ingressSubnetCidr", "publicOrigin", "keyVaultUri", "jwtSecretName", "runtimeConfiguration", "resourceIds"],
+  "jobsParameters": {
+    "required": ["location", "foundationOutputs", "migrationsImageDigest", "sqlBootstrapImageDigest"],
+    "optional": ["sqlBootstrapPhase"],
+    "sqlBootstrapPhases": ["Prepare", "Finalize"]
+  },
+  "jobsOutputs": ["sqlBootstrapJobName", "migrationJobName"],
+  "appsParameters": {
+    "required": ["location", "foundationOutputs", "webImageDigest", "apiImageDigest", "notifierImageDigest", "candidateSuffix", "jwtSecretUri", "smokeAllowedCidrs"],
+    "optional": ["webExistingTraffic", "apiExistingTraffic", "notifierExistingTraffic", "webExistingIpSecurityRestrictions", "webCustomDomains", "notifierMinReplicas", "notifierMaxReplicas"]
+  },
+  "appsOutputs": ["candidateRevisions", "candidateUrls", "expectedWebCandidateOrigin", "canonicalWebFqdn", "appResourceIds"],
+  "identityNames": ["web", "api", "notifier", "migration", "sqlBootstrap"],
+  "identityFields": ["name", "resourceId", "objectId", "clientId"],
+  "sqlBootstrap": {
+    "connectionEnvironmentVariable": "ConnectionStrings__DbConnection",
+    "usersEnvironmentVariable": "SqlBootstrap__UsersJson",
+    "mappingFields": ["name", "objectId", "clientId", "role"],
+    "records": [{ "identity": "api", "role": "Api" }, { "identity": "notifier", "role": "Notifier" }, { "identity": "migration", "role": "Migration" }],
+    "objectIdUse": "ARM role assignments",
+    "clientIdUse": "Azure SQL CREATE USER SID TYPE E and managed identity connection",
+    "existingServerRequirement": "Owner-authorized existing administrator bootstrap route; never change the existing SQL administrator."
+  },
+  "candidate": {
+    "label": "candidate",
+    "expectedOriginFormat": "https://<webAppName>--<candidateSuffix>.<actualEnvironmentDefaultDomain>",
+    "originEvidence": "Smoke uses actual Web latestRevisionFqdn from ARM, which must equal the configured expected revision origin. Label-to-revision metadata has no returned URL in Azure CLI2.91.0; no label hostname is inferred or used for smoke.",
+    "originEnvironmentVariable": "BrowserAuth__AdditionalAllowedOrigins__0",
+    "backendDestinations": "Actual API and Notifier candidate latestRevisionFqdn outputs; never canonical weighted endpoints.",
+    "firstDeployment": "Nonempty bounded smokeAllowedCidrs apply to Web ingress until smoke/promotion.",
+    "existingDeployment": "Preserve explicit prior traffic weights and ingress IP restrictions; candidate label has weight zero.",
+    "neverLatestRevisionTraffic": true
+  },
+  "secrets": {
+    "jwtSecretName": "taskmanager-jwt-signing",
+    "jwtSecretParameter": "jwtSecretUri",
+    "jwtSecretUriMustBeVersioned": true,
+    "jwtRecipients": ["api", "notifier"],
+    "creation": "Trusted script creates a cryptographically random signing key only when absent, stores via private temporary file, never prints or overwrites on routine deployment.",
+    "dataProtectionKeyUriMustBeVersionless": true
+  },
+  "signalR": {
+    "publicRequestTypes": ["ClientConnection"],
+    "privateRequestTypes": ["ServerConnection"],
+    "postFoundationGate": "Query actual private endpoint connection metadata, verify matching owned endpoint ID, set own SignalR ACL and exact publicOrigin plus expected Web candidate revision origin CORS. Feed approved actual connection names/origins into future foundation parameter files."
+  },
+  "releaseManifest": {
+    "required": ["schemaVersion", "product", "commitSha", "subscriptionId", "tenantId", "resourceGroupName", "environmentName", "resourceNamePrefix", "publicOrigin", "registryResourceId", "registryLoginServer", "images"],
+    "imageFields": ["repository", "digest", "reference"],
+    "referenceFormat": "<approvedRegistryLoginServer>/<fixedTaskManagerRepository>@sha256:<64 lowercase hex>",
+    "containsSecrets": false
+  },
+  "cloudEvidence": "Offline Bicep compilation does not prove provider registration, quota/model availability, sender verification, RBAC propagation, private DNS/SQL MI connectivity, deployment or live smoke."
+}

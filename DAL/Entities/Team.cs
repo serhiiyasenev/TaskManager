@@ -7,6 +7,7 @@ namespace DAL.Entities;
 [ExcludeFromCodeCoverage]
 public class Team : BaseEntity
 {
+    public int? OwnerId { get; set; }
     [Required]
     [MaxLength(100)]
     public string Name { get; set; }

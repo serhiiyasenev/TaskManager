@@ -17,10 +17,189 @@ namespace DAL.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("DAL.Entities.AiDailyUsage", b =>
+                {
+                    b.Property<string>("ScopeKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateOnly>("DayUtc")
+                        .HasColumnType("date");
+
+                    b.Property<long>("ReservedTokens")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ScopeKey", "DayUtc");
+
+                    b.ToTable("AiDailyUsage", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskCommitReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ExpectedDraftVersion")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ReplayExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResponseJson")
+                        .IsRequired()
+                        .HasMaxLength(65536)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ResultDraftVersion")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SourceDraftId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReplayExpiresAtUtc");
+
+                    b.HasIndex("OwnerId", "KeyHash")
+                        .IsUnique();
+
+                    b.ToTable("AiTaskCommitReceipts", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("NotesText")
+                        .HasMaxLength(20000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("ReferenceDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("RetainUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RetainUntilUtc");
+
+                    b.HasIndex("OwnerId", "CreatedAtUtc");
+
+                    b.ToTable("AiTaskDrafts", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraftItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CandidateJson")
+                        .HasMaxLength(131072)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("DraftId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DraftId", "Ordinal")
+                        .IsUnique();
+
+                    b.ToTable("AiTaskDraftItems", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskMaterialization", b =>
+                {
+                    b.Property<Guid>("DraftItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("LiveTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OriginalTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("OutboxMessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("DraftItemId");
+
+                    b.HasIndex("LiveTaskId");
+
+                    b.HasIndex("OutboxMessageId")
+                        .IsUnique();
+
+                    b.ToTable("AiTaskMaterializations", (string)null);
+                });
 
             modelBuilder.Entity("DAL.Entities.ExecutedTask", b =>
                 {
@@ -33,6 +212,9 @@ namespace DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("NotificationMessageId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("TaskId")
                         .HasColumnType("int");
 
@@ -42,83 +224,87 @@ namespace DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExecutedTasks");
+                    b.HasIndex("NotificationMessageId")
+                        .IsUnique()
+                        .HasFilter("[NotificationMessageId] IS NOT NULL");
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TaskId = 1,
-                            TaskName = "Design DB schema"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TaskId = 2,
-                            TaskName = "Implement DAL"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TaskId = 3,
-                            TaskName = "Seed data"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TaskId = 10,
-                            TaskName = "JWT endpoints"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TaskId = 11,
-                            TaskName = "Password policies"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TaskId = 12,
-                            TaskName = "Publishers"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TaskId = 13,
-                            TaskName = "OTel tracing"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            TaskId = 14,
-                            TaskName = "Metrics exporter"
-                        });
+                    b.ToTable("ExecutedTasks");
                 });
 
             modelBuilder.Entity("DAL.Entities.NotificationOutboxMessage", b =>
                 {
-                    b.Property<Guid>("Id").HasColumnType("uniqueidentifier");
-                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
-                    b.Property<bool>("IsEscalation").HasColumnType("bit");
-                    b.Property<Guid?>("LockId").IsConcurrencyToken().HasColumnType("uniqueidentifier");
-                    b.Property<DateTime?>("LockedUntilUtc").HasColumnType("datetime2");
-                    b.Property<string>("Payload").IsRequired().HasColumnType("nvarchar(max)");
-                    b.Property<DateTime?>("PublishedAtUtc").HasColumnType("datetime2");
-                    b.Property<string>("QueueName").IsRequired().HasMaxLength(256).HasColumnType("nvarchar(256)");
-                    b.Property<int>("Status").IsConcurrencyToken().HasColumnType("int");
-                    b.Property<int>("TaskId").HasColumnType("int");
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsEscalation")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("LockId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .IsConcurrencyToken()
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PublishedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("QueueName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("Status")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
                     b.HasIndex("TaskId");
+
                     b.HasIndex("Status", "LockedUntilUtc", "CreatedAtUtc");
-                    b.ToTable("NotificationOutbox");
+
+                    b.ToTable("NotificationOutbox", (string)null);
+                });
+
+            modelBuilder.Entity("DAL.Entities.NotificationProcessingMarker", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CanonicalPayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("Disposition")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ProcessedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("ProcessedAtUtc");
+
+                    b.ToTable("NotificationProcessingMarkers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_NotificationProcessingMarkers_Disposition", "[Disposition] IN (0, 1)");
+                        });
                 });
 
             modelBuilder.Entity("DAL.Entities.Project", b =>
@@ -159,68 +345,6 @@ namespace DAL.Migrations
                         .IsUnique();
 
                     b.ToTable("Projects");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            AuthorId = 1,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Deadline = new DateTime(2025, 8, 21, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Core Web API",
-                            Name = "Task Manager API",
-                            TeamId = 1
-                        },
-                        new
-                        {
-                            Id = 2,
-                            AuthorId = 2,
-                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Deadline = new DateTime(2025, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "SignalR hubs & clients",
-                            Name = "Realtime Hub",
-                            TeamId = 2
-                        },
-                        new
-                        {
-                            Id = 3,
-                            AuthorId = 3,
-                            CreatedAt = new DateTime(2025, 8, 3, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Deadline = new DateTime(2025, 8, 31, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "RabbitMQ publishers/consumers",
-                            Name = "Broker Layer",
-                            TeamId = 3
-                        },
-                        new
-                        {
-                            Id = 4,
-                            AuthorId = 4,
-                            CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Deadline = new DateTime(2025, 8, 16, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "JWT, refresh tokens",
-                            Name = "Auth & Identity",
-                            TeamId = 4
-                        },
-                        new
-                        {
-                            Id = 5,
-                            AuthorId = 5,
-                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Deadline = new DateTime(2025, 8, 19, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "OTel, tracing, metrics",
-                            Name = "Observability",
-                            TeamId = 5
-                        },
-                        new
-                        {
-                            Id = 6,
-                            AuthorId = 6,
-                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Deadline = new DateTime(2025, 8, 23, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Backoffice UI",
-                            Name = "Admin Panel",
-                            TeamId = 6
-                        });
                 });
 
             modelBuilder.Entity("DAL.Entities.Task", b =>
@@ -251,6 +375,10 @@ namespace DAL.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("EscalationNotificationId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("EscalationSentAt")
                         .IsConcurrencyToken()
                         .HasColumnType("datetime2");
@@ -274,6 +402,10 @@ namespace DAL.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("ReminderNotificationId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int?>("ReminderOffsetMinutes")
                         .IsConcurrencyToken()
                         .HasColumnType("int");
@@ -286,252 +418,17 @@ namespace DAL.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("ReminderNotificationId")
-                        .IsConcurrencyToken()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("EscalationNotificationId")
+                    b.Property<Guid>("Version")
                         .IsConcurrencyToken()
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PerformerId");
+                    b.HasIndex("PerformerId", "DueDate", "Id");
 
-                    b.HasIndex("ProjectId");
+                    b.HasIndex("ProjectId", "CreatedAt", "Id");
 
                     b.ToTable("Tasks");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Initial ERD + migrations",
-                            EscalationEnabled = false,
-                            FinishedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Design DB schema",
-                            PerformerId = 1,
-                            ProjectId = 1,
-                            ReminderEnabled = false,
-                            State = 2
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "EF Core, repositories",
-                            EscalationEnabled = false,
-                            Name = "Implement DAL",
-                            PerformerId = 2,
-                            ProjectId = 1,
-                            ReminderEnabled = false,
-                            State = 1
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Teams/Users/Projects/Tasks",
-                            EscalationEnabled = false,
-                            Name = "Seed data",
-                            PerformerId = 3,
-                            ProjectId = 1,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "User + project groups",
-                            EscalationEnabled = false,
-                            Name = "Create SignalR hub",
-                            PerformerId = 3,
-                            ProjectId = 2,
-                            ReminderEnabled = false,
-                            State = 1
-                        },
-                        new
-                        {
-                            Id = 5,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "JWT bearer auth",
-                            EscalationEnabled = false,
-                            Name = "Auth for hubs",
-                            PerformerId = 4,
-                            ProjectId = 2,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 6,
-                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Redis backplane",
-                            EscalationEnabled = false,
-                            Name = "Backplane setup",
-                            PerformerId = 4,
-                            ProjectId = 2,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 7,
-                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Outbox pattern",
-                            EscalationEnabled = false,
-                            Name = "Publishers",
-                            PerformerId = 5,
-                            ProjectId = 3,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 8,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Idempotency, DLQ",
-                            EscalationEnabled = false,
-                            Name = "Consumers",
-                            PerformerId = 6,
-                            ProjectId = 3,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 9,
-                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Exponential backoff",
-                            EscalationEnabled = false,
-                            Name = "Retry policy",
-                            PerformerId = 7,
-                            ProjectId = 3,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 10,
-                            CreatedAt = new DateTime(2025, 7, 30, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Login/refresh/roles",
-                            EscalationEnabled = false,
-                            Name = "JWT endpoints",
-                            PerformerId = 7,
-                            ProjectId = 4,
-                            ReminderEnabled = false,
-                            State = 1
-                        },
-                        new
-                        {
-                            Id = 11,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Strong defaults",
-                            EscalationEnabled = false,
-                            Name = "Password policies",
-                            PerformerId = 8,
-                            ProjectId = 4,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 12,
-                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "RBAC",
-                            EscalationEnabled = false,
-                            Name = "Seed admin role",
-                            PerformerId = 9,
-                            ProjectId = 4,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 13,
-                            CreatedAt = new DateTime(2025, 7, 31, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "ActivitySource",
-                            EscalationEnabled = false,
-                            Name = "OTel tracing",
-                            PerformerId = 9,
-                            ProjectId = 5,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 14,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Prometheus",
-                            EscalationEnabled = false,
-                            Name = "Metrics exporter",
-                            PerformerId = 10,
-                            ProjectId = 5,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 15,
-                            CreatedAt = new DateTime(2025, 8, 3, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Serilog + sinks",
-                            EscalationEnabled = false,
-                            Name = "Logs pipeline",
-                            PerformerId = 10,
-                            ProjectId = 5,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 16,
-                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Users/Teams grid",
-                            EscalationEnabled = false,
-                            Name = "Scaffold admin UI",
-                            PerformerId = 10,
-                            ProjectId = 6,
-                            ReminderEnabled = false,
-                            State = 1
-                        },
-                        new
-                        {
-                            Id = 17,
-                            CreatedAt = new DateTime(2025, 8, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Guarded routes",
-                            EscalationEnabled = false,
-                            Name = "RBAC in UI",
-                            PerformerId = 12,
-                            ProjectId = 6,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 18,
-                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Filters & export",
-                            EscalationEnabled = false,
-                            Name = "Audit logs view",
-                            PerformerId = 12,
-                            ProjectId = 6,
-                            ReminderEnabled = false,
-                            State = 0
-                        },
-                        new
-                        {
-                            Id = 19,
-                            CreatedAt = new DateTime(2025, 8, 2, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Test & report",
-                            EscalationEnabled = false,
-                            Name = "Audit Tests",
-                            PerformerId = 12,
-                            ProjectId = 6,
-                            ReminderEnabled = false,
-                            State = 1
-                        });
                 });
 
             modelBuilder.Entity("DAL.Entities.Team", b =>
@@ -550,50 +447,77 @@ namespace DAL.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("OwnerId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Teams");
+                    b.HasIndex("OwnerId");
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Team 1"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Team 2"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Team 3"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CreatedAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Team 4"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            CreatedAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Team 5"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            CreatedAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Team 6"
-                        });
+                    b.ToTable("Teams");
+                });
+
+            modelBuilder.Entity("DAL.Entities.TeamInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AcceptedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("AcceptedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IssuedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NormalizedEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcceptedByUserId");
+
+                    b.HasIndex("IssuedByUserId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("TeamId", "CreatedAtUtc");
+
+                    b.ToTable("TeamInvitations", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.User", b =>
@@ -687,237 +611,50 @@ namespace DAL.Migrations
                     b.HasIndex("TeamId");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
 
-                    b.HasData(
-                        new
+            modelBuilder.Entity("DAL.Entities.UserNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProjectName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TaskName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "ReadAtUtc");
+
+                    b.HasIndex("OwnerId", "OccurredAtUtc", "Id");
+
+                    b.ToTable("UserNotifications", null, t =>
                         {
-                            Id = 1,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1991, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
-                            Email = "john.A.doe@gmail.com",
-                            EmailConfirmed = true,
-                            FirstName = "John",
-                            LastName = "A",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "JOHN.A.DOE@GMAIL.COM",
-                            NormalizedUserName = "JOHN.A",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 1,
-                            TwoFactorEnabled = false,
-                            UserName = "john.a"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1990, 5, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
-                            Email = "kate.a@example.com",
-                            EmailConfirmed = true,
-                            FirstName = "Kate",
-                            LastName = "A",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "KATE.A@EXAMPLE.COM",
-                            NormalizedUserName = "KATE.A",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 1,
-                            TwoFactorEnabled = false,
-                            UserName = "kate.a"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1992, 2, 2, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
-                            Email = "john.b.doe@gmail.com",
-                            EmailConfirmed = true,
-                            FirstName = "John",
-                            LastName = "B",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "JOHN.B.DOE@GMAIL.COM",
-                            NormalizedUserName = "JOHN.B",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 1,
-                            TwoFactorEnabled = false,
-                            UserName = "john.b"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1991, 6, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
-                            Email = "kate.b@example.com",
-                            EmailConfirmed = true,
-                            FirstName = "Kate",
-                            LastName = "B",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "KATE.B@EXAMPLE.COM",
-                            NormalizedUserName = "KATE.B",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 2,
-                            TwoFactorEnabled = false,
-                            UserName = "kate.b"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1993, 3, 3, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
-                            Email = "john.c.doe@gmail.com",
-                            EmailConfirmed = true,
-                            FirstName = "John",
-                            LastName = "C",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "JOHN.C.DOE@GMAIL.COM",
-                            NormalizedUserName = "JOHN.C",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 3,
-                            TwoFactorEnabled = false,
-                            UserName = "john.c"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1989, 8, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
-                            Email = "kate.c@example.com",
-                            EmailConfirmed = true,
-                            FirstName = "Kate",
-                            LastName = "C",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "KATE.C@EXAMPLE.COM",
-                            NormalizedUserName = "KATE.C",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 29, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 3,
-                            TwoFactorEnabled = false,
-                            UserName = "kate.c"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1994, 4, 4, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
-                            Email = "john.d.doe@gmail.com",
-                            EmailConfirmed = true,
-                            FirstName = "John",
-                            LastName = "D",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "JOHN.D.DOE@GMAIL.COM",
-                            NormalizedUserName = "JOHN.D",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 4,
-                            TwoFactorEnabled = false,
-                            UserName = "john.d"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1990, 12, 2, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
-                            Email = "kate.d@example.com",
-                            EmailConfirmed = true,
-                            FirstName = "Kate",
-                            LastName = "D",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "KATE.D@EXAMPLE.COM",
-                            NormalizedUserName = "KATE.D",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 4,
-                            TwoFactorEnabled = false,
-                            UserName = "kate.d"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1995, 5, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
-                            Email = "john.e.doe@gmail.com",
-                            EmailConfirmed = true,
-                            FirstName = "John",
-                            LastName = "E",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "JOHN.E.DOE@GMAIL.COM",
-                            NormalizedUserName = "JOHN.E",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 5,
-                            TwoFactorEnabled = false,
-                            UserName = "john.e"
-                        },
-                        new
-                        {
-                            Id = 10,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(1988, 7, 7, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "66666666-6666-6666-6666-666666666666",
-                            Email = "kate.e@example.com",
-                            EmailConfirmed = true,
-                            FirstName = "Kate",
-                            LastName = "E",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "KATE.E@EXAMPLE.COM",
-                            NormalizedUserName = "KATE.E",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 26, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "55555555-5555-5555-5555-555555555555",
-                            TeamId = 5,
-                            TwoFactorEnabled = false,
-                            UserName = "kate.e"
-                        },
-                        new
-                        {
-                            Id = 12,
-                            AccessFailedCount = 0,
-                            BirthDay = new DateTime(2000, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            ConcurrencyStamp = "44444444-4444-4444-4444-444444444444",
-                            Email = "service.bot@example.com",
-                            EmailConfirmed = true,
-                            FirstName = "Service",
-                            LastName = "Bot",
-                            LockoutEnabled = false,
-                            NormalizedEmail = "SERVICE.BOT@EXAMPLE.COM",
-                            NormalizedUserName = "SERVICE.BOT",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOjCnYyBCMuMtY1qgTRLchq6EiTni+db7W81eRUOtKM3y49VHFJoWToNDjvD2OeHJQ==",
-                            PhoneNumberConfirmed = false,
-                            RegisteredAt = new DateTime(2025, 7, 22, 0, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityStamp = "33333333-3333-3333-3333-333333333333",
-                            TwoFactorEnabled = false,
-                            UserName = "service.bot"
+                            t.HasCheckConstraint("CK_UserNotifications_Kind", "[Kind] IN (0, 1, 2, 3)");
                         });
                 });
 
@@ -949,15 +686,6 @@ namespace DAL.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            ConcurrencyStamp = "77777777-7777-7777-7777-777777777777",
-                            Name = "admin",
-                            NormalizedName = "ADMIN"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -1042,13 +770,6 @@ namespace DAL.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 1,
-                            RoleId = 1
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
@@ -1070,10 +791,72 @@ namespace DAL.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("DAL.Entities.AiTaskCommitReceipt", b =>
+                {
+                    b.HasOne("DAL.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraft", b =>
+                {
+                    b.HasOne("DAL.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraftItem", b =>
+                {
+                    b.HasOne("DAL.Entities.AiTaskDraft", "Draft")
+                        .WithMany("Items")
+                        .HasForeignKey("DraftId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Draft");
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskMaterialization", b =>
+                {
+                    b.HasOne("DAL.Entities.AiTaskDraftItem", "DraftItem")
+                        .WithOne("Materialization")
+                        .HasForeignKey("DAL.Entities.AiTaskMaterialization", "DraftItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Entities.Task", "LiveTask")
+                        .WithMany()
+                        .HasForeignKey("LiveTaskId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("DraftItem");
+
+                    b.Navigation("LiveTask");
+                });
+
             modelBuilder.Entity("DAL.Entities.NotificationOutboxMessage", b =>
                 {
-                    b.HasOne("DAL.Entities.Task", null).WithMany().HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade).IsRequired();
+                    b.HasOne("DAL.Entities.Task", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DAL.Entities.Project", b =>
@@ -1114,6 +897,34 @@ namespace DAL.Migrations
                     b.Navigation("Project");
                 });
 
+            modelBuilder.Entity("DAL.Entities.Team", b =>
+                {
+                    b.HasOne("DAL.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("DAL.Entities.TeamInvitation", b =>
+                {
+                    b.HasOne("DAL.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("AcceptedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("DAL.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("IssuedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Entities.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("DAL.Entities.User", b =>
                 {
                     b.HasOne("DAL.Entities.Team", "Team")
@@ -1122,6 +933,23 @@ namespace DAL.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("DAL.Entities.UserNotification", b =>
+                {
+                    b.HasOne("DAL.Entities.NotificationProcessingMarker", null)
+                        .WithMany()
+                        .HasForeignKey("Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DAL.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -1173,6 +1001,16 @@ namespace DAL.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraft", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("DAL.Entities.AiTaskDraftItem", b =>
+                {
+                    b.Navigation("Materialization");
                 });
 
             modelBuilder.Entity("DAL.Entities.Project", b =>

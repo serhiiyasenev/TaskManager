@@ -13,12 +13,38 @@ namespace DAL.Context
         public DbSet<Task> Tasks { get; set; }
         public DbSet<Team> Teams { get; set; }
         public DbSet<NotificationOutboxMessage> NotificationOutbox { get; set; }
+        public DbSet<UserNotification> UserNotifications { get; set; }
+        public DbSet<NotificationProcessingMarker> NotificationProcessingMarkers { get; set; }
+        public DbSet<AiTaskDraft> AiTaskDrafts { get; set; }
+        public DbSet<AiTaskDraftItem> AiTaskDraftItems { get; set; }
+        public DbSet<AiTaskMaterialization> AiTaskMaterializations { get; set; }
+        public DbSet<AiTaskCommitReceipt> AiTaskCommitReceipts { get; set; }
+        public DbSet<AiDailyUsage> AiDailyUsage { get; set; }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            StampTaskVersions();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override System.Threading.Tasks.Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            StampTaskVersions();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+
+        private void StampTaskVersions()
+        {
+            // Every application task write participates, including scheduler
+            // occurrence changes. Original values remain the concurrency guard.
+            foreach (var entry in ChangeTracker.Entries<Task>().Where(entry => entry.State is EntityState.Added or EntityState.Modified))
+                entry.Entity.Version = Guid.NewGuid();
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Configure();
-            modelBuilder.Seed();
         }
     }
 }

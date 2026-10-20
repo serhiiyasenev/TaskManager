@@ -15,7 +15,8 @@ public record TaskDto(
     bool EscalationEnabled,
     int? EscalationDelayMinutes,
     DateTime? ReminderSentAt,
-    DateTime? EscalationSentAt)
+    DateTime? EscalationSentAt,
+    Guid Version = default)
 {
     public override string ToString()
     {

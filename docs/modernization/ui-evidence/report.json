@@ -1,0 +1,65 @@
+{
+  "contract": "docs/modernization/ui-contract.md: Ukrainian task management UI; primary task creation; responsive accessible workflows; safe state recovery.",
+  "targetViewports": ["1440x900", "390x844"],
+  "scope": "Actual built React App in disposable installed Chrome headless contexts with explicitly synthetic intercepted API responses. This is rendered UI evidence, not real API/SQL or Identity-cookie E2E.",
+  "run": {
+    "startTimeUtc": "2026-10-11T21:06:51.856Z",
+    "durationMs": 38367.907,
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "browserChannel": "chrome",
+    "timeZone": "Europe/Kyiv",
+    "command": "node node_modules/@playwright/test/cli.js test",
+    "workingDirectory": "frontend"
+  },
+  "checker": {
+    "name": "ECC frontend-design-direction check-evidence.js",
+    "exitCode": 0,
+    "output": "Evidence record complete; visual correctness still requires rendered inspection."
+  },
+  "accessibility": {
+    "status": "pass",
+    "evidence": "Both viewport runs used keyboard-only login, labelled input/select/textarea checks, registration aria-invalid/describedby validation, visible solid focus outlines of at least 2px and working skip-to-main navigation. Rendered task/registration control targets, including clickable checkbox labels, met 24px minimum. Measured badge, overdue and error text contrast met 4.5:1. Reduced-motion media query matched, computed animation/transition durations were at most .01 seconds and no running animation remained. These are scoped checks, not a formal WCAG or screen-reader audit."
+  },
+  "responsive": {
+    "status": "pass",
+    "evidence": "Desktop 1440x900 and mobile 390x844 rendered the same long synthetic names and Ukrainian labels. Document scroll width stayed within viewport width; task table and board scrolling stayed in their containers. Visual review confirmed wrapped names, readable forms, stable navigation and centered auth panels. Full-page captures use these CSS viewport sizes and can be taller than the viewport."
+  },
+  "contentStates": {
+    "loading": { "status": "pass", "evidence": "A controlled unresolved task request displayed progress. Releasing it rendered actual fixture rows without replacing the UI with invented content." },
+    "empty": { "status": "pass", "evidence": "An empty task page explained missing results and provided a working Clear filters action at both viewports." },
+    "error": { "status": "pass", "evidence": "Synthetic task HTTP 503 showed a safe Ukrainian explanation and correlation identifier; no task rows appeared. Retry fetched and rendered the recovered fixture result." },
+    "partial": { "status": "pass", "evidence": "Project HTTP 503 left successful dashboard tasks visible and showed an unavailable project section with retry and unknown count instead of a fabricated zero." },
+    "success": { "status": "pass", "evidence": "The rendered task form submitted through the real frontend transport, converted a Kyiv-local deadline to the expected UTC instant and navigated to the returned synthetic task detail. Keyboard login returned to the dashboard; browser storage stayed empty." },
+    "permission": { "status": "pass", "evidence": "Synthetic owner invitation HTTP 403 removed cached invitation directory and management controls, refreshed session/team reads and retained the allowed member view with a safe access explanation." }
+  },
+  "additionalStates": {
+    "session": "Business HTTP 401 redirected to login with preserved returnTo and a visible session-ended banner.",
+    "conflict": "HTTP 409 preserved unsaved fields, offered current-record review, displayed the refreshed record and retried only after an explicit save with the refreshed version."
+  },
+  "limits": [
+    "API requests are intercepted fixtures; backend authorization, SQL transactions, CSRF validation and Identity cookies are not proven by this run.",
+    "Real UI + API + test SQL E2E belongs to roadmap step 28.",
+    "Only installed Chrome was run; other browsers and assistive technology were not exercised.",
+    "Native datetime input display follows browser/platform formatting; submitted UTC conversion was checked."
+  ],
+  "renderedEvidence": [
+    { "viewport": "1440x900", "artifact": "screenshots/desktop-1440x900-dashboard-long.png", "observation": "Desktop dashboard hierarchy, primary action, overdue text cue and long team/project/task names." },
+    { "viewport": "390x844", "artifact": "screenshots/mobile-390x844-dashboard-long.png", "observation": "Mobile navigation and long names wrap within the document; dashboard sections stack." },
+    { "viewport": "1440x900", "artifact": "screenshots/desktop-1440x900-tasks-list-long.png", "observation": "Scoped synthetic task list with four real product state labels, assignee filter and pagination." },
+    { "viewport": "1440x900", "artifact": "screenshots/desktop-1440x900-tasks-board-filtered.png", "observation": "Filtered board preserves query and shows current-page status columns plus the editable status control." },
+    { "viewport": "390x844", "artifact": "screenshots/mobile-390x844-task-form.png", "observation": "One-column task form, deadline, reminders and adequate clickable checkbox labels after the mobile fix." },
+    { "viewport": "1440x900", "artifact": "screenshots/desktop-1440x900-conflict.png", "observation": "Conflict notice and review action preserve unsaved form fields." },
+    { "viewport": "1440x900", "artifact": "screenshots/desktop-1440x900-partial.png", "observation": "Available tasks remain visible while the project section reports a failure and offers retry." },
+    { "viewport": "390x844", "artifact": "screenshots/mobile-390x844-loading.png", "observation": "Task request held by the controlled fixture displays loading progress." },
+    { "viewport": "390x844", "artifact": "screenshots/mobile-390x844-empty.png", "observation": "Empty results explain next actions and retain filter controls." },
+    { "viewport": "390x844", "artifact": "screenshots/mobile-390x844-error.png", "observation": "API outage shows safe error text, a synthetic correlation identifier and retry." },
+    { "viewport": "390x844", "artifact": "screenshots/mobile-390x844-permission.png", "observation": "Revoked owner rights remove management controls and private invitation list; member view remains allowed." },
+    { "viewport": "390x844", "artifact": "screenshots/mobile-390x844-session-expired.png", "observation": "Centered sign-in form explains the ended session and offers recovery routes." },
+    { "viewport": "1440x900", "artifact": "screenshots/desktop-1440x900-registration-validation.png", "observation": "Centered registration form links password mismatch feedback to its labelled field." },
+    { "viewport": "390x844", "artifact": "screenshots/mobile-390x844-keyboard-focus.png", "observation": "Keyboard focus makes the skip-to-content link visibly available." },
+    { "viewport": "1440x900", "artifact": "screenshots/desktop-1440x900-task-create-success.png", "observation": "Successful synthetic creation renders the returned task detail and reminder settings." }
+  ]
+}

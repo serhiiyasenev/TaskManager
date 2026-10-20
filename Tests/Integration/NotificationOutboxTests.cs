@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using WebAPI.Services;
+using BLL.Services.Notifications;
 using Xunit;
 using OutboxMessage = DAL.Entities.NotificationOutboxMessage;
 using OutboxStatus = DAL.Entities.NotificationOutboxStatus;
@@ -20,6 +21,38 @@ namespace Tests.Integration;
 
 public class NotificationOutboxTests
 {
+    [Fact]
+    public async Task TaskCreatedEntry_PublishesWithRemindersDisabled_AndDoesNotBecomeReminderOccurrence()
+    {
+        await using var h = await Harness.CreateAsync();
+        var id = Guid.NewGuid();
+        await using (var db = h.CreateContext())
+        {
+            var task = (await db.Tasks.FindAsync(h.TaskId))!;
+            task.ReminderEnabled = false;
+            db.NotificationOutbox.Add(new OutboxMessage
+            {
+                Id = id, TaskId = h.TaskId, Kind = DAL.Entities.NotificationOutboxKind.TaskCreated,
+                QueueName = "TaskReminders", CreatedAtUtc = h.Clock.GetUtcNow().UtcDateTime,
+                Payload = JsonSerializer.Serialize(new TaskNotificationEnvelope
+                {
+                    Type = NotificationEventType.TaskCreated, CorrelationId = id.ToString("N"),
+                    TaskCreated = new(id, h.TaskId, task.Name, task.PerformerId, task.ProjectId, "Project", task.CreatedAt)
+                })
+            });
+            await db.SaveChangesAsync();
+        }
+        await h.RunAsync(false);
+        await using var final = h.CreateContext();
+        var message = await final.NotificationOutbox.SingleAsync(m => m.Id == id);
+        Assert.Equal(OutboxStatus.Published, message.Status);
+        Assert.Null(message.LockId);
+        Assert.Null(message.LockedUntilUtc);
+        Assert.NotNull(message.PublishedAtUtc);
+        Assert.Null((await final.Tasks.FindAsync(h.TaskId))!.ReminderNotificationId);
+        Assert.Single(h.Queue.Attempts);
+    }
+
     [Fact]
     public async Task RepeatedScan_PublishesEachOccurrenceOnce_AndMarksOnlyAfterConfirmation()
     {
@@ -224,6 +257,17 @@ public class NotificationOutboxTests
             await using (var db = h.CreateContext())
             {
                 await db.Database.EnsureCreatedAsync();
+                db.Teams.Add(new DAL.Entities.Team { Id = 1, Name = "Outbox test team", CreatedAt = h.Clock.GetUtcNow().UtcDateTime });
+                db.Users.Add(new DAL.Entities.User("outbox.member", "Outbox", "Member", "outbox@example.test")
+                {
+                    Id = 1, TeamId = 1, EmailConfirmed = true, SecurityStamp = Guid.NewGuid().ToString()
+                });
+                db.Projects.Add(new DAL.Entities.Project
+                {
+                    Id = 1, AuthorId = 1, TeamId = 1, Name = "Outbox test project", Description = "Isolated fixture",
+                    CreatedAt = h.Clock.GetUtcNow().UtcDateTime
+                });
+                await db.SaveChangesAsync();
                 var task = new TaskEntity
                 {
                     Name = "Outbox regression", Description = "Test task", ProjectId = 1, PerformerId = 1,
@@ -238,12 +282,14 @@ public class NotificationOutboxTests
             var services = new ServiceCollection();
             services.AddScoped(_ => h.CreateContext());
             services.AddSingleton<IQueueService>(h.Queue);
+            services.AddScoped<ITaskNotificationDispatcher>(provider => new TaskNotificationDispatcher(
+                provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<TaskNotificationDispatcher>.Instance, h.Clock));
             h._provider = services.BuildServiceProvider();
             return h;
         }
 
-        public Task RunAsync() => new TaskReminderScheduler(
-            _provider.GetRequiredService<IServiceScopeFactory>(), Options.Create(new ReminderOptions()),
+        public Task RunAsync(bool remindersEnabled = true) => new TaskReminderScheduler(
+            _provider.GetRequiredService<IServiceScopeFactory>(), Options.Create(new ReminderOptions { Enabled = remindersEnabled }),
             Options.Create(new RabbitMqOptions { ReminderQueueName = "TaskReminders" }),
             NullLogger<TaskReminderScheduler>.Instance, Clock).RunOnceAsync();
 

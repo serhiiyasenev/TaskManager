@@ -8,6 +8,8 @@ public static class HttpClientHelper
 {
     public static async Task<T?> GetModelAsync<T>(this HttpResponseMessage response)
     {
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized) throw new UnauthorizedAccessException("The session expired.");
+        response.EnsureSuccessStatusCode();
         var options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true

@@ -86,10 +86,10 @@ public class AuthServiceTests
         var dto = new LoginUserDto(Email: "missing@example.com", Password: "x");
 
         // Act
-        var ex = await Assert.ThrowsAsync<NotFoundException>(() => sut.LoginAsync(dto));
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => sut.LoginAsync(dto));
 
         // Assert
-        Assert.Contains("No user found. Please register.", ex.Message);
+        Assert.Equal("Invalid email or password.", ex.Message);
     }
 
     [Fact]
@@ -110,10 +110,10 @@ public class AuthServiceTests
         var dto = new LoginUserDto(Email: user.Email, Password: "pwd");
 
         // Act
-        var ex = await Assert.ThrowsAsync<NotFoundException>(() => sut.LoginAsync(dto));
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => sut.LoginAsync(dto));
 
         // Assert
-        Assert.Contains("Account is locked. Try again later.", ex.Message);
+        Assert.Equal("Invalid email or password.", ex.Message);
     }
 
     [Fact]
@@ -134,10 +134,10 @@ public class AuthServiceTests
         var dto = new LoginUserDto(Email: user.Email, Password: "pwd");
 
         // Act
-        var ex = await Assert.ThrowsAsync<NotFoundException>(() => sut.LoginAsync(dto));
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => sut.LoginAsync(dto));
 
         // Assert
-        Assert.Contains("Sign-in is not allowed for this account.", ex.Message);
+        Assert.Equal("Invalid email or password.", ex.Message);
     }
 
     [Fact]
@@ -159,10 +159,10 @@ public class AuthServiceTests
         var dto = new LoginUserDto(Email: user.Email, Password: "wrong");
 
         // Act
-        var ex = await Assert.ThrowsAsync<NotFoundException>(() => sut.LoginAsync(dto));
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => sut.LoginAsync(dto));
 
         // Assert
-        Assert.Contains("Incorrect password, please try again.", ex.Message);
+        Assert.Equal("Invalid email or password.", ex.Message);
 
         logger.Verify(
             x => x.Log(

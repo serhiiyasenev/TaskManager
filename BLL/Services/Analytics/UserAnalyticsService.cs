@@ -1,5 +1,7 @@
-﻿using BLL.Interfaces.Analytics;
+﻿#nullable enable annotations
+using BLL.Interfaces.Analytics;
 using BLL.Models.Projects;
+using BLL.Authorization;
 using BLL.Models.Tasks;
 using BLL.Models.Users;
 using DAL.Entities;
@@ -12,10 +14,12 @@ namespace BLL.Services.Analytics;
 public class UserAnalyticsService(
     IReadRepository<User> users,
     IReadRepository<Project> projects,
-    IReadRepository<DAL.Entities.Task> tasks) : IUserAnalyticsService
+    IReadRepository<DAL.Entities.Task> tasks,
+    IUserAccess? access = null) : IUserAnalyticsService
 {
     public async Task<List<UserWithTasksDto>> GetSortedUsersWithSortedTasksAsync()
     {
+        await AccessQueries.RequireAdministratorAsync(access);
         var userRows = await users.Query()
             .Select(u => new { u.Id, u.FirstName, u.LastName, u.Email, u.RegisteredAt, u.BirthDay })
             .OrderBy(u => u.FirstName)
@@ -68,6 +72,7 @@ public class UserAnalyticsService(
 
     public async Task<UserInfoDto> GetUserInfoAsync(int userId)
     {
+        await AccessQueries.RequireAdministratorAsync(access);
         var userDto = await users.Query()
             .Where(u => u.Id == userId)
             .Select(u => new UserDto(

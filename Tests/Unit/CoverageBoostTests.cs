@@ -6,10 +6,12 @@ using DAL.Extensions;
 using DAL.Repositories.Implementation;
 using DAL.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Xunit;
 using ProjectEntity = DAL.Entities.Project;
 using TaskEntity = DAL.Entities.Task;
@@ -21,14 +23,18 @@ namespace Tests.Unit;
 public class CoverageBoostTests
 {
     [Fact]
-    public void BllDependencyInjection_WithoutJwtKey_Throws()
+    public void BllDependencyInjection_WithoutFinalJwtKey_FailsStartupOptionsValidation()
     {
         var services = new ServiceCollection();
         services.AddDbContext<TaskContext>(o => o.UseInMemoryDatabase(Guid.NewGuid().ToString()));
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>()).Build();
 
-        var ex = Assert.Throws<InvalidOperationException>(() => services.AddUserIdentityService(configuration));
-        Assert.Contains("JWT Key is not configured", ex.Message);
+        services.AddLogging();
+        services.AddUserIdentityService(configuration);
+        using var provider = services.BuildServiceProvider();
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>().Get(JwtBearerDefaults.AuthenticationScheme));
+        Assert.Contains("Jwt:Key must be configured", ex.Message);
     }
 
     [Fact]

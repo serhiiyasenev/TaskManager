@@ -1,0 +1,24 @@
+{
+  "subscriptionId": "REQUIRED_ACTUAL_SUBSCRIPTION_GUID",
+  "tenantId": "REQUIRED_ACTUAL_TENANT_GUID",
+  "resourceGroupName": "REQUIRED_PRODUCT_RESOURCE_GROUP",
+  "githubEnvironment": "REQUIRED_PROTECTED_GITHUB_ENVIRONMENT",
+  "expectedFederatedSubject": "REQUIRED_EXACT_ACTUAL_OIDC_SUBJECT",
+  "monthlyBudgetCurrency": "REQUIRED_VERIFIED_BILLING_CURRENCY",
+  "smokeAllowedCidrs": ["REQUIRED_CANONICAL_OPERATOR_PUBLIC_CIDR"],
+  "approvedOwnedLeafResourceIds": [],
+  "foundation": {
+    "resourceNamePrefix": "REQUIRED_LOWERCASE_3_TO_12_CHARS",
+    "environmentName": "REQUIRED_LOWERCASE_2_TO_12_CHARS",
+    "location": "REQUIRED_ACTUAL_AZURE_REGION",
+    "monthlyBudget": 0,
+    "budgetContactEmails": ["REQUIRED_REAL_BUDGET_CONTACT"],
+    "publicOrigin": "",
+    "openAiDeploymentName": "REQUIRED_AVAILABLE_DEPLOYMENT_NAME",
+    "openAiModelName": "REQUIRED_ACTUAL_MODEL_IF_NEW_ACCOUNT",
+    "openAiModelVersion": "REQUIRED_ACTUAL_AVAILABLE_MODEL_VERSION",
+    "emailDomainResourceId": "REQUIRED_VERIFIED_ACS_EMAIL_DOMAIN_RESOURCE_ID",
+    "emailDataLocation": "REQUIRED_ACTUAL_EMAIL_DATA_GEOGRAPHY",
+    "emailFromAddress": "REQUIRED_VERIFIED_SENDER"
+  }
+}

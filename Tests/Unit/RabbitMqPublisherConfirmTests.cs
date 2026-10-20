@@ -34,11 +34,12 @@ public class RabbitMqPublisherConfirmTests
         var factory = new Mock<IConnectionFactory>();
         factory.Setup(f => f.CreateConnectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(connection.Object);
         await using var publisher = new RabbitMqService(
-            Options.Create(new RabbitMqOptions()), NullLogger<RabbitMqService>.Instance,
+            Options.Create(new RabbitMqOptions { ReminderQueueName = "TaskReminders" }), NullLogger<RabbitMqService>.Instance,
             Policy.Handle<IOException>().RetryAsync(1), factory.Object);
 
-        Assert.True(await publisher.PostValue("{\"CorrelationId\":\"stable-occurrence\"}", "TaskReminders"));
-        Assert.Equal(new[] { "stable-occurrence", "stable-occurrence" }, ids);
+        const string stableId = "a31017ebaf09452d8e89d0ab2520d552";
+        Assert.True(await publisher.PostValue($"{{\"CorrelationId\":\"{stableId}\"}}", "TaskReminders"));
+        Assert.Equal(new[] { stableId, stableId }, ids);
         connection.Verify(c => c.CreateChannelAsync(
             It.Is<CreateChannelOptions>(o => o.PublisherConfirmationsEnabled && o.PublisherConfirmationTrackingEnabled),
             It.IsAny<CancellationToken>()), Times.Once);

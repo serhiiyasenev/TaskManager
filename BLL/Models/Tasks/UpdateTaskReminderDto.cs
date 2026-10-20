@@ -5,4 +5,5 @@ public record UpdateTaskReminderDto(
     bool ReminderEnabled,
     int? ReminderOffsetMinutes,
     bool EscalationEnabled,
-    int? EscalationDelayMinutes);
+    int? EscalationDelayMinutes,
+    Guid? ExpectedVersion = null);

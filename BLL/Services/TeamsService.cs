@@ -1,5 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿#nullable enable annotations
 using AutoMapper;
+using BLL.Authorization;
 using BLL.Common;
 using BLL.Interfaces;
 using BLL.Models.Teams;
@@ -10,18 +11,21 @@ using Microsoft.Extensions.Logging;
 
 namespace BLL.Services;
 
-[ExcludeFromCodeCoverage]
 public class TeamsService(
     IRepository<Team> teams,
     IUnitOfWork uow,
     IMapper mapper,
-    ILogger<TeamsService> logger) : ITeamsService
+    ILogger<TeamsService> logger,
+    IUserAccess? access = null,
+    ITeamManagementService? management = null) : ITeamsService
 {
     public async Task<Result<List<TeamDetailDto>>> GetTeamsAsync(CancellationToken ct = default)
     {
         try
         {
-            var teamList = await teams.Query()
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            var teamList = await teams.Query().VisibleTeams(scope)
                 .Include(t => t.Users)
                 .AsNoTracking()
                 .ToListAsync(ct);
@@ -32,7 +36,7 @@ public class TeamsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving teams");
+            logger.LogError("Error retrieving teams ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -41,7 +45,9 @@ public class TeamsService(
     {
         try
         {
-            var team = await teams.Query()
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            var team = await teams.Query().VisibleTeams(scope)
                 .Include(t => t.Users)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id, ct);
@@ -58,7 +64,7 @@ public class TeamsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving team {TeamId}", id);
+            logger.LogError("Error retrieving team {TeamId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -67,6 +73,10 @@ public class TeamsService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            if (access is not null)
+                return management is null ? Error.UnexpectedError : await management.CreateTeamAsync(teamDto.Name, ct);
             var team = new Team
             {
                 Id = 0,
@@ -75,12 +85,12 @@ public class TeamsService(
             };
             await teams.AddAsync(team, ct);
             await uow.SaveChangesAsync(ct);
-            logger.LogInformation("Created team {TeamName} with ID {TeamId}", team.Name, team.Id);
+            logger.LogInformation("Created team {TeamId}", team.Id);
             return Result<Team>.Success(team);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error creating team {TeamName}", teamDto.Name);
+            logger.LogError("Error creating team ({FailureType}).", ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -89,6 +99,10 @@ public class TeamsService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            if (access is not null)
+                return management is null ? Error.UnexpectedError : await management.UpdateTeamAsync(id, teamDto.Name, ct);
             var entity = await teams.GetByIdAsync(id, ct);
             if (entity == null)
             {
@@ -104,7 +118,7 @@ public class TeamsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating team {TeamId}", id);
+            logger.LogError("Error updating team {TeamId} ({FailureType}).", id, ex.GetType().Name);
             return Error.UnexpectedError;
         }
     }
@@ -113,6 +127,10 @@ public class TeamsService(
     {
         try
         {
+            var scope = access is null ? null : await access.GetScopeAsync(ct);
+            if (access is not null && scope is null) return Error.Unauthorized;
+            if (access is not null)
+                return management is null ? Error.UnexpectedError : await management.DeleteTeamAsync(id, ct);
             var entity = await teams.GetByIdAsync(id, ct);
             if (entity == null)
             {
@@ -127,7 +145,7 @@ public class TeamsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error deleting team {TeamId}", id);
+            logger.LogError("Error deleting team {TeamId} ({FailureType}).", id, ex.GetType().Name);
             return Error.BusinessRule("Cannot delete team due to existing dependencies");
         }
     }

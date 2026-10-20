@@ -1,218 +1,85 @@
-using Microsoft.AspNetCore.SignalR;
-using Polly;
+using BLL.Configuration;
+using BLL.Services.Notifications;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System.Text;
-using System.Text.Json;
-using BLL.Models.Messaging;
 
-namespace Notifier
+namespace Notifier;
+
+public class RabbitMqListenerService(
+    NotificationDeliveryCoordinator coordinator,
+    ILogger<RabbitMqListenerService> logger,
+    IOptions<RabbitMqOptions> options,
+    IConnectionFactory? connectionFactory = null) : BackgroundService
 {
-    public class RabbitMqListenerService : BackgroundService
+    private int _connected;
+    public bool IsConnected => Volatile.Read(ref _connected) == 1;
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        private readonly IHubContext<ChatHub> _hubContext;
-        private readonly ILogger<RabbitMqListenerService> _logger;
-        private readonly IConfiguration _configuration;
-        private readonly IConnectionFactory? _connectionFactory;
-        private readonly IAsyncPolicy _retryPolicy;
-        private readonly HashSet<string> _queueNames;
-        private readonly JsonSerializerOptions _serializerOptions = new()
+        var settings = options.Value;
+        var factory = connectionFactory ?? new ConnectionFactory
         {
-            PropertyNameCaseInsensitive = true
+            HostName = settings.HostName, Port = settings.Port, UserName = settings.UserName, Password = settings.Password,
+            ConsumerDispatchConcurrency = 1, AutomaticRecoveryEnabled = false
         };
-
-        public RabbitMqListenerService(
-            IHubContext<ChatHub> hubContext,
-            ILogger<RabbitMqListenerService> logger,
-            IConfiguration configuration,
-            IConnectionFactory? connectionFactory = null)
+        var queues = new HashSet<string>(StringComparer.Ordinal) { settings.QueueName };
+        if (!string.IsNullOrWhiteSpace(settings.ReminderQueueName)) queues.Add(settings.ReminderQueueName);
+        while (!stoppingToken.IsCancellationRequested)
         {
-            _hubContext = hubContext;
-            _logger = logger;
-            _configuration = configuration;
-            _connectionFactory = connectionFactory;
-            
-            // Create retry policy for connection
-            _retryPolicy = Policy
-                .Handle<Exception>()
-                .WaitAndRetryForeverAsync(
-                    retryAttempt => TimeSpan.FromSeconds(Math.Min(Math.Pow(2, retryAttempt), 60)),
-                    (exception, retryCount, timespan) =>
-                    {
-                        _logger.LogWarning(
-                            exception,
-                            "RabbitMQ connection failed. Retry {RetryCount} after {Delay}s",
-                            retryCount,
-                            timespan.TotalSeconds);
-                    });
-
-            var mainQueue = _configuration["RabbitMQ:QueueName"] ?? "TestQueue";
-            var reminderQueue = _configuration["RabbitMQ:ReminderQueueName"];
-            _queueNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { mainQueue };
-            if (!string.IsNullOrWhiteSpace(reminderQueue))
+            try
             {
-                _queueNames.Add(reminderQueue);
-            }
-        }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            await _retryPolicy.ExecuteAsync(async () =>
-            {
-                try
+                using var publisherLock = new SemaphoreSlim(1, 1);
+                await using var connection = await factory.CreateConnectionAsync(stoppingToken);
+                await using var consumerChannel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+                await using var publisherChannel = await connection.CreateChannelAsync(
+                    new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true), stoppingToken);
+                var reconnect = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                foreach (var queue in queues)
+                    await RabbitNotificationTopology.DeclareAsync(consumerChannel, queue, settings, stoppingToken);
+                await consumerChannel.BasicQosAsync(0, 1, false, stoppingToken);
+                foreach (var queue in queues)
                 {
-                    var rabbitMqHost = _configuration["RabbitMQ:HostName"] ?? "localhost";
-                    var rabbitMqPort = _configuration["RabbitMQ:Port"] ?? "5672";
-                    var rabbitMqUser = _configuration["RabbitMQ:UserName"] ?? "guest";
-                    var rabbitMqPassword = _configuration["RabbitMQ:Password"] ?? "guest";
-
-                    var connectionString = $"amqp://{rabbitMqUser}:{rabbitMqPassword}@{rabbitMqHost}:{rabbitMqPort}";
-                    var factory = _connectionFactory ?? new ConnectionFactory { Uri = new Uri(connectionString) };
-
-                    _logger.LogInformation("Connecting to RabbitMQ at {ConnectionString}", connectionString.Replace(rabbitMqPassword, "***"));
-
-                    await using var connection = await factory.CreateConnectionAsync(stoppingToken);
-                    await using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
-
-                    foreach (var queueName in _queueNames)
+                    var consumer = new AsyncEventingBasicConsumer(consumerChannel);
+                    consumer.ReceivedAsync += async (_, delivery) =>
                     {
-                        await channel.QueueDeclareAsync(
-                            queue: queueName,
-                            durable: true,
-                            exclusive: false,
-                            autoDelete: false,
-                            arguments: null,
-                            cancellationToken: stoppingToken);
-                        _logger.LogInformation("Listening on queue {QueueName}", queueName);
-                    }
-
-                    await channel.BasicQosAsync(0, 1, false, stoppingToken);
-                    foreach (var queueName in _queueNames)
-                    {
-                        var consumer = new AsyncEventingBasicConsumer(channel);
-                        consumer.ReceivedAsync += async (_, ea) =>
+                        try { await HandleDeliveryAsync(queue, delivery, consumerChannel, publisherChannel, publisherLock, stoppingToken); }
+                        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
+                        catch (Exception)
                         {
-                            try
-                            {
-                                await HandleMessageAsync(queueName, ea, stoppingToken);
-                                await channel.BasicAckAsync(ea.DeliveryTag, false, stoppingToken);
-                            }
-                            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                            {
-                                // Closing the channel requeues this unacknowledged delivery.
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogWarning(ex, "Requeueing failed delivery {DeliveryTag}", ea.DeliveryTag);
-                                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-                                await channel.BasicNackAsync(ea.DeliveryTag, false, true, stoppingToken);
-                            }
-                        };
-
-                        await channel.BasicConsumeAsync(
-                            queue: queueName,
-                            autoAck: false,
-                            consumer: consumer,
-                            cancellationToken: stoppingToken);
-                    }
-
-                    // Keep the service running
-                    while (!stoppingToken.IsCancellationRequested)
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-                    }
-
-                    _logger.LogInformation("RabbitMQ listener service stopping gracefully");
+                            // Closing outside this callback requeues the unacknowledged
+                            // delivery without deadlocking consumer dispatcher shutdown.
+                            logger.LogWarning("Notification settlement unavailable; reconnecting the RabbitMQ consumer.");
+                            reconnect.TrySetResult();
+                        }
+                    };
+                    await consumerChannel.BasicConsumeAsync(queue, false, consumer, stoppingToken);
+                    logger.LogInformation("Listening on queue {QueueName}.", queue);
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                Volatile.Write(ref _connected, 1);
+                while (!stoppingToken.IsCancellationRequested && connection.IsOpen && consumerChannel.IsOpen && publisherChannel.IsOpen)
                 {
-                    _logger.LogInformation("RabbitMQ listener service stopping due to cancellation");
+                    await Task.WhenAny(reconnect.Task, Task.Delay(TimeSpan.FromSeconds(1), stoppingToken));
+                    if (reconnect.Task.IsCompleted) break;
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Fatal error in RabbitMQ listener service");
-                    throw; // Let Polly retry
-                }
-            });
-        }
-
-        internal Task HandleMessageAsyncForTests(string queueName, string message, CancellationToken token) =>
-            HandleMessageAsync(queueName, new BasicDeliverEventArgs(
-                consumerTag: string.Empty,
-                deliveryTag: 1,
-                redelivered: false,
-                exchange: string.Empty,
-                routingKey: queueName,
-                properties: new BasicProperties(),
-                body: new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(message)),
-                cancellationToken: token), token);
-
-        private async Task HandleMessageAsync(string queueName, BasicDeliverEventArgs ea, CancellationToken stoppingToken)
-        {
-            try
-            {
-                var message = Encoding.UTF8.GetString(ea.Body.Span);
-                _logger.LogInformation("Received message from queue {QueueName}: {Message}", queueName, message);
-
-                var envelope = DeserializeEnvelope(message);
-                if (envelope is not null)
-                {
-                    var (user, text) = BuildNotification(envelope);
-                    if (envelope.Type is NotificationEventType.TaskReminder or NotificationEventType.TaskOverdueEscalation)
-                    {
-                        _logger.LogInformation("Simulated email notification to performer {PerformerId}", envelope.Reminder?.PerformerId);
-                    }
-                    await _hubContext.Clients.All.SendAsync(
-                        "ReceiveMessage",
-                        user,
-                        text,
-                        cancellationToken: stoppingToken);
-
-                    _logger.LogInformation("Notification broadcasted via SignalR for {Type}", envelope.Type);
-                    return;
-                }
-
-                await _hubContext.Clients.All.SendAsync(
-                    "ReceiveMessage",
-                    "RabbitMQ Default User",
-                    $"Task \"{message}\" was marked as Done. Great job!",
-                    cancellationToken: stoppingToken);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing message from RabbitMQ queue {QueueName}", queueName);
-                throw;
-            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
+            catch (Exception) { logger.LogWarning("RabbitMQ consumer unavailable; connection will be retried."); }
+            finally { Volatile.Write(ref _connected, 0); }
+            try { await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken); }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
         }
+    }
 
-        private TaskNotificationEnvelope? DeserializeEnvelope(string message)
-        {
-            try
-            {
-                return JsonSerializer.Deserialize<TaskNotificationEnvelope>(message, _serializerOptions);
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogDebug(ex, "Failed to parse message as TaskNotificationEnvelope");
-                return null;
-            }
-        }
-
-        internal static (string User, string Message) BuildNotification(TaskNotificationEnvelope envelope)
-        {
-            return envelope.Type switch
-            {
-                NotificationEventType.ExecutedTaskCompleted when envelope.ExecutedTask is not null =>
-                    ("Notifier",
-                        $"Task \"{envelope.ExecutedTask.TaskName}\" was marked as Done at {envelope.ExecutedTask.CompletedAtUtc:u}. Great job!"),
-                NotificationEventType.TaskReminder when envelope.Reminder is not null =>
-                    ("Reminder",
-                        $"Upcoming task \"{envelope.Reminder.TaskName}\" for performer {envelope.Reminder.PerformerId} due at {envelope.Reminder.DueDateUtc:u} (project: {envelope.Reminder.ProjectName ?? "N/A"})."),
-                NotificationEventType.TaskOverdueEscalation when envelope.Reminder is not null =>
-                    ("Overdue",
-                        $"Task \"{envelope.Reminder.TaskName}\" assigned to performer {envelope.Reminder.PerformerId} is OVERDUE since {envelope.Reminder.DueDateUtc:u}. Please take action."),
-                _ => ("RabbitMQ Default User", "Received an unrecognized notification payload.")
-            };
-        }
+    internal async Task HandleDeliveryAsync(string queueName, BasicDeliverEventArgs delivery,
+        IChannel consumerChannel, IChannel publisherChannel, SemaphoreSlim publisherLock, CancellationToken ct)
+    {
+        var settlement = new RabbitNotificationSettlement(consumerChannel, publisherChannel, publisherLock, queueName, delivery);
+        int attempt;
+        try { attempt = NotificationDeliveryMetadata.GetRabbitAttempt(delivery.BasicProperties.Headers); }
+        catch (InvalidDataException) { await settlement.DeadLetterAsync("InvalidNotification", ct); return; }
+        // Delivery body is decoded within the awaited callback; it is never
+        // retained after RabbitMQ releases its pooled delivery memory.
+        await coordinator.ProcessAsync(new(delivery.BasicProperties.MessageId, delivery.Body, attempt), settlement, ct);
     }
 }

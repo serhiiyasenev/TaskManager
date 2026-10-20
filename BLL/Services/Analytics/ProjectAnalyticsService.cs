@@ -1,5 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿#nullable enable annotations
+using System.Diagnostics.CodeAnalysis;
 using BLL.Interfaces.Analytics;
+using BLL.Authorization;
 using BLL.Models;
 using BLL.Models.Projects;
 using BLL.Models.Tasks;
@@ -17,10 +19,12 @@ public class ProjectAnalyticsService(
     IReadRepository<Project> projects,
     IReadRepository<User> users,
     IReadRepository<Team> teams,
-    IReadRepository<DAL.Entities.Task> tasks) : IProjectAnalyticsService
+    IReadRepository<DAL.Entities.Task> tasks,
+    IUserAccess? access = null) : IProjectAnalyticsService
 {
     public async Task<List<(int Id, string Name, int teamSizeCurrent)>> GetProjectsByTeamSizeAsync(int teamSize)
     {
+        await AccessQueries.RequireAdministratorAsync(access);
         var data = await (from p in projects.Query()
                           join t in teams.Query() on p.TeamId equals t.Id
                           join u in users.Query() on t.Id equals u.TeamId into ug
@@ -33,6 +37,7 @@ public class ProjectAnalyticsService(
 
     public async Task<List<ProjectInfoDto>> GetProjectsInfoAsync()
     {
+        await AccessQueries.RequireAdministratorAsync(access);
         return await (from p in projects.Query()
                       select new ProjectInfoDto(
                           new ProjectDto(p.Id, p.Name, p.Description, p.CreatedAt, p.Deadline),
@@ -83,6 +88,7 @@ public class ProjectAnalyticsService(
     public async Task<PagedList<FullProjectDto>> GetSortedFilteredPageOfProjectsAsync(
         PageModel page, FilterModel filter, SortingModel sorting)
     {
+        await AccessQueries.RequireAdministratorAsync(access);
         var queryable = from p in projects.Query()
                 select new
                 {

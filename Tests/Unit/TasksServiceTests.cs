@@ -43,6 +43,33 @@ public class TasksServiceTests
         _logger.Object,
         Options.Create(reminderOptions ?? new ReminderOptions()));
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TaskWrite_DoesNotLogPrivateTitleDescriptionOrProviderException(bool fail)
+    {
+        const string privateTitle = "synthetic-private-task-title";
+        const string privateDescription = "synthetic-private-notes-body";
+        const string providerContent = "synthetic-private-provider-response";
+        _users.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _projects.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Project, bool>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        if (fail) _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException(providerContent));
+        else _uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        var result = await CreateSut().AddTaskAsync(new DAL.Entities.Task
+            { Name = privateTitle, Description = privateDescription, PerformerId = 1, ProjectId = 1, State = TaskState.ToDo });
+        Assert.Equal(!fail, result.IsSuccess);
+        var logs = _logger.Invocations.Where(invocation => invocation.Method.Name == "Log").ToArray();
+        Assert.NotEmpty(logs);
+        foreach (var log in logs)
+        {
+            var state = log.Arguments[2].ToString() ?? "";
+            Assert.DoesNotContain(privateTitle, state);
+            Assert.DoesNotContain(privateDescription, state);
+            Assert.DoesNotContain(providerContent, state);
+            Assert.Null(log.Arguments[3]);
+        }
+    }
+
     [Fact]
     public async Task GetTasksAsync_ReturnsAllTasks()
     {

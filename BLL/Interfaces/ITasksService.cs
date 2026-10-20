@@ -1,6 +1,7 @@
 ﻿using BLL.Common;
 using BLL.Models.Tasks;
 using DAL.Entities;
+using DAL.Enum;
 using Task = DAL.Entities.Task;
 
 namespace BLL.Interfaces;
@@ -8,10 +9,15 @@ namespace BLL.Interfaces;
 public interface ITasksService
 {
     System.Threading.Tasks.Task<Result<List<TaskDetailDto>>> GetTasksAsync(CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result<TaskPageResult>> GetTaskPageAsync(TaskPageQuery query, CancellationToken ct = default);
     System.Threading.Tasks.Task<Result<TaskDetailDto>> GetTaskByIdAsync(int id, CancellationToken ct = default);
     System.Threading.Tasks.Task<Result<Task>> AddTaskAsync(Task task, CancellationToken ct = default);
     System.Threading.Tasks.Task<Result<ExecutedTask>> AddExecutedTaskAsync(ExecutedTask task, CancellationToken ct = default);
     System.Threading.Tasks.Task<Result<Task>> UpdateTaskByIdAsync(int id, Task task, CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result<Task>> UpdateTaskWithVersionAsync(int id, Task task, Guid? expectedVersion, CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result<Task>> UpdateTaskStateWithVersionAsync(int id, TaskState state, Guid expectedVersion, CancellationToken ct = default);
     System.Threading.Tasks.Task<Result<Task>> UpdateTaskReminderAsync(int id, UpdateTaskReminderDto reminderDto, CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result<Task>> UpdateTaskReminderWithVersionAsync(int id, UpdateTaskReminderDto reminderDto, Guid? expectedVersion, CancellationToken ct = default);
     System.Threading.Tasks.Task<Result> DeleteTaskByIdAsync(int id, CancellationToken ct = default);
+    System.Threading.Tasks.Task<Result> DeleteTaskWithVersionAsync(int id, Guid? expectedVersion, CancellationToken ct = default);
 }

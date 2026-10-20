@@ -9,6 +9,7 @@ namespace DAL.Entities;
 [ExcludeFromCodeCoverage]
 public class Task : BaseEntity
 {
+    public Guid Version { get; set; }
     public int ProjectId { get; set; }
     public int PerformerId { get; set; }
 

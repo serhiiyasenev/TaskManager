@@ -9,11 +9,32 @@ namespace Client
     {
         static HttpClient? HttpClient { get; set; }
         static ITimerService? TimerService { get; set; }
+        static ConsoleSession? Session { get; set; }
 
-        public MenuActions()
+        public MenuActions() : this(new ConsoleSession(new HttpClient { BaseAddress = new Uri("https://localhost:7151/api/") })) { }
+
+        public MenuActions(ConsoleSession session)
         {
-            HttpClient = new HttpClient();
-            HttpClient.BaseAddress = new Uri("https://localhost:7151/api/");
+            Session = session;
+            HttpClient = session.Client;
+            foreach (var key in Actions.Keys.ToArray())
+            {
+                var action = Actions[key];
+                Actions[key] = async () =>
+                {
+                    try { await action(); }
+                    catch (HttpRequestException error) when (error.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        session.Logout();
+                        throw new UnauthorizedAccessException("The session expired.");
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        session.Logout();
+                        throw;
+                    }
+                };
+            }
         }
 
         public Dictionary<int, Func<Task>> Actions = new()
@@ -30,8 +51,54 @@ namespace Client
             [9] = StartTimerServiceToExecuteRandomTasksWithDelay,
             [10] = StopTimerService,
             [11] = ListTasksWithReminders,
-            [12] = UpdateTaskReminderSettings
+            [12] = UpdateTaskReminderSettings,
+            [14] = Login,
+            [15] = Logout
         };
+
+        public static async Task Login()
+        {
+            if (Session!.IsAuthenticated)
+            {
+                PrintColored("Sign out before signing in as another user.", ConsoleColor.Yellow);
+                return;
+            }
+            Console.Write("Email: ");
+            var email = Console.ReadLine() ?? string.Empty;
+            Console.Write("Password: ");
+            var password = ReadPassword();
+            var success = await Session.LoginAsync(email, password);
+            PrintColored(success ? "Signed in. Private notifications are enabled." : "Sign-in failed. Check credentials and email confirmation.",
+                success ? ConsoleColor.Green : ConsoleColor.Red);
+        }
+
+        public static async Task Logout()
+        {
+            Session!.Logout();
+            await StopTimerService();
+            PrintColored("Signed out. Session credentials were cleared.", ConsoleColor.Green);
+        }
+
+        private static string ReadPassword()
+        {
+            if (Console.IsInputRedirected) return Console.ReadLine() ?? string.Empty;
+            var value = new System.Text.StringBuilder();
+            while (true)
+            {
+                var key = Console.ReadKey(intercept: true);
+                if (key.Key == ConsoleKey.Enter) { Console.WriteLine(); return value.ToString(); }
+                if (key.Key == ConsoleKey.Backspace && value.Length > 0)
+                {
+                    value.Length--;
+                    Console.Write("\b \b");
+                }
+                else if (!char.IsControl(key.KeyChar) && value.Length < 256)
+                {
+                    value.Append(key.KeyChar);
+                    Console.Write('*');
+                }
+            }
+        }
 
         public static async Task GetTasksCountInProjectsByUserId()
         {
@@ -280,6 +347,17 @@ namespace Client
                     return;
                 }
             }
+            else
+            {
+                using var currentResponse = await HttpClient!.GetAsync($"Tasks/{taskId}");
+                var current = await currentResponse.GetModelAsync<TaskDetailDto>();
+                if (current is null)
+                {
+                    PrintColored("Task is unavailable. Reminder settings were not changed.", ConsoleColor.Red);
+                    return;
+                }
+                dueDate = current.DueDate;
+            }
 
             var reminderEnabled = PromptBoolean("Enable reminder? (y/n): ");
             var reminderOffset = PromptOptionalInt("Reminder offset minutes (blank for default): ");
@@ -296,6 +374,8 @@ namespace Client
             };
 
             var response = await HttpClient!.PutAsJsonAsync($"Tasks/{taskId}/reminder", payload);
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                throw new UnauthorizedAccessException("The session expired.");
             if (response.IsSuccessStatusCode)
             {
                 PrintColored("Reminder settings updated.", ConsoleColor.Green);

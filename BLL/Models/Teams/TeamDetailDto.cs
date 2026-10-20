@@ -6,4 +6,5 @@ public record TeamDetailDto(
     int Id,
     string Name,
     DateTime CreatedAt,
-    List<UserBasicDto> Users);
+    List<UserBasicDto> Users,
+    int? OwnerId = null);
