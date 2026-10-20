@@ -179,6 +179,9 @@ docs/           Maintained runbooks and documentation assets
 AI/             Plans, decisions and historical execution evidence
 ```
 
+Open [`src/backend/TaskManager.sln`](src/backend/TaskManager.sln) for all backend
+projects, their tests and supporting .NET tools.
+
 ```mermaid
 graph TD
     A[TaskManager Solution]

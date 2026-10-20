@@ -4,8 +4,14 @@ Use the repository root as the working directory for the commands below.
 Directory changes preserve .NET assembly names, namespaces, API routes and the
 existing database schema and migration history.
 
+Open `src/backend/TaskManager.sln` for backend development. This single solution
+contains the seven backend applications/libraries, the backend test project and
+three supporting .NET tools. They share dependencies and verification, so one
+solution keeps project membership and build configurations consistent.
+
 | Location | Responsibility |
 | --- | --- |
+| `src/backend/TaskManager.sln` | Canonical .NET solution, including backend tests/tools |
 | `src/backend/WebAPI` | Identity, authorized API requests and business writes |
 | `src/backend/Notifier` | Notification scans, outbox delivery and private realtime |
 | `src/backend/WebHost` | React hosting and YARP API/hub gateway |
@@ -38,9 +44,9 @@ npm run test:unit
 npm run test:coverage
 npm run build:frontend
 npm run test:e2e
-dotnet restore TaskManager.sln --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
-dotnet build TaskManager.sln --configuration Release --no-restore
-dotnet test TaskManager.sln --settings .runsettings --configuration Release --no-build
+dotnet restore src/backend/TaskManager.sln --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
+dotnet build src/backend/TaskManager.sln --configuration Release --no-restore
+dotnet test src/backend/TaskManager.sln --settings .runsettings --configuration Release --no-build
 ```
 
 `npm run dev:frontend` starts Vite. The production UI is `src/frontend/dist`;

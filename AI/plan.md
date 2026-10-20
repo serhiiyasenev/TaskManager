@@ -334,3 +334,18 @@ Completed locally: read-only admin overview, fresh-role/IDOR tests, bilingual
 switching and denial-cache regressions pass.946 backend,199 unit,100 UI,12 real
 SQL/Rabbit browser cases; type/lint/contracts and local admin smoke pass. Current
 branch is prepared for PR publication; CI/container outcome recorded separately.
+
+## Backend solution location — owner correction2026-10-20
+
+Owner requested a solution inside src/backend, choosing one or several as fits.
+Use one canonical src/backend/TaskManager.sln for all seven backend projects plus
+backend tests and three supporting .NET tools. Move existing solution, preserving
+GUIDs/configurations; recalculate relative paths and remove redundant virtual
+src/backend nesting. Update maintained root commands, workflow and native runner;
+keep historical evidence paths. Verify solution membership, locked restore/build,
+relevant integration discovery/tests and actionlint, then update PR53 and CI.
+This corrects the already authorized repository layout and PR scope.
+
+Completed locally: canonical solution moved, all11 memberships/configurations
+preserved; locked restore/build/actionlint and57 HTTP integration cases pass.
+Updating PR53; refreshed CI evidence belongs to the new head commit.

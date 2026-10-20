@@ -6,10 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Build
-dotnet build TaskManager.sln --configuration Release
+dotnet build src/backend/TaskManager.sln --configuration Release
 
 # Run all tests with coverage (Cobertura format)
-dotnet test TaskManager.sln --settings .runsettings --configuration Release
+dotnet test src/backend/TaskManager.sln --settings .runsettings --configuration Release
 
 # Run a single test class
 dotnet test tests/backend/Tests.csproj --filter "FullyQualifiedName~TasksServiceIntegrationTests"

@@ -93,3 +93,12 @@ personal. No global broadcast, new persisted read markers or migration is needed
 Admin overview is explicitly refreshed and read only; denied requests clear UI
 visibility of cached private data, including during retries. This avoids changing
 another person's read state simply because an administrator reviewed delivery.
+
+### ADR004 amendment — canonical backend solution,2026-10-20
+
+At the owner's request, relocate the single solution to
+src/backend/TaskManager.sln. Its11 project identities/configurations remain stable:
+seven backend applications/libraries, one backend test project and three .NET
+tools. External tests/tools use relative paths; virtual src/backend solution
+folders are removed because the solution is already at that boundary. Keep root
+commands explicit and update CI/native-runner references to this sole solution.
