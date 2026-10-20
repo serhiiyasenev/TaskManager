@@ -6,21 +6,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Build
-dotnet build TaskManager.sln --configuration Release
+dotnet build src/backend/TaskManager.sln --configuration Release
 
 # Run all tests with coverage (Cobertura format)
-dotnet test TaskManager.sln --settings .runsettings --configuration Release
+dotnet test src/backend/TaskManager.sln --settings .runsettings --configuration Release
 
 # Run a single test class
-dotnet test Tests/Tests.csproj --filter "FullyQualifiedName~TasksServiceIntegrationTests"
+dotnet test tests/backend/Tests.csproj --filter "FullyQualifiedName~TasksServiceIntegrationTests"
 
 # Run a single test method
-dotnet test Tests/Tests.csproj --filter "FullyQualifiedName~TasksServiceIntegrationTests.GetTaskByIdAsync_ExistingId_ReturnsTask"
+dotnet test tests/backend/Tests.csproj --filter "FullyQualifiedName~TasksServiceIntegrationTests.GetTaskByIdAsync_ExistingId_ReturnsTask"
 
 # Run the system (three separate terminals)
-dotnet run --project WebAPI
-dotnet run --project Notifier
-dotnet run --project Client
+dotnet run --project src/backend/WebAPI
+dotnet run --project src/backend/Notifier
+dotnet run --project src/backend/Client
+
+# Prepare and verify both npm workspaces from the repository root
+npm ci --ignore-scripts
+npm run contracts:check
+npm run lint
+npm run typecheck
+npm run test:coverage
+npm run build:frontend
+npm run test:e2e
 
 # Docker with Compose v2, Linux x86-64 containers (PowerShell)
 ./scripts/local-init.ps1
@@ -40,13 +49,19 @@ verification status. Docker execution requires a Docker-capable host.
 
 ## Architecture
 
-This is a .NET 10 layered solution with six projects: three runnable applications/services (WebAPI, Notifier, Client), two class libraries (BLL, DAL), and one test project (Tests).
+The .NET 10 applications and libraries live in `src/backend/`; the React app
+and its colocated unit tests live in `src/frontend/`. .NET suites are in
+`tests/backend/`, while Playwright suites/configuration are in `tests/frontend/`.
+The root npm workspace owns the single lockfile. See
+`docs/repository-layout.md` for the complete map and execution commands.
 
-- **WebAPI** -- ASP.NET Core REST API. Controllers under `WebAPI/Controllers/`, global exception handling via middleware (`WebAPI/Middleware/`), Swagger with JWT Bearer auth. Admin bootstrap is runtime-configurable via `BootstrapAdmin` settings in `WebAPI/appsettings*.json` and disabled by default (no hardcoded default credentials).
-- **BLL** -- Business logic services, AutoMapper profiles (`BLL/Mapping/`), FluentValidation validators (`BLL/Validators/`), configuration options classes (`BLL/Configuration/`). Services return `Result<T>` for operation outcomes.
-- **DAL** -- EF Core with SQL Server. `TaskContext` extends `IdentityDbContext<User, IdentityRole<int>, int>`. Generic repository pattern: `IRepository<T>` / `EfCoreRepository<T>`. Entities: User, Team, Project, Task, ExecutedTask. Migrations in `DAL/Migrations/`.
+- **WebAPI** -- ASP.NET Core REST API. Controllers under `src/backend/WebAPI/Controllers/`, global exception handling via middleware (`src/backend/WebAPI/Middleware/`), Swagger with JWT Bearer auth. Admin bootstrap is runtime-configurable via `BootstrapAdmin` settings in `src/backend/WebAPI/appsettings*.json` and disabled by default (no hardcoded default credentials).
+- **BLL** -- Business logic services, AutoMapper profiles (`src/backend/BLL/Mapping/`), FluentValidation validators (`src/backend/BLL/Validators/`), configuration options classes (`src/backend/BLL/Configuration/`). Services return `Result<T>` for operation outcomes.
+- **DAL** -- EF Core with SQL Server. `TaskContext` extends `IdentityDbContext<User, IdentityRole<int>, int>`. Generic repository pattern: `IRepository<T>` / `EfCoreRepository<T>`. Entities: User, Team, Project, Task, ExecutedTask. Migrations in `src/backend/DAL/Migrations/`.
 - **Notifier** -- Background worker that consumes RabbitMQ messages and broadcasts to clients via SignalR (`ChatHub`).
 - **Client** -- Console app that connects to WebAPI (HTTP) and Notifier (SignalR) for real-time updates.
+- **WebHost** -- ASP.NET Core YARP gateway for the built React application, API and authenticated hub.
+- **Hosting** -- Shared hosting, cloud configuration and Data Protection support.
 
 **Message flow:** WebAPI publishes to RabbitMQ -> Notifier consumes -> SignalR pushes to Client.
 
@@ -61,9 +76,9 @@ This is a .NET 10 layered solution with six projects: three runnable application
 
 ## Test Structure
 
-Tests use **xUnit** + **Moq** + **MockQueryable.Moq**. Located in `Tests/`:
-- `Tests/Unit/` -- Unit tests with mocked dependencies
-- `Tests/Integration/` -- Integration tests using `DatabaseFixture` with EF Core InMemoryDatabase
+Tests use **xUnit** + **Moq** + **MockQueryable.Moq**. Located in `tests/backend/`:
+- `tests/backend/Unit/` -- Unit tests with mocked dependencies
+- `tests/backend/Integration/` -- Integration tests using `DatabaseFixture` with EF Core InMemoryDatabase
 
 `DatabaseFixture` seeds a known dataset (teams, users, projects, tasks). CI runs tests via `.github/workflows/run-tests.yml` and posts coverage to PRs.
 

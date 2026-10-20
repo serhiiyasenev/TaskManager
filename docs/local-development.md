@@ -121,7 +121,7 @@ test prefixes; they never borrow the product database:
 
 ```powershell
 $env:TASKMANAGER_TEST_SQL_SERVER = 'Server=tcp:127.0.0.1,1433;Database=master;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;Connect Timeout=5'
-dotnet test Tests/Tests.csproj --configuration Release --filter 'FullyQualifiedName~SqlServer|FullyQualifiedName~LegacyAccountMigrationTests' --logger 'trx;LogFileName=native-sql.trx' --results-directory TestResults/native-sql
+dotnet test tests/backend/Tests.csproj --configuration Release --filter 'FullyQualifiedName~SqlServer|FullyQualifiedName~LegacyAccountMigrationTests' --logger 'trx;LogFileName=native-sql.trx' --results-directory TestResults/native-sql
 ```
 
 This requires create/drop permission for those disposable test databases. It does

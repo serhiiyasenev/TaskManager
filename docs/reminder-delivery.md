@@ -24,6 +24,6 @@ Drain pending messages before rolling back: the down migration drops the outbox 
 
 ## Regression checks
 
-`dotnet test Tests/Tests.csproj --filter "FullyQualifiedName~NotificationOutboxTests|FullyQualifiedName~RabbitMqPublisherConfirmTests|FullyQualifiedName~RabbitMqListenerExecuteTests"`
+`dotnet test tests/backend/Tests.csproj --filter "FullyQualifiedName~NotificationOutboxTests|FullyQualifiedName~RabbitMqPublisherConfirmTests|FullyQualifiedName~RabbitMqListenerExecuteTests"`
 
 SQLite relational tests exercise rollback and concurrency, repeated scans, publish failure/restart, active claims, cancellation of stale work, and a database save failure after publication. Publisher/consumer tests verify confirmation options, stable IDs, cancellation and acknowledgment behavior. The SQL Server model is compared with the migration snapshot. These checks do not substitute for a real SQL Server/RabbitMQ failure-injection environment.

@@ -1,0 +1,20 @@
+{
+  "name": "@taskmanager/browser-tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:fullstack": "playwright test --config playwright.fullstack.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@types/node": "24.19.2",
+    "eslint": "10.12.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.1",
+    "zod": "4.6.6"
+  }
+}

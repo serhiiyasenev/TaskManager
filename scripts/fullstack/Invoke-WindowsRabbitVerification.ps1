@@ -88,7 +88,7 @@ try {
         @($ports | Where-Object { $_ -notin $listeners.Port }).Count) { throw 'Owned broker listeners are missing or extend beyond loopback.' }
     Write-Host 'PASS actual portable RabbitMQ4.3.6/OTP28.5 readiness; all three listeners are loopback.'
     $phase='backend';$env:TASKMANAGER_TEST_SQL_SERVER=$sql;$env:TASKMANAGER_TEST_RABBITMQ='true'
-    $backend = Start-FullStackChild -Executable (Get-Command dotnet -ErrorAction Stop).Source -Arguments @('test','TaskManager.sln','--settings','.runsettings','--results-directory','TestResults/fullstack-native-rabbit-backend','--logger','trx;LogFileName=test_results.trx','--configuration','Release','--no-build') -WorkingDirectory $repository -Environment @{TASKMANAGER_TEST_SQL_SERVER=$sql;TASKMANAGER_TEST_RABBITMQ='true'}
+    $backend = Start-FullStackChild -Executable (Get-Command dotnet -ErrorAction Stop).Source -Arguments @('test','src/backend/TaskManager.sln','--settings','.runsettings','--results-directory','TestResults/fullstack-native-rabbit-backend','--logger','trx;LogFileName=test_results.trx','--configuration','Release','--no-build') -WorkingDirectory $repository -Environment @{TASKMANAGER_TEST_SQL_SERVER=$sql;TASKMANAGER_TEST_RABBITMQ='true'}
     try { if ((Wait-FullStackChild $backend -TimeoutSeconds 600) -ne 0) { throw 'Actual native SQL/Rabbit backend regression failed; private raw output is discarded.' } }
     finally { $null=Stop-FullStackChild $backend -GraceSeconds 1;$backend.Process.Dispose() }
     # Exit0 alone also accepts a collector warning with no fresh report. Do

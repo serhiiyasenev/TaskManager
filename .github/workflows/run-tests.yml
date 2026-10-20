@@ -68,17 +68,17 @@ jobs:
       run: dotnet tool restore
 
     - name: Restore dependencies
-      run: dotnet restore TaskManager.sln --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
+      run: dotnet restore src/backend/TaskManager.sln --locked-mode -warnaserror:NU1901,NU1902,NU1903,NU1904
 
     - name: Build solution
-      run: dotnet build TaskManager.sln --configuration Release --no-restore -warnaserror:NU1901,NU1902,NU1903,NU1904
+      run: dotnet build src/backend/TaskManager.sln --configuration Release --no-restore -warnaserror:NU1901,NU1902,NU1903,NU1904
 
     - name: Clean old artifacts
       run: rm -rf TestResults CoverageReport
 
     - name: Run tests with Coverlet
       run: |
-        dotnet test TaskManager.sln \
+        dotnet test src/backend/TaskManager.sln \
           --settings .runsettings \
           --results-directory ./TestResults \
           --logger "trx;LogFileName=test_results.trx" \

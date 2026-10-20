@@ -126,7 +126,7 @@ try {
         throw 'Migration bundle did not complete successfully.'
     }
 
-    $migrationFiles = @(Get-ChildItem -LiteralPath (Join-Path $repositoryPath 'DAL/Migrations') -File |
+    $migrationFiles = @(Get-ChildItem -LiteralPath (Join-Path $repositoryPath 'src/backend/DAL/Migrations') -File |
         Where-Object { $_.BaseName -match '^\d{14}_[A-Za-z0-9_]+$' } | Sort-Object BaseName -Descending)
     if ($migrationFiles.Count -eq 0) { throw 'No application migration found.' }
     $latestMigration = $migrationFiles[0].BaseName

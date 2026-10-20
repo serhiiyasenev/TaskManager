@@ -18,9 +18,6 @@ jobs:
   frontend:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - name: Checkout event commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -29,7 +26,7 @@ jobs:
       - name: Install pinned Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: frontend/.node-version
+          node-version-file: .node-version
           package-manager-cache: false
       - name: Install pinned npm and locked dependencies
         run: |
@@ -38,19 +35,19 @@ jobs:
       - name: Dependency audit
         run: npm audit --audit-level=high
       - name: Check canonical notification contract outputs
-        run: node ../scripts/generate-notification-contract.mjs --check
+        run: node scripts/generate-notification-contract.mjs --check
       - name: Lint, types and unit coverage
         run: |
           npm run lint
           npm run typecheck
           npm run test:coverage
       - name: Build production UI
-        run: npm run build
+        run: npm run build:frontend
       - name: Install isolated CI browser
-        run: npx --no-install playwright install --with-deps chromium
+        run: node node_modules/@playwright/test/cli.js install --with-deps chromium
       - name: Render desktop and mobile workflows
         env:
           TASKMANAGER_UI_BROWSER: chromium
         # This gate uses synthetic, intercepted API responses. Full-stack
         # SQL/Identity/mail/AI tests are a separate acceptance gate.
-        run: npm run e2e
+        run: npm run test:e2e

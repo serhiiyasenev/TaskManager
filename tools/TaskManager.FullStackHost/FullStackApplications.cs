@@ -54,7 +54,7 @@ internal sealed class FullStackApplications(FullStackSettings settings, FullStac
 
     public void StartApi(ReservedPort port)
     {
-        Api = new ActualFactory<ApiEntry>(Path.Combine(settings.RepositoryRoot, "WebAPI"), Configuration(), services =>
+        Api = new ActualFactory<ApiEntry>(Path.Combine(settings.RepositoryRoot, "src", "backend", "WebAPI"), Configuration(), services =>
         {
             ConfigureClock(services);
             RemoveOwnedWorkers(services, notifier: false);
@@ -79,7 +79,7 @@ internal sealed class FullStackApplications(FullStackSettings settings, FullStac
 
     public void StartNotifier(ReservedPort port)
     {
-        Notifier = new ActualFactory<NotifierEntry>(Path.Combine(settings.RepositoryRoot, "Notifier"), Configuration(), services =>
+        Notifier = new ActualFactory<NotifierEntry>(Path.Combine(settings.RepositoryRoot, "src", "backend", "Notifier"), Configuration(), services =>
         {
             ConfigureClock(services);
             RemoveOwnedWorkers(services, notifier: true);
@@ -108,8 +108,8 @@ internal sealed class FullStackApplications(FullStackSettings settings, FullStac
 
     public void StartGateway(ReservedPort port, X509Certificate2 certificate)
     {
-        Gateway = new ActualFactory<GatewayEntry>(Path.Combine(settings.RepositoryRoot, "WebHost"), Configuration(), _ => { },
-            Path.Combine(settings.RepositoryRoot, "frontend", "dist"));
+        Gateway = new ActualFactory<GatewayEntry>(Path.Combine(settings.RepositoryRoot, "src", "backend", "WebHost"), Configuration(), _ => { },
+            Path.Combine(settings.RepositoryRoot, "src", "frontend", "dist"));
         Gateway.UseKestrel(options => options.Listen(IPAddress.Loopback, port.Port, endpoint => endpoint.UseHttps(certificate)));
         port.Dispose();
         Gateway.StartServer();

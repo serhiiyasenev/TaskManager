@@ -2,14 +2,15 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-// Deliberately constrained to this repository's three local payload schemas.
+// Deliberately constrained to this repository's five approved local payload schemas.
 // No evaluation, external references, network, or arbitrary output paths.
 const root = fileURLToPath(new URL('../', import.meta.url));
 const source = JSON.parse(await readFile(path.join(root, 'contracts/notifications.openapi.json'), 'utf8'));
 if (source.openapi !== '3.1.0') throw new Error('Unsupported contract version');
 const schemas = source.components.schemas;
 const names = Object.keys(schemas);
-if (names.length !== 3 || names.some(name => !/^Notification[A-Za-z]+$/.test(name))) throw new Error('Unexpected schema');
+const approvedNames = ['NotificationInboxItem', 'NotificationInboxPage', 'NotificationHint', 'NotificationAdminInboxItem', 'NotificationAdminInboxPage'];
+if (names.length !== approvedNames.length || names.some(name => !approvedNames.includes(name))) throw new Error('Unexpected schema');
 const reference = value => {
   const prefix = '#/components/schemas/';
   if (!value.startsWith(prefix) || !names.includes(value.slice(prefix.length))) throw new Error('Only approved local references are supported');
@@ -87,8 +88,8 @@ for (const name of names) {
   cs.push(`public sealed record ${name}Dto(`, `    ${parameters.join(',\n    ')});`, '');
 }
 const outputs = [
-  ['frontend/src/lib/generated/notifications.ts', ts.join('\n')],
-  ['BLL/Models/Notifications/NotificationDtos.cs', cs.join('\n')],
+  ['src/frontend/src/lib/generated/notifications.ts', ts.join('\n')],
+  ['src/backend/BLL/Models/Notifications/NotificationDtos.cs', cs.join('\n')],
 ];
 for (const [relative, contents] of outputs) {
   const target = path.resolve(root, relative);

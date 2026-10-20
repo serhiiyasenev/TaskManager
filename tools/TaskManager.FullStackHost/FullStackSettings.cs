@@ -51,7 +51,7 @@ internal sealed record FullStackSettings(Guid RunId, string RepositoryRoot, stri
             PrivateFiles.AssertNoDirectoryLinks(directory);
         var transport = Required("TASKMANAGER_FULLSTACK_TRANSPORT");
         if (transport is not ("Controlled" or "RabbitMQ")) throw new InvalidOperationException("Full-stack transport is invalid.");
-        if (!File.Exists(Path.Combine(root, "frontend", "dist", "index.html")))
+        if (!File.Exists(Path.Combine(root, "src", "frontend", "dist", "index.html")))
             throw new InvalidOperationException("Build the real frontend before starting full-stack verification.");
         var host = Environment.GetEnvironmentVariable("TASKMANAGER_FULLSTACK_RABBIT_HOST") ?? "127.0.0.1";
         if (transport == "RabbitMQ" && !(host is "localhost" or "127.0.0.1" or "::1"))
@@ -80,7 +80,7 @@ internal sealed record FullStackSettings(Guid RunId, string RepositoryRoot, stri
         foreach (var start in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
             for (var directory = new DirectoryInfo(start); directory is not null; directory = directory.Parent)
                 if (File.Exists(Path.Combine(directory.FullName, "AI", "plan.md"))
-                    && File.Exists(Path.Combine(directory.FullName, "WebAPI", "WebAPI.csproj"))) return directory.FullName;
+                    && File.Exists(Path.Combine(directory.FullName, "src", "backend", "WebAPI", "WebAPI.csproj"))) return directory.FullName;
         throw new InvalidOperationException("Full-stack repository root is unavailable.");
     }
 }

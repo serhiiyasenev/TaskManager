@@ -22,7 +22,9 @@ if ($Mode -eq 'RabbitMQ') {
         [int] $env:TASKMANAGER_FULLSTACK_RABBIT_PORT -lt 1024 -or [int] $env:TASKMANAGER_FULLSTACK_RABBIT_PORT -gt 65535) { throw 'Full-stack broker must be the explicitly disposable loopback service.' }
 }
 $repository = Get-FullStackRepository
-$frontend = Join-Path $repository 'frontend'
+$frontend = Join-Path $repository 'src/frontend'
+$browserWorkspace = Join-Path $repository 'tests/frontend'
+$playwrightCli = Join-Path $repository 'node_modules/@playwright/test/cli.js'
 $dotnet = (Get-Command dotnet -ErrorAction Stop).Source
 $node = (Get-Command node -ErrorAction Stop).Source
 $runDirectory = New-FullStackRunDirectory
@@ -36,7 +38,8 @@ if ($Mode -eq 'RabbitMQ') {
     foreach ($key in @('TASKMANAGER_FULLSTACK_RABBIT_HOST','TASKMANAGER_FULLSTACK_RABBIT_PORT','TASKMANAGER_FULLSTACK_RABBIT_USER','TASKMANAGER_FULLSTACK_RABBIT_PASSWORD')) { $hostEnvironment[$key] = [Environment]::GetEnvironmentVariable($key) }
 }
 try {
-    if (-not (Test-Path -LiteralPath (Join-Path $frontend 'dist/index.html')) -or -not (Test-Path -LiteralPath (Join-Path $frontend 'node_modules/@playwright/test/cli.js'))) { throw 'Prepare locked frontend dependencies and production dist explicitly before full-stack execution.' }
+    if (-not (Test-Path -LiteralPath (Join-Path $frontend 'dist/index.html')) -or -not (Test-Path -LiteralPath $playwrightCli -PathType Leaf) -or
+        -not (Test-Path -LiteralPath (Join-Path $browserWorkspace 'playwright.fullstack.config.ts') -PathType Leaf)) { throw 'Prepare root locked workspace dependencies and production frontend dist explicitly before full-stack execution.' }
     if (-not $NoBuild) {
         Write-Host 'Building only the test host sequentially using locked dependencies; frontend preparation remains explicit.'
         foreach ($arguments in @(@('restore','tools/TaskManager.FullStackHost/TaskManager.FullStackHost.csproj','--locked-mode','-warnaserror:NU1901,NU1902,NU1903,NU1904'),
@@ -48,14 +51,18 @@ try {
     }
     $assembly = Join-Path $repository "tools/TaskManager.FullStackHost/bin/$Configuration/net10.0/TaskManager.FullStackHost.dll"
     if (-not (Test-Path -LiteralPath $assembly -PathType Leaf)) { throw 'Verified test-host artifact is missing; -NoBuild never performs an implicit restore/build.' }
+    $hostDirectory = Split-Path -Parent $assembly
+    if (-not (Test-Path -LiteralPath (Join-Path $hostDirectory 'MvcTestingAppManifest.json') -PathType Leaf)) { throw 'Build the actual test host with its generated application content-root manifest.' }
     Write-Host "Starting explicitly enabled local full-stack host ($Mode)."
-    $fullStackHostHandle = Start-FullStackChild -Executable $dotnet -Arguments @($assembly) -WorkingDirectory $repository -Environment $hostEnvironment
+    # WAF reads this generated manifest relative to the working directory,
+    # before ConfigureWebHost runs. Avoid its root-solution discovery fallback.
+    $fullStackHostHandle = Start-FullStackChild -Executable $dotnet -Arguments @($assembly) -WorkingDirectory $hostDirectory -Environment $hostEnvironment
     $state = Wait-FullStackState -Handle $fullStackHostHandle -Path $statePath -Transport $Mode -TimeoutSeconds $StartupTimeoutSeconds
     Write-Host 'Test host ready. Running actual desktop/mobile product requests without interception.'
-    $browser = Start-FullStackChild -Executable $node -Arguments @('node_modules/@playwright/test/cli.js','test','--config','playwright.fullstack.config.ts') -WorkingDirectory $frontend -Environment @{
+    $browser = Start-FullStackChild -Executable $node -Arguments @($playwrightCli,'test','--config','playwright.fullstack.config.ts') -WorkingDirectory $browserWorkspace -Environment @{
         TASKMANAGER_FULLSTACK_STATE = $statePath; TASKMANAGER_FULLSTACK_RUN_ID = $runId; TASKMANAGER_UI_BROWSER = $(if ($env:TASKMANAGER_UI_BROWSER) { $env:TASKMANAGER_UI_BROWSER } else { 'chrome' }) }
     if ((Wait-FullStackChild $browser -TimeoutSeconds $BrowserTimeoutSeconds) -ne 0) { throw 'Actual browser verification failed; raw auth/mail/control output is not forwarded.' }
-    $summaryPath = Join-Path $frontend 'test-results/fullstack-summary.json'
+    $summaryPath = Join-Path $browserWorkspace 'test-results/fullstack-summary.json'
     $summary = Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json -AsHashtable -Depth 10
     Assert-FullStackBrowserSummary $summary $runId $Mode
 } catch {

@@ -1,0 +1,22 @@
+{
+  "name": "taskmanager-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@12.2.0",
+  "engines": { "node": "24.18.0", "npm": "12.2.0" },
+  "workspaces": ["src/frontend", "tests/frontend"],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace taskmanager-web --",
+    "build:frontend": "npm run build --workspace taskmanager-web --",
+    "build": "npm run build:frontend",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test:unit",
+    "test:unit": "npm run test --workspace taskmanager-web --",
+    "test:coverage": "npm run test:coverage --workspace taskmanager-web --",
+    "test:e2e": "npm run test:e2e --workspace @taskmanager/browser-tests --",
+    "test:fullstack": "npm run test:fullstack --workspace @taskmanager/browser-tests --",
+    "contracts:check": "node scripts/generate-notification-contract.mjs --check"
+  }
+}
