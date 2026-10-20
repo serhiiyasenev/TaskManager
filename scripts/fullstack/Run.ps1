@@ -51,8 +51,12 @@ try {
     }
     $assembly = Join-Path $repository "tools/TaskManager.FullStackHost/bin/$Configuration/net10.0/TaskManager.FullStackHost.dll"
     if (-not (Test-Path -LiteralPath $assembly -PathType Leaf)) { throw 'Verified test-host artifact is missing; -NoBuild never performs an implicit restore/build.' }
+    $hostDirectory = Split-Path -Parent $assembly
+    if (-not (Test-Path -LiteralPath (Join-Path $hostDirectory 'MvcTestingAppManifest.json') -PathType Leaf)) { throw 'Build the actual test host with its generated application content-root manifest.' }
     Write-Host "Starting explicitly enabled local full-stack host ($Mode)."
-    $fullStackHostHandle = Start-FullStackChild -Executable $dotnet -Arguments @($assembly) -WorkingDirectory $repository -Environment $hostEnvironment
+    # WAF reads this generated manifest relative to the working directory,
+    # before ConfigureWebHost runs. Avoid its root-solution discovery fallback.
+    $fullStackHostHandle = Start-FullStackChild -Executable $dotnet -Arguments @($assembly) -WorkingDirectory $hostDirectory -Environment $hostEnvironment
     $state = Wait-FullStackState -Handle $fullStackHostHandle -Path $statePath -Transport $Mode -TimeoutSeconds $StartupTimeoutSeconds
     Write-Host 'Test host ready. Running actual desktop/mobile product requests without interception.'
     $browser = Start-FullStackChild -Executable $node -Arguments @($playwrightCli,'test','--config','playwright.fullstack.config.ts') -WorkingDirectory $browserWorkspace -Environment @{

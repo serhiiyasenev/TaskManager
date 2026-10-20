@@ -166,3 +166,13 @@ pwsh -NoProfile -File scripts/azure/Record-AuthenticatedSmoke.ps1 -ReleasePath '
 ```
 
 Use [the Azure delivery runbook](azure-deployment.md) for exact-revision proof, cost/what-if/release ordering and separate promotion. Its unchanged authenticated gate requires all nine fresh actual checks/evidence hashes. The executor never records evidence in the release journal, changes traffic, deploys resources or calls Promote. Controlled local state has provider `fake`/loopback origin and cannot satisfy the gate. No real native probes/inputs/cloud run currently exist; future opt-in capability is not live Azure acceptance.
+
+## Backend solution and host content roots
+
+The canonical solution is `src/backend/TaskManager.sln`. Run the documented
+commands from the repository root. The runner starts the .NET test-host child in
+its build-output directory, where ASP.NET testing reads the generated
+`MvcTestingAppManifest.json`. The manifest supplies actual application source
+roots before the factory configures each host. This avoids dependency on an
+ancestor solution file; browser working directories and private paths keep their
+existing explicit locations. A missing manifest requires an explicit host build.

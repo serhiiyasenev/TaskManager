@@ -349,3 +349,8 @@ This corrects the already authorized repository layout and PR scope.
 Completed locally: canonical solution moved, all11 memberships/configurations
 preserved; locked restore/build/actionlint and57 HTTP integration cases pass.
 Updating PR53; refreshed CI evidence belongs to the new head commit.
+
+Backend-solution follow-up: fixed full-stack child CWD to use its generated
+content-root manifest after CI exposed ancestor-solution discovery. Local RED
+reproduced and12 actual Controlled-mode browser cases plus verified cleanup pass;
+runner fixtures9/9 and actionlint pass. Refresh Rabbit/CI verification after push.
