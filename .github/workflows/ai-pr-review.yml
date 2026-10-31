@@ -1,0 +1,94 @@
+name: AI PR review
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_run:
+    workflows: ['.NET Build and Test', 'Run Tests']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Open PR number to review
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: ai-pr-review-${{ github.event.pull_request.number || inputs.pr_number || github.event.workflow_run.head_branch || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: AI PR review - analyze
+    # Manual runs use the default branch. PR code is NEVER checked out/executed.
+    if: >-
+      (github.event_name != 'workflow_dispatch' || github.ref_name == github.event.repository.default_branch)
+      && (github.event_name != 'pull_request_target' || !github.event.pull_request.draft)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      pr_number: ${{ steps.analyze.outputs.pr_number }}
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+    steps:
+      - name: Checkout trusted reviewer only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          persist-credentials: false
+          sparse-checkout: .github/review-agent
+          sparse-checkout-cone-mode: false
+      - name: Review immutable PR snapshot
+        id: analyze
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        run: python3 -I .github/review-agent/worker.py review
+      - name: Save report even when AI is unavailable
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ai-pr-review
+          path: review-output/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  publish:
+    name: AI PR review - publish
+    needs: review
+    if: always() && needs.review.outputs.pr_number != '' && needs.review.result != 'cancelled'
+    concurrency:
+      group: ai-pr-review-comment-${{ needs.review.outputs.pr_number }}
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout trusted publisher only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          persist-credentials: false
+          sparse-checkout: .github/review-agent
+          sparse-checkout-cone-mode: false
+      - name: Download this run's report
+        id: artifact
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ai-pr-review
+          path: review-output
+      - name: Update one comment if PR is still current
+        if: steps.artifact.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -I .github/review-agent/worker.py publish

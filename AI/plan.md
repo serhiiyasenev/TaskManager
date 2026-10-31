@@ -354,3 +354,29 @@ Backend-solution follow-up: fixed full-stack child CWD to use its generated
 content-root manifest after CI exposed ancestor-solution discovery. Local RED
 reproduced and12 actual Controlled-mode browser cases plus verified cleanup pass;
 runner fixtures9/9 and actionlint pass. Refresh Rabbit/CI verification after push.
+
+
+## Automated PR review — authorized 2026-10-31
+
+The owner requested implementation in GitHub of the discussed reviewer, verification
+agent and change presenter, hosted on GitHub Actions with Azure OpenAI. This is
+acceptance of that conversation plan for additive PR automation. Existing product
+Azure deployment remains deferred. Prepare a branch and PR; do not merge.
+
+| Step | Acceptance criteria |
+| --- | --- |
+| 1 ✅ | Read current workflow, ownership and AI context; preserve product CI |
+| 2 ✅ | Add trusted-base Python worker with bounded read-only tools and Azure Responses API |
+| 3 ✅ | Validate findings and present behavior changes, risks and actual CI status; collapse only low-noise details |
+| 4 ✅ | Add event/manual workflows, stale-commit guards, permissions separation and setup documentation |
+| 5 | Exercise offline integration/security cases and inspect PR CI; record live Azure prerequisites explicitly |
+
+Only agent infrastructure and its documentation/tests change. PR code is read as
+untrusted data and never executed with model credentials. No model, Azure resource,
+secret or successful live review is invented. Evidence is recorded in
+AI/traces/step-20261031-pr-review-agent.md.
+
+Offline implementation complete: 30 behavior/security/integration tests pass and
+both new workflows pass actionlint 1.7.12. Live Azure credentials/quota/model
+behavior and real automatic PR comments remain unverified until configured and
+merged. No existing application deployment gate is changed.
