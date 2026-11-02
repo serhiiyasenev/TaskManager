@@ -48,7 +48,7 @@ resource or paid model deployment is created by these workflows.
   `list_files`/`read_file` tools at those immutable SHAs. Source quotes are checked
   at the cited line; unmatched evidence becomes uncertain. The verifier's
   agreement is not equivalent to executing or reproducing a test.
-- Presenter generates Ukrainian before/after explanations, affected files and
+- Presenter generates English before/after explanations, affected files and
   suggested tests. Mechanical mappings/formatting are collapsed in the report.
   All supplied patches still go through review; mappings with material risks or
   unresolved findings stay visible. Excluded formats and budget gaps are explicit.

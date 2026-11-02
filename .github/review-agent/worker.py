@@ -417,7 +417,7 @@ def review(github, pr, model):
     packet = context.packet(checks)
     report = {"schema_version": 1, "repository": github.repository, "pr": pr["number"],
               "head_sha": context.head, "target_base_sha": context.target_base, "merge_base_sha": context.base,
-              "state": "configuration_required", "findings": [], "presentation": {"summary": "AI-перевірку не виконано: налаштуйте Azure OpenAI за інструкцією docs/ai-pr-review.md.", "changes": [], "suggested_tests": []},
+              "state": "configuration_required", "findings": [], "presentation": {"summary": "AI review was not run: configure Azure OpenAI using docs/ai-pr-review.md.", "changes": [], "suggested_tests": []},
               "files": [{"path": f["filename"], "status": f["status"], "additions": f["additions"], "deletions": f["deletions"]} for f in context.files],
               "ci_checks": checks, "coverage_notes": context.notes, "tool_trace": [], "usage": {}}
     if model is None:
@@ -437,7 +437,7 @@ def review(github, pr, model):
         report["state"] = "partial" if context.notes else "reviewed"
     except ReviewError as error:
         report["state"] = "failed"
-        report["presentation"] = {"summary": "AI-перевірка не завершена. " + str(error), "changes": [], "suggested_tests": []}
+        report["presentation"] = {"summary": "AI review did not complete. " + str(error), "changes": [], "suggested_tests": []}
     report["tool_trace"] = context.trace
     report["usage"] = model.usage
     return report
@@ -462,43 +462,43 @@ def location(report, finding):
 
 
 def markdown(report):
-    states = {"reviewed": "AI-перевірку завершено", "partial": "Часткова AI-перевірка — є обмеження покриття",
-              "configuration_required": "Потрібне налаштування Azure OpenAI", "failed": "AI-перевірка не завершена"}
+    states = {"reviewed": "AI review completed", "partial": "Partial AI review — coverage limitations apply",
+              "configuration_required": "Azure OpenAI configuration required", "failed": "AI review did not complete"}
     parts = [MARKER, "## AI PR review", f"**{states[report['state']]}**", f"Commit: `{report['head_sha']}`",
-             md(report["presentation"]["summary"]), "### Зміни поведінки", "| Було | Стало | Файли |", "| --- | --- | --- |"]
+             md(report["presentation"]["summary"]), "### Behavior changes", "| Before | After | Files |", "| --- | --- | --- |"]
     changes = report["presentation"]["changes"]
     for change in changes:
         if change["kind"] == "behavior":
             parts.append(f"| {md(change['before'])} | {md(change['after'])} | {md(', '.join(change['files']))} |")
     if not any(c["kind"] == "behavior" for c in changes):
-        parts.append("| — | Немає сформованого опису змін поведінки | — |")
-    parts.extend(["", "### Зауваження та ризики"])
+        parts.append("| — | No behavior change summary was generated | — |")
+    parts.extend(["", "### Findings and risks"])
     active = [f for f in report["findings"] if f["status"] != "dismissed"]
     for f in active:
         parts.append(f"- **{md(f['severity'])} / {md(f['status'])}: {md(f['title'])}** — [{md(f['path'])}:{f['line']}]({location(report, f)}). {md(f['reason'])}")
     if not active:
-        parts.append("Зауважень не сформовано. Це не гарантія відсутності дефектів; врахуйте статус перевірки вище.")
-    parts.extend(["", "### CI — знімок стану, а не новий запуск тестів", "| Перевірка | Commit | Стан |", "| --- | --- | --- |"])
+        parts.append("No findings were generated. This does not guarantee the absence of defects; check the review status above.")
+    parts.extend(["", "### CI status snapshot — not a new test run", "| Check | Commit | Status |", "| --- | --- | --- |"])
     for c in report["ci_checks"][:60]:
         parts.append(f"| {md(c['name'])} | {md(c['source'])} | {md(c['status'])} / {md(c['conclusion'])} |")
     if not report["ci_checks"]:
-        parts.append("| Дані CI недоступні або перевірки ще не створені | — | Невідомо |")
-    parts.extend(["", "### Що перевірити додатково"] + ["- " + md(s) for s in report["presentation"]["suggested_tests"]])
-    parts.extend(["", "<details><summary>Технічні деталі та відхилені зауваження</summary>", ""])
+        parts.append("| CI data is unavailable or checks have not been created yet | — | Unknown |")
+    parts.extend(["", "### Suggested additional checks"] + ["- " + md(s) for s in report["presentation"]["suggested_tests"]])
+    parts.extend(["", "<details><summary>Technical details and dismissed findings</summary>", ""])
     for c in changes:
         if c["kind"] != "behavior":
             parts.append(f"- {md(c['kind'])}: {md(c['before'])} → {md(c['after'])} ({md(', '.join(c['files']))})")
     for f in report["findings"]:
         if f["status"] == "dismissed":
-            parts.append(f"- Відхилено: {md(f['title'])}. {md(f['reason'])}")
-    parts.extend(["", "</details>", "", "<details><summary>Покриття та обмеження</summary>", "",
-                  f"Змінено файлів: {len(report['files'])}. Викликів інструментів: {len(report['tool_trace'])}.",
-                  "Supported означає висновок агента з перевіреним посиланням на код, а не відтворений тестом дефект.",
-                  "Тести виконує наявний CI. Агент не запускає код PR і не змінює вихідні файли."])
+            parts.append(f"- Dismissed: {md(f['title'])}. {md(f['reason'])}")
+    parts.extend(["", "</details>", "", "<details><summary>Coverage and limitations</summary>", "",
+                  f"Changed files: {len(report['files'])}. Tool calls: {len(report['tool_trace'])}.",
+                  "Supported means an agent conclusion with a verified source reference, not a defect reproduced by a test.",
+                  "Existing CI runs the tests. The agent does not execute PR code or modify source files."])
     parts += ["- " + md(n) for n in report["coverage_notes"][:50]]
     if len(report["coverage_notes"]) > 50:
-        parts.append("Повний перелік обмежень — у report.json артефакту.")
-    parts.extend(["", "</details>", "", "HTML-звіт і JSON доступні в артефакті `ai-pr-review` цього запуску."])
+        parts.append("The complete list of limitations is in the report.json artifact.")
+    parts.extend(["", "</details>", "", "The HTML report and JSON are available in this run's `ai-pr-review` artifact."])
     return "\n\n".join(parts[:5]) + "\n\n" + "\n".join(parts[5:])
 
 
@@ -506,14 +506,14 @@ def html_report(report):
     p = report["presentation"]
     cards, quiet = [], []
     for c in p["changes"]:
-        card = f'<article><small>{clean(", ".join(c["files"]))}</small><div class="pair"><section><b>Було</b><p>{clean(c["before"])}</p></section><section><b>Стало</b><p>{clean(c["after"])}</p></section></div></article>'
+        card = f'<article><small>{clean(", ".join(c["files"]))}</small><div class="pair"><section><b>Before</b><p>{clean(c["before"])}</p></section><section><b>After</b><p>{clean(c["after"])}</p></section></div></article>'
         (cards if c["kind"] == "behavior" else quiet).append(card)
     findings = "".join(f'<li><strong>{clean(f["severity"])} · {clean(f["status"])} · {clean(f["title"])}</strong><p>{clean(f["reason"])}</p><a href="{html.escape(location(report, f), quote=True)}">{clean(f["path"])}:{f["line"]}</a></li>' for f in report["findings"] if f["status"] != "dismissed")
     checks = "".join(f'<tr><td>{clean(c["name"])}</td><td>{clean(c["source"])}</td><td>{clean(c["status"])} / {clean(c["conclusion"])}</td></tr>' for c in report["ci_checks"])
     notes = "".join(f"<li>{clean(n)}</li>" for n in report["coverage_notes"])
-    return f'''<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><title>PR review #{report['pr']}</title><style>
+    return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><title>PR review #{report['pr']}</title><style>
 body{{margin:0;background:#10151d;color:#edf1f7;font:16px/1.6 system-ui,sans-serif}}main{{max-width:1050px;margin:auto;padding:32px 20px}}h1{{font-size:36px}}small,.muted{{color:#aebacf}}article,li{{background:#1a2330;border:1px solid #344253;border-radius:12px;padding:20px;margin:16px 0;overflow-wrap:anywhere}}.pair{{display:grid;grid-template-columns:1fr 1fr;gap:24px}}.pair section:last-child{{border-left:3px solid #65d8ad;padding-left:20px}}b,a{{color:#8ee5c1}}code{{overflow-wrap:anywhere}}table{{width:100%;border-collapse:collapse}}td,th{{text-align:left;padding:12px;border-bottom:1px solid #344253;overflow-wrap:anywhere}}ul{{padding:0;list-style:none}}summary{{cursor:pointer;padding:18px 0;color:#f8d178}}@media(max-width:650px){{.pair{{grid-template-columns:1fr}}h1{{font-size:28px}}}}
-</style></head><body><main><p class="muted">{clean(report['repository'])} · PR #{report['pr']}</p><h1>Що змінилося</h1><p><b>Статус: {clean(report['state'])}</b></p><p>{clean(p['summary'])}</p><p class="muted">Commit <code>{report['head_sha']}</code></p>{''.join(cards)}<h2>Ризики й зауваження</h2><ul>{findings or '<li>Зауважень не сформовано. Врахуйте статус і обмеження перевірки.</li>'}</ul><h2>Стан CI</h2><p class="muted">Знімок наявних перевірок. Цей агент не запускає тести.</p><table><thead><tr><th>Перевірка</th><th>Commit</th><th>Стан</th></tr></thead><tbody>{checks}</tbody></table><details><summary>Другорядні зміни</summary>{''.join(quiet) or '<p>Немає.</p>'}</details><details><summary>Покриття та обмеження</summary><p>Файлів: {len(report['files'])}. Supported — висновок агента з перевіреним посиланням, не доказ виконаного тесту.</p><ul>{notes}</ul></details></main></body></html>'''
+</style></head><body><main><p class="muted">{clean(report['repository'])} · PR #{report['pr']}</p><h1>What changed</h1><p><b>Status: {clean(report['state'])}</b></p><p>{clean(p['summary'])}</p><p class="muted">Commit <code>{report['head_sha']}</code></p>{''.join(cards)}<h2>Risks and findings</h2><ul>{findings or '<li>No findings were generated. Check the review status and limitations.</li>'}</ul><h2>Status CI</h2><p class="muted">Snapshot of existing checks. This agent does not run tests.</p><table><thead><tr><th>Check</th><th>Commit</th><th>Status</th></tr></thead><tbody>{checks}</tbody></table><details><summary>Minor changes</summary>{''.join(quiet) or '<p>None.</p>'}</details><details><summary>Coverage and limitations</summary><p>Files: {len(report['files'])}. Supported is an agent conclusion with a verified reference, not proof of an executed test.</p><ul>{notes}</ul></details></main></body></html>'''
 
 
 def save_report(report, output):
@@ -533,7 +533,7 @@ def publish(github, report):
         return False
     body = markdown(report)
     if len(body) > 60000:
-        body = body[:56000] + "\n\nЗвіт скорочено. Повний результат — у report.html / report.json артефакту."
+        body = body[:56000] + "\n\nReport truncated. The full result is in the report.html / report.json artifact."
     comments = github.pages(f"/issues/{report['pr']}/comments")
     own = [c for c in comments if c.get("user", {}).get("login") == "github-actions[bot]" and
            c.get("user", {}).get("type") == "Bot" and c.get("body", "").startswith(MARKER)]

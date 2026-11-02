@@ -22,8 +22,8 @@ FILE = {"filename": "src/Mapper.cs", "status": "modified", "additions": 1, "dele
         "patch": "@@ -1 +1 @@\n-return amount;\n+return 0;"}
 FINDING = {"title": "Amount is lost", "severity": "high", "path": "src/Mapper.cs", "version": "head",
            "line": 1, "evidence": "return 0;", "reason": "Every input maps to zero", "status": "candidate"}
-PRESENTATION = {"summary": "Зміна суми", "changes": [{"before": "Сума зберігалась", "after": "Сума стає нулем",
-                "files": ["src/Mapper.cs"], "kind": "mapping"}], "suggested_tests": ["Перевірити ненульову суму"]}
+PRESENTATION = {"summary": "Amount change", "changes": [{"before": "The amount was preserved", "after": "The amount becomes zero",
+                "files": ["src/Mapper.cs"], "kind": "mapping"}], "suggested_tests": ["Test a nonzero amount"]}
 
 
 class FakeGitHub:
@@ -109,12 +109,12 @@ class ReviewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             w.save_report(report, Path(directory))
             self.assertEqual(len(list(Path(directory).iterdir())), 3)
-            self.assertIn("Потрібне налаштування", (Path(directory) / "report.md").read_text())
+            self.assertIn("Azure OpenAI configuration required", (Path(directory) / "report.md").read_text())
 
     def test_model_failure_never_becomes_a_clean_review(self):
         report = w.review(self.github, PR, FakeModel(fail_role="verifier"))
         self.assertEqual(report["state"], "failed")
-        self.assertIn("не завершена", report["presentation"]["summary"])
+        self.assertIn("did not complete", report["presentation"]["summary"])
 
     def test_unresolved_candidates_are_preserved(self):
         report = w.review(self.github, PR, FakeModel(empty_verifier=True))
