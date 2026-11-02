@@ -9,6 +9,7 @@ The browser application uses Ukrainian/English React/TypeScript screens and a se
 ASP.NET Core YARP web host. Identity cookies, confirmed email and server-side
 team/project permissions protect browser operations; the existing JWT console
 client remains supported.
+
 ---
 
 ## 🚀 Main Features
