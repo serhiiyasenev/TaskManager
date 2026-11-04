@@ -4,8 +4,14 @@
   "private": true,
   "type": "module",
   "packageManager": "npm@12.2.0",
-  "engines": { "node": "24.18.0", "npm": "12.2.0" },
-  "workspaces": ["src/frontend", "tests/frontend"],
+  "engines": {
+    "node": "24.18.0",
+    "npm": "12.2.0"
+  },
+  "workspaces": [
+    "src/frontend",
+    "tests/frontend"
+  ],
   "scripts": {
     "dev:frontend": "npm run dev --workspace taskmanager-web --",
     "build:frontend": "npm run build --workspace taskmanager-web --",
@@ -18,5 +24,8 @@
     "test:e2e": "npm run test:e2e --workspace @taskmanager/browser-tests --",
     "test:fullstack": "npm run test:fullstack --workspace @taskmanager/browser-tests --",
     "contracts:check": "node scripts/generate-notification-contract.mjs --check"
+  },
+  "overrides": {
+    "undici": "^8.12.3"
   }
 }
