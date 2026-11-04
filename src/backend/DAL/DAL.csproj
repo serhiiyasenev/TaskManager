@@ -25,6 +25,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="10.0.14" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <!-- Override the vulnerable PKCS transitive dependency from SqlClient. -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
