@@ -13,7 +13,7 @@
     "@playwright/test": "1.64.0",
     "@types/node": "24.19.2",
     "eslint": "10.12.0",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "typescript-eslint": "8.71.1",
     "zod": "4.6.6"
   }
